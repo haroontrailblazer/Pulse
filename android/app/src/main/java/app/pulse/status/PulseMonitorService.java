@@ -21,7 +21,7 @@ public final class PulseMonitorService extends Service {
     @Override public void onCreate() {
         super.onCreate();PulseStore.channel(this);
         Notification notification=new NotificationCompat.Builder(this,PulseStore.MONITOR_CHANNEL)
-            .setSmallIcon(R.drawable.ic_pulse_notification).setContentTitle("Pulse is monitoring your watchlist")
+            .setSmallIcon(R.drawable.ic_pulse_notification).setLargeIcon(PulseStore.notificationLogo(this)).setContentTitle("Pulse is monitoring your watchlist")
             .setContentText("Background checks run while alerts are enabled.").setContentIntent(PulseStore.open(this)).setOngoing(true).setShowWhen(false).build();
         startForeground(4102,notification);
     }
