@@ -14,7 +14,27 @@ try {
       if (!localStorage.getItem("pulse-theme")) localStorage.setItem("pulse-theme", "light");
       localStorage.setItem("pulse-watchlist", JSON.stringify(["openai", "anthropic", "cloudflare", "github"]));
     });
-    const data = { providers: providers.map((p) => ({ ...unknownProvider(p), status: p.id === "openai" ? "degraded" : "operational", stale: false, checkedAt: new Date().toISOString(), components: [], incidents: [] })), history: [], refreshing: false, fetchedAt: new Date().toISOString(), completedChecks: providers.length, revision: 1 };
+    const timestamp = new Date().toISOString();
+    const incidents = [
+      { provider: "openai", id: "sf", name: "San Francisco API latency", impact: "minor", status: "monitoring", updatedAt: timestamp, body: "Official service update." },
+      { provider: "github", id: "london", name: "London Actions disruption", impact: "major", status: "investigating", updatedAt: timestamp, body: "Official service update." },
+      { provider: "googlecloud", id: "tokyo", name: "Tokyo Cloud incident", impact: "major", status: "investigating", updatedAt: timestamp, body: "Official service update." },
+      { provider: "azure", id: "virginia", name: "Virginia platform degradation", impact: "minor", status: "monitoring", updatedAt: timestamp, body: "Official service update." },
+    ];
+    const data = {
+      providers: providers.map((p) => {
+        const incident = incidents.find((item) => item.provider === p.id);
+        return {
+          ...unknownProvider(p),
+          status: incident?.impact === "major" ? "outage" : incident ? "degraded" : "operational",
+          stale: false,
+          checkedAt: timestamp,
+          components: p.id === "openai" ? [{ id: "sf-api", name: "San Francisco / API", status: "degraded_performance" }] : [],
+          incidents: incident ? [incident] : [],
+        };
+      }),
+      history: [], refreshing: false, fetchedAt: timestamp, completedChecks: providers.length, revision: 1,
+    };
     await context.route("**/api/status**", (route) => route.fulfill({ contentType: route.request().url().includes("stream") ? "text/event-stream" : "application/json", body: route.request().url().includes("stream") ? `data: ${JSON.stringify(data)}\n\n` : JSON.stringify(data) }));
     const page = await context.newPage();
     const errors = [];
@@ -26,9 +46,29 @@ try {
     assert.equal(await page.locator(".summary-grid").count(), 1);
     assert.equal(await page.locator(".overview-grid").count(), 1);
     assert.equal(await page.locator(".service-table").count(), 1);
+    assert.equal(await page.locator(".incident-stream .incident-item").count(), incidents.length);
+    assert.equal(
+      await page.locator(".incident-stream").evaluate((node) => node.scrollHeight <= node.clientHeight),
+      true,
+      "Live incidents must not be clipped on the Overview page",
+    );
+    assert.ok(await page.locator(".atlas-hub.outage").count() > 0, "Map should show official outage locations");
+    assert.ok(await page.locator(".atlas-hub.degraded").count() > 0, "Map should show official degraded locations");
+    assert.equal(
+      await page.locator(".health-bars i").count(),
+      (providers.length - 1) * 30 + 1,
+      "Desktop component-health bars must retain the earlier full fallback",
+    );
+    assert.equal(
+      await page.locator(".service-table tbody tr td:nth-child(4)").first().isVisible(),
+      viewport.width > 760,
+      "Status signals should be desktop-only on the website",
+    );
     const geometry = await page.evaluate(() => {
       const title = document.querySelector(".page-heading h1");
       const style = getComputedStyle(title);
+      const dot = document.querySelector(".page-heading .eyebrow > span");
+      const menu = document.querySelector(".page-menu svg");
       return {
         width: innerWidth,
         scroll: document.documentElement.scrollWidth,
@@ -37,15 +77,22 @@ try {
         titleHeight: title.getBoundingClientRect().height,
         titleFont: parseFloat(style.fontSize),
         titleLine: parseFloat(style.lineHeight),
+        eyebrowTop: document.querySelector(".page-heading .eyebrow").getBoundingClientRect().top,
+        dotLeft: dot?.getBoundingClientRect().left ?? null,
+        menuLeft: menu?.getBoundingClientRect().left ?? null,
       };
     });
     assert.ok(geometry.scroll <= geometry.width, `Horizontal overflow at ${viewport.width}`);
     assert.ok(geometry.titleScroll <= geometry.titleWidth, `Page title overflows at ${viewport.width}`);
     assert.ok(geometry.titleHeight <= geometry.titleLine * 1.1, `Page title wraps at ${viewport.width}`);
+    if (viewport.width <= 760)
+      assert.ok(Math.abs(geometry.dotLeft - geometry.menuLeft) <= 0.5, `Menu glyph must align with the eyebrow dot at ${viewport.width}`);
     const android = await page.evaluate(() => {
       document.documentElement.dataset.platform = "android";
       const title = document.querySelector(".page-heading h1");
       const style = getComputedStyle(title);
+      const dot = document.querySelector(".page-heading .eyebrow > span");
+      const menu = document.querySelector(".page-menu svg");
       return {
         summary: document.querySelectorAll(".summary-grid").length,
         overview: document.querySelectorAll(".overview-grid").length,
@@ -55,11 +102,23 @@ try {
         titleHeight: title.getBoundingClientRect().height,
         titleFont: parseFloat(style.fontSize),
         titleLine: parseFloat(style.lineHeight),
+        eyebrowTop: document.querySelector(".page-heading .eyebrow").getBoundingClientRect().top,
+        dotLeft: dot?.getBoundingClientRect().left ?? null,
+        menuLeft: menu?.getBoundingClientRect().left ?? null,
       };
     });
     assert.deepEqual([android.summary, android.overview, android.directory], [1, 1, 1]);
     assert.ok(android.titleScroll <= android.titleWidth, `Android page title overflows at ${viewport.width}`);
     assert.ok(android.titleHeight <= android.titleLine * 1.1, `Android page title wraps at ${viewport.width}`);
+    assert.ok(android.eyebrowTop >= 36, `Android status-bar inset is missing at ${viewport.width}`);
+    if (viewport.width <= 760)
+      assert.ok(Math.abs(android.dotLeft - android.menuLeft) <= 0.5, `Android menu glyph must align with the eyebrow dot at ${viewport.width}`);
+    assert.equal(
+      await page.locator(".service-table tbody tr td:nth-child(4)").first().isVisible(),
+      false,
+      "Status signals should be hidden in the Android APK",
+    );
+    await page.evaluate(() => delete document.documentElement.dataset.platform);
     await page.screenshot({ path: `test-results/overview-${viewport.width}-light.png`, fullPage: true });
     await page.getByRole("button", { name: "OpenAI", exact: false }).first().click();
     await page.getByRole("button", { name: "Remove from watchlist", exact: false }).waitFor();

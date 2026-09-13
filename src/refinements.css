@@ -258,7 +258,7 @@
 :root[data-platform="android"] main {
   max-width: 720px;
   margin-inline: auto;
-  padding-top: 18px;
+  padding-top: max(36px, calc(env(safe-area-inset-top) + 12px));
   padding-inline: 14px;
 }
 :root[data-platform="android"] .page-heading {
@@ -268,6 +268,19 @@
   font-size: clamp(15px, 5vw, 19px);
   line-height: 1.2;
   white-space: nowrap;
+}
+:root[data-platform="android"] .service-table th:nth-child(4),
+:root[data-platform="android"] .service-table td:nth-child(4) {
+  display: none;
+}
+:root[data-platform="android"] .service-table th:first-child {
+  width: 54%;
+}
+:root[data-platform="android"] .service-table th:nth-child(2) {
+  width: 33%;
+}
+:root[data-platform="android"] .service-table th:last-child {
+  width: 13%;
 }
 :root[data-platform="android"] .panel,
 :root[data-platform="android"] .summary-card,

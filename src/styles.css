@@ -874,7 +874,7 @@ h1 > span {
 }
 .incident-stream {
   flex: 1;
-  max-height: 321px;
+  max-height: none;
   overflow: auto;
   scrollbar-width: thin;
   scrollbar-color: #dce5d7 transparent;
@@ -2390,6 +2390,11 @@ h1 > span {
   .page-title-row h1 {
     white-space: nowrap;
   }
+  .page-title-row .page-menu {
+    /* Keep the 44px touch target while aligning the visible menu glyph with
+       the eyebrow signal dot at the page's left inset. */
+    margin-left: -12px;
+  }
   .page-heading p {
     font-size: 10px;
     max-width: 310px;
@@ -2478,8 +2483,8 @@ h1 > span {
   }
   .incident-stream {
     display: block;
-    max-height: 300px;
-    overflow: auto;
+    max-height: none;
+    overflow: visible;
   }
   .incident-stream > .incident-item {
     border-bottom: 1px solid #edf0e8;

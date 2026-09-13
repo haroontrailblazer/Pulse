@@ -53,6 +53,33 @@ test("provider-wide incidents stay visible without inventing geographic pins", (
   assert.ok(result.locations.every((h) => h.status === "unknown"));
   assert.equal(result.issues[0].evidence[0].kind, "Active incident");
 });
+test("official incident details add outage and degraded pins when they name a hub", () => {
+  const result = buildAtlas(
+    [
+      provider({
+        incidents: [
+          {
+            name: "London API disruption",
+            impact: "major",
+            status: "investigating",
+            body: "The provider is investigating elevated errors.",
+            components: ["London / API"],
+          },
+          {
+            name: "San Francisco latency",
+            impact: "minor",
+            status: "monitoring",
+            body: "The provider is monitoring recovery.",
+          },
+        ],
+      }),
+    ],
+    now,
+  );
+  assert.equal(result.locations[2].status, "outage");
+  assert.equal(result.locations[0].status, "degraded");
+  assert.equal(result.locations[2].signals[0].kind, "Active incident");
+});
 test("stale or failed feeds cannot keep regional outage pins or count as healthy", () => {
   const bad = provider({
     components: [component("Mumbai", "major_outage")],

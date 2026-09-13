@@ -157,15 +157,26 @@ export function buildAtlas(
         (includeMaintenance && incident.impact === "maintenance"
           ? "maintenance"
           : null);
-      if (status)
-        evidence.push({
+      if (status) {
+        // A provider-wide incident stays in the service list, but an official
+        // component or incident title that names a map hub is useful regional
+        // evidence. Update text can mention an unaffected city, so it never
+        // assigns an incident to a map location by itself.
+        const matchedLocations = [
+          ...(incident.components || []),
+          incident.name,
+        ].flatMap(componentLocations);
+        const signal = {
           provider,
           name: incident.name,
           status,
           kind: "Active incident",
           incident,
-          locations: [],
-        });
+          locations: [...new Set(matchedLocations)],
+        };
+        for (const index of signal.locations) locations[index].signals.push(signal);
+        evidence.push(signal);
+      }
     }
     if (include(provider.status))
       evidence.unshift({
