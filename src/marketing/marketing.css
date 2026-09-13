@@ -6,6 +6,8 @@ html {
   scroll-padding-top: 100px;
   background: #fafaf8;
   color-scheme: light;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 body {
   margin: 0;
@@ -13,6 +15,13 @@ body {
   background: #fafaf8;
   font-family: "DM Sans Variable", sans-serif;
   -webkit-font-smoothing: antialiased;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  width: 0;
+  height: 0;
 }
 button,
 a,

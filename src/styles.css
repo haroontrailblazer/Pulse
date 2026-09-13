@@ -11,6 +11,16 @@
   --lime: #dcf78b;
   --sidebar: 232px;
 }
+html,
+body {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
 * {
   box-sizing: border-box;
 }
