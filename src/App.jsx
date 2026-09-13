@@ -55,7 +55,7 @@ import {
 } from "../shared/incidents";
 import { explainIndustry } from "../shared/insights";
 import BackgroundSettings, { useBackgroundSync } from "./BackgroundSettings";
-import { isFresh } from "../shared/monitor";
+import { isFresh, SIGNAL_WINDOW_MS, signalWindow } from "../shared/monitor";
 import { providers, categories, statusLabels } from "../shared/providers";
 import WorldMap from "./WorldMap";
 import MobileOverview from "./MobileOverview";
@@ -846,11 +846,11 @@ export default function App() {
                       <th>Status</th>
                       <th>Category</th>
                       <th>
-                        Component health{" "}
+                        Status signal{" "}
                         <button
-                          title="Each bar is a reported component, not historical uptime"
+                          title="A fixed window of recent official checks; unmeasured slots remain gray"
                           onClick={() => setModal("methodology")}
-                          aria-label="About component health"
+                          aria-label="About status signals"
                         >
                           <CircleHelp size={12} />
                         </button>
@@ -883,32 +883,25 @@ export default function App() {
                           <button
                             className="component-cell"
                             onClick={() => openProvider(p)}
-                            aria-label={`View ${p.name} component health`}
+                            aria-label={`View ${p.name} status signal`}
                           >
                             <div className="health-bars">
-                              {(p.components.length && !p.stale
-                                ? p.components.slice(0, 38)
-                                : Array.from({ length: 30 }, () => ({
-                                    status: "unknown",
-                                  }))
-                              ).map((c, i) => (
+                              {signalWindow(p, now).map((signal, i) => (
                                 <i
                                   key={i}
                                   title={
-                                    c.name
-                                      ? `${c.name}: ${c.status.replaceAll("_", " ")}`
-                                      : "Not measured"
+                                    signal.at
+                                      ? `${new Date(signal.at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}: ${signal.status.replaceAll("_", " ")}`
+                                      : "Not measured in this window"
                                   }
-                                  className={c.status}
+                                  className={signal.status}
                                 />
                               ))}
                             </div>
                             <span>
                               {p.stale
-                                ? "Stale component reading"
-                                : p.components.length
-                                  ? `${p.components.filter((c) => c.status === "operational").length} / ${p.components.length} healthy`
-                                  : "No component data"}
+                                ? "Stale signal"
+                                : `${Math.round(SIGNAL_WINDOW_MS / 60_000)} min fixed window`}
                             </span>
                           </button>
                         </td>
@@ -921,7 +914,9 @@ export default function App() {
                           >
                             <Star
                               size={16}
-                              weight={watchlist.includes(p.id) ? "fill" : "regular"}
+                              weight={
+                                watchlist.includes(p.id) ? "fill" : "regular"
+                              }
                               className={`watchlist-star ${watchlist.includes(p.id) ? "watched" : ""}`}
                             />
                           </button>
@@ -1391,13 +1386,14 @@ export default function App() {
                 Pulse could not retrieve or understand the feed. Check
                 timestamps before relying on a reading.
               </p>
-              <h3>Components, not invented uptime</h3>
+              <h3>A fixed signal window</h3>
               <p>
-                The bars show the first 38 current component readings. The
-                adjacent count includes all reported components. Green means
-                operational, amber degraded or maintenance, red outage, and gray
-                unavailable. Historical uptime requires measurements over time
-                and is not estimated here.
+                Every service uses the same{" "}
+                {Math.round(SIGNAL_WINDOW_MS / 60_000)}-minute, 12-slot window
+                of official readings. Green means operational, amber degraded or
+                maintenance, red outage, and gray means no verified reading for
+                that slot. A provider’s aggregate status fills the signal when
+                it does not publish component-level data.
               </p>
               <h3>The map and industry insights</h3>
               <p>

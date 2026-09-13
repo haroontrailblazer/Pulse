@@ -84,7 +84,9 @@ export default function BackgroundSettings({
         const permission = await native.requestAlerts();
         publish(permission);
         if (permission.permission !== "granted") {
-          setMessage("Allow Pulse notifications in Android Settings, then enable alerts again.");
+          setMessage(
+            "Allow Pulse notifications in Android Settings, then enable alerts again.",
+          );
           return;
         }
       }
@@ -151,9 +153,11 @@ export default function BackgroundSettings({
           </strong>
           <p>
             {android
-              ? "Android checks about every 15 minutes when online and battery is not low. The OS can delay checks. Force-stop pauses monitoring until you reopen Pulse."
+              ? state.enabled
+                ? `Pulse keeps a visible background-monitor notification and checks your ${automated} watched feeds about every ${state.intervalSeconds || 30} seconds. The interval grows with your watchlist to limit requests; Android can still stop monitoring after force-stop or under system restrictions.`
+                : "Enable alerts to keep Pulse monitoring after you close the app. The widget also has a 15-minute Android-scheduled fallback when alerts are off."
               : native
-                ? "Pulse stays in the Windows tray after closing the window. Your watched feeds are checked every 5 minutes; Quit stops monitoring."
+                ? "Pulse stays in the Windows tray after closing the window. Your watched feeds are checked every 30 seconds; Quit stops monitoring."
                 : "Install the APK or Windows app to monitor your watchlist after closing the window. This browser pauses checks when hidden."}
           </p>
           {native && state.enabled && state.permission !== "granted" && (
@@ -182,7 +186,13 @@ export default function BackgroundSettings({
       </div>
       <div className="background-foot">
         {native && state.lastCheckedAt && (
-          <span>Last verified check: {new Date(state.lastCheckedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
+          <span>
+            Last verified check:{" "}
+            {new Date(state.lastCheckedAt).toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+            })}
+          </span>
         )}
         <span>
           <ShieldCheck size={16} /> {native ? "Checks" : "Installed apps check"}{" "}

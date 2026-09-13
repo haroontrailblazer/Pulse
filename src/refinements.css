@@ -254,3 +254,56 @@
     padding-bottom: max(23px, env(safe-area-inset-bottom));
   }
 }
+
+:root[data-platform="android"] main {
+  max-width: 720px;
+  margin-inline: auto;
+  padding-top: 18px;
+  padding-inline: 14px;
+}
+:root[data-platform="android"] .page-heading {
+  margin-bottom: 16px;
+}
+:root[data-platform="android"] .page-heading h1 {
+  font-size: 25px;
+  line-height: 1.15;
+}
+:root[data-platform="android"] .mobile-overview {
+  gap: 14px;
+  max-width: 640px;
+}
+:root[data-platform="android"] .mobile-overview-heading {
+  gap: 8px;
+}
+:root[data-platform="android"] .mobile-overview-heading h1 {
+  font-size: 23px;
+}
+:root[data-platform="android"] .mobile-section-heading {
+  margin-bottom: 9px;
+}
+:root[data-platform="android"] .mobile-section-heading h2 {
+  font-size: 15px;
+}
+:root[data-platform="android"] .mobile-service-list {
+  border-radius: 10px;
+}
+:root[data-platform="android"] .mobile-service {
+  min-height: 48px;
+  padding-block: 7px;
+}
+:root[data-platform="android"] .panel,
+:root[data-platform="android"] .summary-card,
+:root[data-platform="android"] .insight-card {
+  border-radius: 10px;
+}
+@media (min-width: 761px) {
+  :root[data-platform="android"] .sidebar {
+    width: 210px;
+  }
+  :root[data-platform="android"] .main-shell {
+    margin-left: 210px;
+  }
+  :root[data-platform="android"] .topbar {
+    left: 210px;
+  }
+}

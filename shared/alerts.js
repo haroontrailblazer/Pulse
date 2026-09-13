@@ -33,10 +33,13 @@ export function nextAlert(previous, provider) {
   };
 }
 export function requestBudget(watched, feeds = 28) {
+  const androidIntervalSeconds = Math.min(300, Math.max(30, watched * 30));
   return {
     oldHourly: feeds * 120,
     foregroundHourly: feeds * 120,
-    androidHourly: watched * 4,
-    desktopHourly: watched * 12,
+    androidHourly: watched
+      ? Math.ceil((watched * 3600) / androidIntervalSeconds)
+      : 0,
+    desktopHourly: watched * 120,
   };
 }

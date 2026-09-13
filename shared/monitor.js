@@ -2,8 +2,101 @@ import { unknownProvider } from "./providers.js";
 
 export const REFRESH_MS = 30_000;
 export const STALE_MS = 300_000;
-export const DESKTOP_REFRESH_MS = 300_000;
+export const DESKTOP_REFRESH_MS = 30_000;
 export const ANDROID_REFRESH_MS = 900_000;
+export const SIGNAL_WINDOW_MS = 15 * 60_000;
+export const SIGNAL_SLOTS = 12;
+export const SIGNAL_SLOT_MS = SIGNAL_WINDOW_MS / SIGNAL_SLOTS;
+
+const signalRanks = {
+  unknown: 0,
+  operational: 1,
+  under_maintenance: 2,
+  degraded_performance: 3,
+  partial_outage: 3,
+  major_outage: 4,
+};
+const providerSignalStates = {
+  operational: "operational",
+  maintenance: "under_maintenance",
+  degraded: "degraded_performance",
+  outage: "major_outage",
+  unknown: "unknown",
+};
+const incidentSignalStates = {
+  maintenance: "under_maintenance",
+  minor: "degraded_performance",
+  major: "major_outage",
+  critical: "major_outage",
+};
+
+export function signalState(provider) {
+  if (!provider.checkedAt || provider.stale || provider.status === "unknown")
+    return "unknown";
+  let state = providerSignalStates[provider.status] || "unknown";
+  for (const component of provider.components || []) {
+    const candidate = component.status;
+    if ((signalRanks[candidate] || 0) > (signalRanks[state] || 0))
+      state = candidate;
+  }
+  for (const incident of provider.incidents || []) {
+    if (
+      ["resolved", "postmortem", "completed", "scheduled"].includes(
+        incident.status,
+      )
+    )
+      continue;
+    const candidate = incidentSignalStates[incident.impact];
+    if ((signalRanks[candidate] || 0) > (signalRanks[state] || 0))
+      state = candidate;
+  }
+  return state;
+}
+
+export function appendSignal(previous, provider, observedAt = Date.now()) {
+  const timestamp =
+    typeof observedAt === "number" ? observedAt : Date.parse(observedAt);
+  const now = Number.isFinite(timestamp) ? timestamp : Date.now();
+  const earliestSlot = Math.floor((now - SIGNAL_WINDOW_MS) / SIGNAL_SLOT_MS);
+  const slots = new Map();
+  for (const signal of previous?.signals || []) {
+    const at = Date.parse(signal.at);
+    const slot = Math.floor(at / SIGNAL_SLOT_MS);
+    if (
+      Number.isFinite(at) &&
+      slot >= earliestSlot &&
+      signalRanks[signal.status] !== undefined
+    )
+      slots.set(slot, signal);
+  }
+  slots.set(Math.floor(now / SIGNAL_SLOT_MS), {
+    at: new Date(now).toISOString(),
+    status: signalState(provider),
+  });
+  return [...slots.entries()]
+    .sort(([first], [second]) => first - second)
+    .slice(-SIGNAL_SLOTS)
+    .map(([, signal]) => signal);
+}
+
+export function signalWindow(provider, now = Date.now()) {
+  const timestamp = typeof now === "number" ? now : Date.parse(now);
+  const currentSlot = Math.floor(
+    (Number.isFinite(timestamp) ? timestamp : Date.now()) / SIGNAL_SLOT_MS,
+  );
+  const readings = new Map(
+    (provider.signals || [])
+      .filter((signal) => signalRanks[signal.status] !== undefined)
+      .map((signal) => [
+        Math.floor(Date.parse(signal.at) / SIGNAL_SLOT_MS),
+        signal,
+      ]),
+  );
+  return Array.from({ length: SIGNAL_SLOTS }, (_, index) => {
+    const slot = currentSlot - SIGNAL_SLOTS + index + 1;
+    return readings.get(slot) || { status: "unknown", at: null };
+  });
+}
 export function isFresh(provider, now = Date.now()) {
   return (
     !provider.stale &&
@@ -25,6 +118,7 @@ export function failedReading(
       (previous?.status !== "unknown" ? previous?.status : null),
     components: previous?.components || [],
     incidents: previous?.incidents || [],
+    signals: previous?.signals || [],
     sourceUpdatedAt: previous?.sourceUpdatedAt || null,
     stale: !!previous?.checkedAt,
     attemptedAt: now,
@@ -171,6 +265,10 @@ export function createMonitor({
             new Date(clock()).toISOString(),
           );
         else result = { ...result, stale: false, lastKnownStatus: null };
+        result = {
+          ...result,
+          signals: appendSignal(previous, result, clock()),
+        };
         const events = detectChanges(previous, result).map((event, i) => ({
           ...event,
           id: `${revision}-${provider.id}-${i}`,
@@ -181,7 +279,11 @@ export function createMonitor({
         history = [...events, ...history].slice(0, 250);
         items = items.map((p) => (p.id === provider.id ? result : p));
         for (const listener of readingListeners) {
-          try { listener(result); } catch { /* One consumer must not stop collection. */ }
+          try {
+            listener(result);
+          } catch {
+            /* One consumer must not stop collection. */
+          }
         }
         completedChecks++;
         emit();
@@ -212,8 +314,13 @@ export function createMonitor({
       }
     };
   }
-  return { snapshot, refresh, subscribe, observeReadings(listener) {
-    readingListeners.add(listener);
-    return () => readingListeners.delete(listener);
-  } };
+  return {
+    snapshot,
+    refresh,
+    subscribe,
+    observeReadings(listener) {
+      readingListeners.add(listener);
+      return () => readingListeners.delete(listener);
+    },
+  };
 }

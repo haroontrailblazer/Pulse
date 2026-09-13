@@ -71,8 +71,8 @@ test("request budget uses feed count and watched services, not fictional battery
   assert.deepEqual(requestBudget(4, count), {
     oldHourly: 3360,
     foregroundHourly: 3360,
-    androidHourly: 16,
-    desktopHourly: 48,
+    androidHourly: 120,
+    desktopHourly: 480,
   });
   assert.equal(requestBudget(0).androidHourly, 0);
 });

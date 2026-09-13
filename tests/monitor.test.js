@@ -6,6 +6,11 @@ import {
   detectChanges,
   isFresh,
   failedReading,
+  appendSignal,
+  signalState,
+  signalWindow,
+  SIGNAL_SLOTS,
+  SIGNAL_SLOT_MS,
   STALE_MS,
 } from "../shared/monitor.js";
 import {
@@ -18,10 +23,17 @@ import { statusApi } from "../server/api.js";
 const provider = providers[0];
 const at = "2026-09-13T10:00:00.000Z";
 test("next sweep is scheduled from its start, not delayed by feed response time", async () => {
-  let now=Date.parse(at);
-  const monitor=createMonitor({catalog:[provider],clock:()=>now,fetcher:async()=>{now+=12000;return reading();}});
-  const snapshot=await monitor.refresh();
-  assert.equal(snapshot.nextCheckAt,"2026-09-13T10:00:30.000Z");
+  let now = Date.parse(at);
+  const monitor = createMonitor({
+    catalog: [provider],
+    clock: () => now,
+    fetcher: async () => {
+      now += 12000;
+      return reading();
+    },
+  });
+  const snapshot = await monitor.refresh();
+  assert.equal(snapshot.nextCheckAt, "2026-09-13T10:00:30.000Z");
 });
 function reading(p = provider, status = "none") {
   return normalizeSummary(
@@ -55,6 +67,51 @@ test("unchanged checks create no fake events and stale readings are never fresh"
   assert.equal(isFresh(failed, Date.parse(at)), false);
   assert.equal(detectChanges(good, failed)[0].kind, "verification");
   assert.equal(detectChanges(failed, good)[0].kind, "verification");
+});
+test("fixed signal windows are even for cloud feeds without component data", () => {
+  const cloud = {
+    ...reading(),
+    id: "googlecloud",
+    components: [],
+    incidents: [],
+  };
+  const start = Date.parse(at);
+  let signals = [];
+  for (let index = 0; index < SIGNAL_SLOTS; index++)
+    signals = appendSignal({ signals }, cloud, start + index * SIGNAL_SLOT_MS);
+  const window = signalWindow(
+    { ...cloud, signals },
+    start + (SIGNAL_SLOTS - 1) * SIGNAL_SLOT_MS,
+  );
+  assert.equal(window.length, SIGNAL_SLOTS);
+  assert.deepEqual(
+    window.map((signal) => signal.status),
+    Array(SIGNAL_SLOTS).fill("operational"),
+  );
+  assert.equal(
+    signalState({
+      ...cloud,
+      components: [{ id: "api", status: "partial_outage" }],
+    }),
+    "partial_outage",
+  );
+  assert.equal(
+    signalState({
+      ...cloud,
+      incidents: [{ id: "i", status: "investigating", impact: "major" }],
+    }),
+    "major_outage",
+  );
+});
+test("fixed signal windows keep unmeasured slots visibly unavailable", () => {
+  const time = Date.parse(at);
+  const provider = { ...reading(), signals: [] };
+  const window = signalWindow(provider, time);
+  assert.equal(window.length, SIGNAL_SLOTS);
+  assert.equal(
+    window.filter((signal) => signal.status === "unknown").length,
+    SIGNAL_SLOTS,
+  );
 });
 test("observed provider, component and incident changes are captured", () => {
   const before = reading(),

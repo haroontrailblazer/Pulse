@@ -27,9 +27,9 @@ public class PulseBackground extends Plugin {
         });
     }
     @Override protected void handleOnDestroy() { feeds.shutdownNow(); }
-    @Override public void load() { PulseStore.channel(getContext()); PulseStore.schedule(getContext()); }
+    @Override public void load() { PulseStore.channel(getContext()); PulseStore.schedule(getContext()); if(PulseStore.continuous(getContext())) PulseStore.startContinuousMonitor(getContext()); }
     @PluginMethod public void status(PluginCall call) { call.resolve(state()); }
-    private JSObject state() { return new JSObject().put("enabled",PulseStore.prefs(getContext()).getBoolean("enabled",false)).put("permission",PulseStore.permission(getContext())?"granted":"denied").put("lastCheckedAt",PulseStore.prefs(getContext()).getString("lastCheckedAt",null)); }
+    private JSObject state() { return new JSObject().put("enabled",PulseStore.prefs(getContext()).getBoolean("enabled",false)).put("permission",PulseStore.permission(getContext())?"granted":"denied").put("lastCheckedAt",PulseStore.prefs(getContext()).getString("lastCheckedAt",null)).put("intervalSeconds",PulseStore.continuousInterval(getContext())/1000).put("continuous",PulseStore.continuous(getContext())); }
     @PluginMethod public void requestAlerts(PluginCall call) {
         if(Build.VERSION.SDK_INT>=33 && getPermissionState("notifications")!=PermissionState.GRANTED) requestPermissionForAlias("notifications",call,"permissionResult");
         else call.resolve(state());
@@ -51,7 +51,7 @@ public class PulseBackground extends Plugin {
                 Boolean enabled=call.getBoolean("enabled"); if(enabled!=null) { if(enabled&&!p.getBoolean("enabled",false)) edit.remove("lastRequested"); edit.putBoolean("enabled",enabled); }
                 edit.apply();
             }
-            PulseStore.schedule(getContext());PulseStore.refresh(getContext());PulseWidget.updateAll(getContext());call.resolve(state());
+            PulseStore.schedule(getContext());PulseStore.refresh(getContext());if(PulseStore.continuous(getContext())) PulseStore.startContinuousMonitor(getContext()); else PulseStore.stopContinuousMonitor(getContext());PulseWidget.updateAll(getContext());call.resolve(state());
         } catch(Exception error) { call.reject("Could not save monitoring preferences",error); }
     }
     @PluginMethod public void record(PluginCall call) {
@@ -69,6 +69,7 @@ public class PulseBackground extends Plugin {
     }
     @Override protected void handleOnResume() {
         PulseStore.schedule(getContext());
+        if(PulseStore.continuous(getContext())) PulseStore.startContinuousMonitor(getContext());
         PulseStore.refresh(getContext());
         Intent intent=getActivity().getIntent();
         if(intent.getBooleanExtra("pulseWatchlist",false)) { intent.removeExtra("pulseWatchlist");notifyListeners("openWatchlist",new JSObject(),true); }
