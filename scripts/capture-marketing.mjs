@@ -105,9 +105,13 @@ try {
     .getByRole("button", { name: "Global map", exact: true })
     .click();
   await capture("map-light");
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
   await page.getByRole("button", { name: "Switch to dark mode" }).click();
+  await page.getByRole("button", { name: "Close dialog", exact: true }).click();
   await capture("map-dark");
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
   await page.getByRole("button", { name: "Switch to light mode" }).click();
+  await page.getByRole("button", { name: "Close dialog", exact: true }).click();
   await navigation.getByRole("button", { name: /^Incidents/ }).click();
   await capture("incidents");
   await navigation
