@@ -6,13 +6,15 @@ module.exports = async function background({
   Notification,
   powerMonitor,
   open,
+  services,
 }) {
   const load = (file) => import(pathToFileURL(path.join(__dirname, file)).href);
-  const [{ providers }, { fetchProvider, monitor }, { nextAlert }] =
-    await Promise.all([
+  const [{ providers }, { fetchProvider, monitor }, { nextAlert }, { DESKTOP_REFRESH_MS, REFRESH_MS }] =
+    services || await Promise.all([
       load("../shared/providers.js"),
       load("../server/status.js"),
       load("../shared/alerts.js"),
+      load("../shared/monitor.js"),
     ]);
   const file = path.join(app.getPath("userData"), "watchlist-monitor.json");
   let state = { enabled: false, watchlist: [], signatures: {} };
@@ -20,6 +22,7 @@ module.exports = async function background({
     state = { ...state, ...JSON.parse(readFileSync(file, "utf8")) };
   } catch {}
   let busy = false,
+    pendingSweep = false,
     stopped = false,
     timer,
     suspended = false;
@@ -30,9 +33,17 @@ module.exports = async function background({
   const status = () => ({
     enabled: state.enabled,
     permission: Notification.isSupported() ? "granted" : "denied",
+    lastCheckedAt: state.lastCheckedAt || null,
+    intervalSeconds: DESKTOP_REFRESH_MS / 1000,
   });
   function accept(reading) {
     if (!state.enabled || !state.watchlist.includes(reading.id)) return;
+    if (reading.checkedAt && !reading.stale) {
+      const previousTime = state.checkedAt?.[reading.id];
+      if (previousTime && Date.parse(reading.checkedAt) < Date.parse(previousTime)) return;
+      state.checkedAt = { ...state.checkedAt, [reading.id]: reading.checkedAt };
+      state.lastCheckedAt = reading.checkedAt;
+    }
     const result = nextAlert(state.signatures[reading.id], reading);
     if (result.notify && Notification.isSupported()) {
       const notification = new Notification({
@@ -50,6 +61,7 @@ module.exports = async function background({
       state.signatures[reading.id] = result.signature;
   }
   async function sweep() {
+    if (busy) { pendingSweep = true; return; }
     if (
       busy ||
       stopped ||
@@ -60,39 +72,45 @@ module.exports = async function background({
       return;
     busy = true;
     try {
-      for (const provider of providers.filter(
+      const queue = providers.filter(
         (p) => state.watchlist.includes(p.id) && p.format !== "source-only",
-      )) {
-        if (stopped || suspended || !state.enabled) break;
+      );
+      await Promise.all(Array.from({ length: Math.min(4, queue.length) }, async () => {
+        while (queue.length && !stopped && !suspended && state.enabled) {
+        const provider = queue.shift();
+        try {
         const cached = monitor
           .snapshot()
           .providers.find((p) => p.id === provider.id);
         const reading =
           cached?.checkedAt &&
           !cached.stale &&
-          Date.now() - Date.parse(cached.checkedAt) < 120000
+          Date.now() - Date.parse(cached.checkedAt) < REFRESH_MS
             ? cached
             : await fetchProvider(provider);
         accept(reading);
-      }
-      persist();
+        persist();
+        } catch { /* A failed feed must not block the other watched services. */ }
+        }
+      }));
     } finally {
       busy = false;
+      if (pendingSweep) {
+        pendingSweep = false;
+        void sweep().catch(() => {});
+      }
     }
   }
   // Visible sweeps already fetch these readings; piggyback without a second collector.
-  const original = monitor.subscribe;
-  monitor.subscribe = (listener) =>
-    original((snapshot) => {
-      listener(snapshot);
-      if (!snapshot.refreshing && state.enabled) {
-        snapshot.providers.forEach(accept);
-        persist();
-      }
-    });
+  const detach = monitor.observeReadings((reading) => {
+    if (!state.enabled || !state.watchlist.includes(reading.id)) return;
+    accept(reading);
+    persist();
+  });
   function schedule() {
     clearInterval(timer);
-    timer = setInterval(() => void sweep().catch(() => {}), 300000);
+    if (state.enabled && state.watchlist.length && !stopped)
+      timer = setInterval(() => void sweep().catch(() => {}), DESKTOP_REFRESH_MS);
   }
   powerMonitor.on("suspend", () => {
     suspended = true;
@@ -106,6 +124,7 @@ module.exports = async function background({
   return {
     status,
     configure(options = {}) {
+      const before = new Set(state.watchlist);
       if (Array.isArray(options.watchlist)) {
         state.watchlist = [
           ...new Set(
@@ -115,17 +134,19 @@ module.exports = async function background({
           ),
         ];
         for (const id of Object.keys(state.signatures))
-          if (!state.watchlist.includes(id)) delete state.signatures[id];
+          if (!state.watchlist.includes(id)) { delete state.signatures[id]; delete state.checkedAt?.[id]; }
       }
       const enabling = options.enabled === true && !state.enabled;
       if (typeof options.enabled === "boolean") state.enabled = options.enabled;
       persist();
-      if (enabling) void sweep().catch(() => {});
+      schedule();
+      if (enabling || state.watchlist.some((id) => !before.has(id))) void sweep().catch(() => {});
       return status();
     },
     stop() {
       stopped = true;
       clearInterval(timer);
+      detach();
     },
   };
 };

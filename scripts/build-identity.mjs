@@ -1,0 +1,25 @@
+import { createHash } from "node:crypto";
+import { readFileSync, readdirSync } from "node:fs";
+import { join } from "node:path";
+
+export function buildIdentity(root = process.cwd()) {
+  const hash = createHash("sha256");
+  const content = (file) => {
+    const bytes = readFileSync(join(root, file));
+    return /\.(?:jsx?|mjs|cjs|json|css|svg|html|java|xml|gradle)$/.test(file)
+      ? bytes.toString("utf8").replaceAll("\r\n", "\n") : bytes;
+  };
+  const skip = new Set(["release-assets.json", "downloads", "marketing"]);
+  function visit(relative) {
+    for (const entry of readdirSync(join(root, relative), { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))) {
+      if (skip.has(entry.name)) continue;
+      const file = `${relative}/${entry.name}`;
+      if (entry.isDirectory()) visit(file);
+      else hash.update(file).update("\0").update(content(file)).update("\0");
+    }
+  }
+  for (const directory of ["src", "shared", "public", "desktop", "server", "android/app/src/main/java", "android/app/src/main/res"]) visit(directory);
+  for (const file of ["index.html", "package.json", "package-lock.json", "vite.config.js", "android/app/build.gradle", "android/app/src/main/AndroidManifest.xml"])
+    hash.update(file).update(content(file));
+  return { version: JSON.parse(readFileSync(join(root, "package.json"))).version, sourceHash: hash.digest("hex") };
+}

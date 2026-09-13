@@ -31,7 +31,7 @@ Open http://localhost:3000. The production server serves both `dist` and `/api/s
 - Developer console with watched-stack health, searchable provider components, observed changes, feed diagnostics, JSON snapshots, and copyable source curl commands.
 - Dedicated Registries view for package installation, publishing, container services, and registry health. Component labels retain their source group/region to distinguish otherwise identical names.
 - Security lab with Snyk/HackerOne status, live OSV package advisory lookup (npm, PyPI, RubyGems), local JWT inspection, and local SHA-256 hashing of text or files with checksum comparison.
-- Local watchlist persisted on the device, in-app incident inbox, and automatic monitoring every two minutes while visible. Hidden renderers disconnect and stop polling.
+- Local watchlist persisted on the device, in-app incident inbox, and automatic monitoring every 30 seconds while visible. Hidden renderers disconnect and stop polling.
 - Live atlas: regional pins reflect fresh component status (major issue, degraded, maintenance, operational, or unavailable). Select a hub for source evidence, filter severity or your watchlist, and open provider incidents. The service-wide view includes issues without a reported location and suggests developer workflows to check. Region selection, zoom, reset, and phone controls remain available.
 - Industry relevance explorer and provider links for investigating potential exposure.
 - Responsive phone layout, keyboard-accessible dialogs, reduced-motion support, and bundled fonts.
@@ -77,7 +77,7 @@ npm.cmd run desktop
 npm.cmd run build:windows
 ```
 
-Expected portable artifact: `releases/Pulse-1.0.3-Windows.exe`. Packaging is unsigned; code-signing certificates and public distribution are not configured. The app uses a sandboxed renderer with Node integration disabled and a local status server bound to `127.0.0.1:47823`. Its fixed origin keeps the local watchlist stable across restarts. Port 47823 must be available. External HTTPS links open in the system browser.
+Expected portable artifact: `releases/Pulse-1.0.4-Windows.exe`. Packaging is unsigned; code-signing certificates and public distribution are not configured. The app uses a sandboxed renderer with Node integration disabled and a local status server bound to `127.0.0.1:47823`. Its fixed origin keeps the local watchlist stable across restarts. Port 47823 must be available. External HTTPS links open in the system browser.
 
 ## Android app
 
@@ -91,7 +91,7 @@ npm.cmd run build:android
 npm.cmd run android:open
 ```
 
-APK output: `releases/Pulse-1.0.3-Android.apk` (also in `android/app/build/outputs/apk/debug/app-debug.apk`). This is a debug-signed APK for installation and testing. A production release APK/AAB requires your signing key. Do not commit signing secrets or keystores. The Android app fetches the allowlisted public status feeds through native HTTP, including BOM-aware decoding for AWS and XML support for Azure, so it does not depend on a localhost server or browser CORS.
+APK output: `releases/Pulse-1.0.4-Android.apk` (also in `android/app/build/outputs/apk/debug/app-debug.apk`). This is a debug-signed APK for installation and testing. A production release APK/AAB requires your signing key. Do not commit signing secrets or keystores. The Android app fetches the allowlisted public status feeds through native HTTP, including BOM-aware decoding for AWS and XML support for Azure, so it does not depend on a localhost server or browser CORS.
 
 ## Verification
 
@@ -124,9 +124,9 @@ Map geometry: Natural Earth through `world-atlas` (public domain). Icons: Phosph
 
 ## Watchlist alerts and Android home-screen widget
 
-Open **Watchlist → Enable alerts** in the installed app. Android requests notification permission; Windows keeps Pulse in the tray when its window closes. Android background checks run about every 15 minutes when network and battery conditions permit; Windows checks watched feeds every five minutes. They notify on newly observed issues and deduplicate unchanged incidents. These are local scheduled notifications, not instant cloud push. Quit on Windows and force-stop on Android stop monitoring. The browser pauses its collector connection when hidden.
+Open **Settings → Enable alerts**, or use **Enable alerts** beside Refresh on Overview. Android requests notification permission; Windows keeps Pulse in the tray when its window closes. Android background checks run about every 15 minutes when network and battery conditions permit; Windows checks watched feeds every five minutes. They notify on newly observed issues and deduplicate unchanged incidents. These are local scheduled notifications, not instant cloud push. Quit on Windows and force-stop on Android stop monitoring. The browser pauses its collector connection when hidden.
 
-In the APK, choose **Watchlist → Add widget**, then confirm with your launcher. Alternatively, long-press your Android home screen, choose Widgets, and select **Pulse · My stack**. The native, resizable widget shows prioritized watched services, issue counts, dated readings and a refresh control. Tapping it opens Watchlist. Widget updates work independently of notification permission.
+In the APK, choose **Settings → Add widget**, then confirm with your launcher. Alternatively, long-press your Android home screen, choose Widgets, and select **Pulse · My stack**. The native, resizable widget shows prioritized watched services, issue counts, dated readings and a refresh control. Tapping it opens Watchlist. Widget updates work independently of notification permission.
 
 The full developer console now lives on **Developer tools**. Overview has the overall summary; Global map, Incidents, Dependency insights and Watchlist no longer repeat that console or overall summary. Watchlist filters and totals are scoped to watched services. Unavailable feeds remain explicitly unavailable, never implicitly healthy.
 
@@ -150,7 +150,7 @@ The inbox uses provider logos, incident-specific impact badges, unread indicator
 
 ## Mobile overview
 
-At widths up to 760 px, Overview renders a dedicated compact interface: a watchlist summary, up to five saved services ordered by severity, two recent updates prioritizing watched services, and searchable service browsing in batches of six. The detailed map, service table and industry cards remain on desktop; phone users open regional status and impact insights through shortcuts. Mobile status summaries include component and incident evidence, separate maintenance from disruption, and keep unavailable readings neutral. Page navigation returns to the top. The layout uses the existing monitoring stream and clock, with no additional refresh timers.
+Overview uses the same responsive component on the website, Android and Windows: Find a service followed by Your services. Rows are 54 px high with touch targets retained; search opens the full directory in batches of six. The map and dependency insights live on their own pages. Status summaries include component and incident evidence, separate maintenance from disruption, and keep unavailable readings neutral. Page navigation returns to the top.
 
 ## Contained map workspace
 
@@ -162,22 +162,34 @@ Export brief and the repeated Add to watchlist buttons in page headings have bee
 
 The public entry point is a marketing page explaining Pulse, with actual app screenshots, an interactive feature tour, and web-first platform choices. On Vercel, / serves the marketing index and /app serves dashboard.html. The web build promotes landing.html to dist/index.html and preserves the dashboard as dist/dashboard.html. Preview the landing locally at /landing.html. Run npm run build:web for the hosted build; regular npm run build remains the native dashboard build and excludes marketing images.
 
-Vercel serves /api/status as a bounded Node function. The hosted dashboard polls every two minutes while visible and pauses when hidden. Responses can be shared by the CDN for 30 seconds; freshness checks still exclude outdated readings. Native builds retain their existing local server or direct Android transport. No database or cross-device account system is introduced.
+Vercel serves /api/status as a bounded Node function. The hosted dashboard polls every 30 seconds while visible and pauses when hidden. Responses can be shared by the CDN for 30 seconds; freshness checks still exclude outdated readings. Native builds retain their existing local server or direct Android transport. No database or cross-device account system is introduced.
 
-Download links in both the landing page and dashboard point to versioned static files under https://pulse-status-zeta.vercel.app/downloads/v1.0.3, defined in shared/downloads.js. The deployment command `npm run build:deploy` fetches the published release once, verifies byte counts and SHA-256 against shared/release-assets.json, and stages the installers on the website CDN. Users download directly from that CDN; no runtime GitHub proxy or serverless function handles the file transfer. The APK and portable EXE include the compact sidebar and smaller wordmark, removed Watchlist card, simplified Dependency insights, search-first mobile Overview, alerts control beside Refresh, title-aligned notifications without a top bar, and appearance controls in Settings. See design/marketing-assets.md for artwork provenance and screenshot details.
+Download links in both the landing page and dashboard point to versioned static files under https://pulse-status-zeta.vercel.app/downloads/v1.0.4, defined in shared/downloads.js. The deployment command `npm run build:deploy` fetches the published release once, verifies byte counts and SHA-256 against shared/release-assets.json, and stages the installers on the website CDN. Users download directly from that CDN; no runtime GitHub proxy or serverless function handles the file transfer. The APK and portable EXE include the compact sidebar and smaller wordmark, removed Watchlist card, simplified Dependency insights, search-first mobile Overview, alerts control beside Refresh, title-aligned notifications without a top bar, and appearance controls in Settings. See design/marketing-assets.md for artwork provenance and screenshot details.
 
 Public website: https://pulse-status-zeta.vercel.app
 
 Open the dashboard: https://pulse-status-zeta.vercel.app/app
 
-Public installers and checksums: https://github.com/haroontrailblazer/Pulse/releases/tag/v1.0.3
+Public installers and checksums: https://github.com/haroontrailblazer/Pulse/releases/tag/v1.0.4
 
 The manual Build Windows release GitHub Actions workflow can build and upload a Windows EXE directly to an existing draft release. It installs the Electron runtime explicitly, runs the tests, checks the existing Android checksum, and uploads a matching combined checksum manifest. The release stays a draft until final review and publication.
 
 For each new installer release, update shared/release-assets.json with the verified names, sizes and checksums before deploying. The mirror fails the deployment on a mismatch or unavailable artifact, so the previous working deployment remains available. Ordinary web and native builds do not bundle the installers. GitHub remains the release archive.
 
+For local iteration where you want dashboard edits to regenerate both installers, use:
 
-### Official cloud feeds (1.0.3)
+```powershell
+npm.cmd run watch:all-downloads
+```
+
+That watch command runs `npm run build:all-downloads` on first start and whenever app source changes. It rebuilds Windows and Android, verifies matching packaged assets and source fingerprints, updates the checksum manifest, stages local downloads, and builds the website. Generated downloads and metadata are excluded from watching to avoid an endless rebuild loop.
+
+Version 1.0.4 fixes recursive installer packaging: neither native app includes `public/downloads` or marketing screenshots. APK verification rejects nested APK/EXE files and sizes above 15 MB. The hosted deployment refuses a source fingerprint that differs from the rebuilt installers. Download binaries are ignored by Git; publish them to the versioned GitHub release before pushing the deployment commit. Vercel copies the verified files onto its CDN, so users download from the site directly. Already installed copies need the new APK/EXE; this build harness does not silently update installed applications.
+
+Visible dashboards check every 30 seconds. Windows checks watched feeds every five minutes in the tray and resumes after system sleep. Each completed provider reading can trigger its alert immediately, without waiting for unrelated feeds; failed providers do not skip the rest of a Windows sweep. Android forwards foreground readings immediately, rechecks newly enabled or added watched services, and restores scheduling when reopened. Background Android checks use WorkManager's 15-minute minimum, network and battery constraints; the OS can delay them. Instant closed-app delivery requires a separately configured push service. Request counts are estimates, not measured battery consumption.
+
+
+### Official cloud feeds (1.0.4)
 
 Replicate now follows its `fvgfcmy66tdr` component on Cloudflare Status, after the old Replicate status domain migrated. Unrelated Cloudflare incidents are excluded. AWS uses the public dashboard's `/public/currentevents` endpoint, with BOM-aware UTF-16 decoding, regional incident details, and resolved-event filtering. Azure uses the official RSS feed with validated XML and public-advisory coverage. Google Cloud retains its official JSON feed; transient requests can retry once within the existing 15-second request budget, and explicit `SERVICE_OUTAGE` updates now retain outage severity.
 

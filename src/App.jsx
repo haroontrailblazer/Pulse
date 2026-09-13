@@ -188,7 +188,7 @@ export default function App() {
     update();
     return () => media.removeEventListener("change", update);
   }, []);
-  const mobileOverview = compact && page === "Overview";
+  const mobileOverview = page === "Overview";
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [page]);
@@ -919,7 +919,11 @@ export default function App() {
                             aria-pressed={watchlist.includes(p.id)}
                             onClick={() => toggleWatch(p.id)}
                           >
-                            <Star size={16} />
+                            <Star
+                              size={16}
+                              weight={watchlist.includes(p.id) ? "fill" : "regular"}
+                              className={`watchlist-star ${watchlist.includes(p.id) ? "watched" : ""}`}
+                            />
                           </button>
                         </td>
                       </tr>
@@ -966,7 +970,7 @@ export default function App() {
                     <span className="count-label">{allIncidents.length}</span>
                   </h2>
                   <p>
-                    Provider updates are checked every two minutes while
+                    Provider updates are checked every 30 seconds while
                     automatic refresh is enabled.
                   </p>
                 </div>
@@ -1281,7 +1285,11 @@ export default function App() {
                   className="button secondary"
                   onClick={() => toggleWatch(detail.id)}
                 >
-                  <Star size={15} />
+                  <Star
+                    size={15}
+                    weight={watchlist.includes(detail.id) ? "fill" : "regular"}
+                    className={`watchlist-star ${watchlist.includes(detail.id) ? "watched" : ""}`}
+                  />
                   {watchlist.includes(detail.id)
                     ? "Remove from watchlist"
                     : "Add to watchlist"}
@@ -1333,7 +1341,7 @@ export default function App() {
                 <span>
                   <strong>Automatic refresh</strong>
                   <small>
-                    Check official feeds every two minutes while visible. Hidden
+                    Check official feeds every 30 seconds while visible. Hidden
                     pages pause automatically.
                   </small>
                 </span>
@@ -1376,7 +1384,7 @@ export default function App() {
               </p>
               <h3>Provider-reported, with context</h3>
               <p>
-                Feeds are checked every two minutes while connected. Results
+                Feeds are checked every 30 seconds while connected. Results
                 stream in as each check completes; the provider may publish with
                 a delay. “Operational” reflects the provider’s overall status,
                 not an independent availability test. “Status unavailable” means

@@ -35,11 +35,6 @@ export function useBackgroundSync(watchlist, data) {
     );
   }, [ids]);
   useEffect(() => {
-    if (!android || data.refreshing || !data.fetchedAt) return;
-    // Only a completed visible sweep is forwarded; native code owns all alerts.
-    native.record({ providers: data.providers }).catch(() => {});
-  }, [data.fetchedAt, data.refreshing]);
-  useEffect(() => {
     if (!native) return;
     const check = () => {
       if (!document.hidden)
@@ -85,7 +80,14 @@ export default function BackgroundSettings({
     setBusy(true);
     setMessage("");
     try {
-      if (!state.enabled && android) await native.requestAlerts();
+      if (!state.enabled && android) {
+        const permission = await native.requestAlerts();
+        publish(permission);
+        if (permission.permission !== "granted") {
+          setMessage("Allow Pulse notifications in Android Settings, then enable alerts again.");
+          return;
+        }
+      }
       await configure({ enabled: !state.enabled, watchlist });
     } catch (e) {
       setMessage(e.message);
@@ -179,6 +181,9 @@ export default function BackgroundSettings({
         )}
       </div>
       <div className="background-foot">
+        {native && state.lastCheckedAt && (
+          <span>Last verified check: {new Date(state.lastCheckedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
+        )}
         <span>
           <ShieldCheck size={16} /> {native ? "Checks" : "Installed apps check"}{" "}
           only your {automated} automated watched feeds in the background.

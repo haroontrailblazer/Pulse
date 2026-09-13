@@ -29,7 +29,7 @@ public class PulseBackground extends Plugin {
     @Override protected void handleOnDestroy() { feeds.shutdownNow(); }
     @Override public void load() { PulseStore.channel(getContext()); PulseStore.schedule(getContext()); }
     @PluginMethod public void status(PluginCall call) { call.resolve(state()); }
-    private JSObject state() { return new JSObject().put("enabled",PulseStore.prefs(getContext()).getBoolean("enabled",false)).put("permission",PulseStore.permission(getContext())?"granted":"denied"); }
+    private JSObject state() { return new JSObject().put("enabled",PulseStore.prefs(getContext()).getBoolean("enabled",false)).put("permission",PulseStore.permission(getContext())?"granted":"denied").put("lastCheckedAt",PulseStore.prefs(getContext()).getString("lastCheckedAt",null)); }
     @PluginMethod public void requestAlerts(PluginCall call) {
         if(Build.VERSION.SDK_INT>=33 && getPermissionState("notifications")!=PermissionState.GRANTED) requestPermissionForAlias("notifications",call,"permissionResult");
         else call.resolve(state());
@@ -45,9 +45,10 @@ public class PulseBackground extends Plugin {
                     for(int n=0;n<catalog.length();n++) allowed.add(catalog.getJSONObject(n).getString("id"));
                     Set<String> ids=new HashSet<>(); for(int n=0;n<requested.length();n++) if(allowed.contains(requested.optString(n))) ids.add(requested.optString(n));
                     for(String old:PulseStore.watchlist(getContext())) if(!ids.contains(old)) { edit.remove("reading."+old);edit.remove("signature."+old); }
+                    if(!PulseStore.watchlist(getContext()).containsAll(ids)) edit.remove("lastRequested");
                     edit.putStringSet("watchlist",ids);
                 }
-                Boolean enabled=call.getBoolean("enabled"); if(enabled!=null) edit.putBoolean("enabled",enabled);
+                Boolean enabled=call.getBoolean("enabled"); if(enabled!=null) { if(enabled&&!p.getBoolean("enabled",false)) edit.remove("lastRequested"); edit.putBoolean("enabled",enabled); }
                 edit.apply();
             }
             PulseStore.schedule(getContext());PulseStore.refresh(getContext());PulseWidget.updateAll(getContext());call.resolve(state());
@@ -67,6 +68,8 @@ public class PulseBackground extends Plugin {
         call.resolve(new JSObject().put("supported",supported));
     }
     @Override protected void handleOnResume() {
+        PulseStore.schedule(getContext());
+        PulseStore.refresh(getContext());
         Intent intent=getActivity().getIntent();
         if(intent.getBooleanExtra("pulseWatchlist",false)) { intent.removeExtra("pulseWatchlist");notifyListeners("openWatchlist",new JSObject(),true); }
     }

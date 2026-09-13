@@ -57,6 +57,9 @@ export default function useLiveStatus(autoRefresh) {
           if (response.status !== 200)
             throw new Error(`Official feed returned HTTP ${response.status}`);
           const result = normalizeFeed(provider, response.data);
+          // Deliver each successful feed immediately; a slow unrelated provider
+          // must not delay watched-service notifications or widget updates.
+          void officialFeeds.record({ providers: [result] }).catch(() => {});
           return {
             ...result,
             responseMs: Date.now() - start,

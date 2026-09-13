@@ -1,7 +1,10 @@
 .mobile-overview {
   color: var(--text);
   display: grid;
-  gap: 25px;
+  gap: 18px;
+  width: 100%;
+  max-width: 960px;
+  margin-inline: auto;
 }
 .mobile-overview-heading {
   display: grid;
@@ -85,12 +88,12 @@
 }
 .mobile-service {
   width: 100%;
-  min-height: 63px;
+  min-height: 54px;
   display: flex;
   align-items: center;
   gap: 10px;
   text-align: left;
-  padding: 12px;
+  padding: 9px 12px;
 }
 .mobile-service + .mobile-service {
   border-top: 1px solid var(--line);
@@ -197,8 +200,8 @@
 }
 @media (max-width: 760px) {
   main.mobile-overview-main {
-    padding-top: 24px;
-    padding-inline: 18px;
+    padding-top: 18px;
+    padding-inline: 16px;
   }
   .mobile-overview-main > .page-footer {
     margin-top: 24px;

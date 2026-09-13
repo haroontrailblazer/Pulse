@@ -53,6 +53,11 @@ final class PulseStore {
         if(!watchlist(c).contains(id)) return;
         SharedPreferences p=prefs(c);
         String signature=FeedReading.signature(reading);
+        if(signature!=null) {
+            JSONObject saved=new JSONObject(p.getString("reading."+id,"{}"));
+            if(reading.optString("checkedAt").compareTo(saved.optString("checkedAt"))<0) return;
+            p.edit().putString("lastCheckedAt",reading.optString("checkedAt")).apply();
+        }
         String previous=p.getString("signature."+id,"");
         if(signature!=null && p.getBoolean("enabled",false) && permission(c)) {
             if(FeedReading.shouldNotify(previous,signature)) {

@@ -23,7 +23,7 @@ public class PulseWorker extends Worker {
                 if(!PulseStore.watchlist(c).contains(id)||provider.optString("format").equals("source-only")) continue;
                 // A recent foreground sweep or another worker already supplied this feed.
                 try { JSONObject saved=new JSONObject(PulseStore.prefs(c).getString("reading."+id,"{}"));
-                    if(!saved.optBoolean("stale") && System.currentTimeMillis()-java.time.Instant.parse(saved.getString("checkedAt")).toEpochMilli()<120000) continue;
+                    if(!saved.optBoolean("stale") && System.currentTimeMillis()-java.time.Instant.parse(saved.getString("checkedAt")).toEpochMilli()<30000) { PulseStore.record(c,saved); continue; }
                 } catch(Exception ignored) {}
                 try {
                     PulseStore.record(c,FeedReading.parse(provider,OfficialFeed.read(provider)));

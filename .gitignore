@@ -2,6 +2,7 @@ node_modules/
 .cache/
 dist/
 releases/
+public/downloads/
 .env
 .env.*
 !.env.example

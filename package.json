@@ -1,9 +1,9 @@
 {
   "name": "pulse-status",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "private": true,
   "type": "module",
-  "description": "Pulse \u00e2\u20ac\u201d a clearer picture of the internet's health",
+  "description": "Pulse â€” a clearer picture of the internet's health",
   "author": "Pulse",
   "main": "desktop/main.cjs",
   "scripts": {
@@ -12,6 +12,11 @@
     "build:web": "vite build --mode web",
     "build:deploy": "npm run build:web && node scripts/prepare-downloads.mjs",
     "screenshots": "node scripts/capture-marketing.mjs",
+    "build:portable": "npm run build:windows && npm run build:android",
+    "sync:metadata": "node scripts/update-release-assets.mjs",
+    "sync:public-downloads": "node scripts/sync-public-downloads.mjs",
+    "build:all-downloads": "npm run build:portable && npm run verify:native && npm run sync:metadata && npm run sync:public-downloads && npm run build:deploy",
+    "watch:all-downloads": "node scripts/watch-and-sync-downloads.mjs",
     "preview": "vite preview --host 0.0.0.0",
     "start": "node server/index.js",
     "test": "node --test tests/*.test.js",
@@ -19,7 +24,8 @@
     "build:windows": "npm run build && electron-builder --win portable",
     "android:sync": "node scripts/generate-native-catalog.mjs && npm run build && cap sync android",
     "build:android": "npm run android:sync && node scripts/build-android.mjs",
-    "android:open": "cap open android"
+    "android:open": "cap open android",
+    "verify:native": "node scripts/verify-native-builds.mjs"
   },
   "build": {
     "appId": "app.pulse.status",

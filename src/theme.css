@@ -333,7 +333,7 @@
   color: var(--muted);
 }
 :root[data-theme] .star-button.watched {
-  color: var(--accent);
+  color: #ffd24a;
 }
 :root[data-theme] .toggle:not(.on) {
   background: var(--neutral-line);

@@ -1338,10 +1338,20 @@ h1 > span {
   place-items: center;
 }
 .star-button.watched {
-  color: #a8b987;
+  color: #e9b93a;
 }
-.star-button.watched svg {
-  fill: #e9efda;
+.watchlist-star.watched {
+  color: #ffd24a;
+  filter: drop-shadow(0 1px 0 #9d7420) drop-shadow(0 2px 3px #2b2007);
+}
+.star-button .watchlist-star {
+  transition: transform 0.12s ease;
+}
+.star-button .watchlist-star:not(.watched) {
+  color: var(--muted);
+}
+.star-button:hover .watchlist-star {
+  transform: translateY(-0.5px);
 }
 .star-button:hover {
   color: #779657;

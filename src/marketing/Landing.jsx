@@ -524,7 +524,7 @@ export default function Landing() {
             <TiltCard>
               <div className="platform-label">
                 <span>02 / AT YOUR DESK</span>
-                <span>v1.0.3</span>
+                <span>v1.0.4</span>
               </div>
               <PlatformArt type="windows" />
               <h3>Pulse for Windows</h3>
@@ -550,7 +550,7 @@ export default function Landing() {
             <TiltCard>
               <div className="platform-label">
                 <span>03 / AWAY FROM YOUR DESK</span>
-                <span>v1.0.3</span>
+                <span>v1.0.4</span>
               </div>
               <PlatformArt type="android" />
               <h3>Pulse for Android</h3>
@@ -603,7 +603,7 @@ export default function Landing() {
               ],
               [
                 "How often does it update?",
-                "The dashboard checks about every two minutes while visible and pauses when hidden. Installed Windows monitoring checks watched services about every five minutes. Android schedules background checks about every 15 minutes, subject to the phone’s battery and network rules. Provider publication and device scheduling can delay alerts.",
+                "The dashboard checks about every 30 seconds while visible and pauses when hidden. Installed Windows monitoring checks watched services about every five minutes. Android schedules background checks about every 15 minutes, subject to the phone’s battery and network rules. Provider publication and device scheduling can delay alerts.",
               ],
               [
                 "Can I get alerts when the app is closed?",

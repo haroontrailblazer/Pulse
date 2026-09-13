@@ -35,7 +35,7 @@ export function nextAlert(previous, provider) {
 export function requestBudget(watched, feeds = 28) {
   return {
     oldHourly: feeds * 120,
-    foregroundHourly: feeds * 30,
+    foregroundHourly: feeds * 120,
     androidHourly: watched * 4,
     desktopHourly: watched * 12,
   };

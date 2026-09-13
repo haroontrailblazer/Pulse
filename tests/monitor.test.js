@@ -21,7 +21,7 @@ test("next sweep is scheduled from its start, not delayed by feed response time"
   let now=Date.parse(at);
   const monitor=createMonitor({catalog:[provider],clock:()=>now,fetcher:async()=>{now+=12000;return reading();}});
   const snapshot=await monitor.refresh();
-  assert.equal(snapshot.nextCheckAt,"2026-09-13T10:02:00.000Z");
+  assert.equal(snapshot.nextCheckAt,"2026-09-13T10:00:30.000Z");
 });
 function reading(p = provider, status = "none") {
   return normalizeSummary(

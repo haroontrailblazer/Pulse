@@ -98,7 +98,7 @@ export default function LiveConsole({
           </span>
           <h2>Your infrastructure. Right now.</h2>
           <p>
-            Official feeds checked every two minutes. Changes appear as each
+            Official feeds checked every 30 seconds. Changes appear as each
             check finishes.
           </p>
         </div>

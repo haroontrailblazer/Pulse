@@ -1,6 +1,9 @@
 import { unknownProvider } from "./providers.js";
-export const REFRESH_MS = 120_000;
+
+export const REFRESH_MS = 30_000;
 export const STALE_MS = 300_000;
+export const DESKTOP_REFRESH_MS = 300_000;
+export const ANDROID_REFRESH_MS = 900_000;
 export function isFresh(provider, now = Date.now()) {
   return (
     !provider.stale &&
@@ -104,6 +107,8 @@ export function createMonitor({
     completedChecks = 0,
     timer;
   const listeners = new Set();
+  // Passive observers receive each reading without keeping foreground polling alive.
+  const readingListeners = new Set();
   const snapshot = () => ({
     providers: items,
     history,
@@ -175,6 +180,9 @@ export function createMonitor({
         }));
         history = [...events, ...history].slice(0, 250);
         items = items.map((p) => (p.id === provider.id ? result : p));
+        for (const listener of readingListeners) {
+          try { listener(result); } catch { /* One consumer must not stop collection. */ }
+        }
         completedChecks++;
         emit();
       }),
@@ -204,5 +212,8 @@ export function createMonitor({
       }
     };
   }
-  return { snapshot, refresh, subscribe };
+  return { snapshot, refresh, subscribe, observeReadings(listener) {
+    readingListeners.add(listener);
+    return () => readingListeners.delete(listener);
+  } };
 }

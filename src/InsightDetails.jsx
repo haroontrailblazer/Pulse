@@ -128,7 +128,11 @@ Source: ${i.provider.url}`,
                 aria-pressed={i.watched}
                 onClick={() => onWatch(i.provider.id)}
               >
-                <Star size={14} />
+                <Star
+                  size={14}
+                  weight={i.watched ? "fill" : "regular"}
+                  className={`watchlist-star ${i.watched ? "watched" : ""}`}
+                />
                 {i.watched ? "Watching · remove" : "Add to watchlist"}
               </button>
             </div>

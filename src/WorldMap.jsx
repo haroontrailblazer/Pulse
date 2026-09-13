@@ -451,7 +451,7 @@ export default function WorldMap({
                   Markers describe components that explicitly name a location.
                   They do not mean an entire city is down.
                 </p>
-                <div className="atlas-map-legend">
+        <div className="atlas-map-legend">
                   {[...issueStates, "operational", "unknown"].map((state) => (
                     <span key={state}>
                       <StatusGlyph status={state} />
@@ -469,7 +469,7 @@ export default function WorldMap({
                 </p>
                 {feedError && <p role="alert">{feedError}</p>}
                 <p>
-                  With automatic refresh on, checks run every two minutes while
+                  With automatic refresh on, checks run every 30 seconds while
                   this app is visible. Background alerts follow your saved
                   watchlist and device settings.
                 </p>
@@ -488,7 +488,11 @@ export default function WorldMap({
                       aria-pressed={watchlist.includes(focused.provider.id)}
                       onClick={() => onToggleWatch(focused.provider.id)}
                     >
-                      <Star size={15} />
+                      <Star
+                        size={15}
+                        weight={watchlist.includes(focused.provider.id) ? "fill" : "regular"}
+                        className={`watchlist-star ${watchlist.includes(focused.provider.id) ? "watched" : ""}`}
+                      />
                       {watchlist.includes(focused.provider.id)
                         ? "Watching"
                         : "Watch"}

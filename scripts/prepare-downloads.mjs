@@ -14,6 +14,7 @@ import { Readable, Transform } from "node:stream";
 import { pipeline } from "node:stream/promises";
 import { pathToFileURL } from "node:url";
 import { releaseVersion } from "../shared/downloads.js";
+import { buildIdentity } from "./build-identity.mjs";
 
 async function verifiedFile(path, asset) {
   try {
@@ -91,11 +92,19 @@ async function main() {
   );
   if (manifest.version !== releaseVersion)
     throw new Error("Download manifest must match the release version");
+  if (manifest.sourceHash !== buildIdentity().sourceHash)
+    throw new Error("Installers are stale for this app source. Run npm run build:all-downloads before publishing.");
   const outputDir = resolve("dist/downloads", `v${manifest.version}`);
   const cacheDir = resolve(".cache/download-mirror", `v${manifest.version}`);
   const source = `https://github.com/haroontrailblazer/Pulse/releases/download/v${manifest.version}`;
-  for (const asset of manifest.assets)
+  for (const asset of manifest.assets) {
+    const local = resolve("public/downloads", `v${manifest.version}`, asset.name);
+    if (await verifiedFile(local, asset)) {
+      await mkdir(cacheDir, { recursive: true });
+      await copyFile(local, join(cacheDir, asset.name));
+    }
     await stageAsset(asset, { source, cacheDir, outputDir });
+  }
   await writeFile(
     join(outputDir, "SHA256SUMS.txt"),
     manifest.assets
