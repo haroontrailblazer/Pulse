@@ -160,7 +160,7 @@ Export brief and the repeated Add to watchlist buttons in page headings have bee
 
 ## Public website and Vercel
 
-The public entry point is a marketing page explaining Pulse, with actual app screenshots, an interactive feature tour, and web-first platform choices. On Vercel, / serves landing.html and /app serves the dashboard. Preview the landing locally at /landing.html. Run npm run build:web for the hosted build; regular npm run build remains the native dashboard build and excludes marketing images.
+The public entry point is a marketing page explaining Pulse, with actual app screenshots, an interactive feature tour, and web-first platform choices. On Vercel, / serves the marketing index and /app serves dashboard.html. The web build promotes landing.html to dist/index.html and preserves the dashboard as dist/dashboard.html. Preview the landing locally at /landing.html. Run npm run build:web for the hosted build; regular npm run build remains the native dashboard build and excludes marketing images.
 
 Vercel serves /api/status as a bounded Node function. The hosted dashboard polls every two minutes while visible and pauses when hidden. Responses can be shared by the CDN for 30 seconds; freshness checks still exclude outdated readings. Native builds retain their existing local server or direct Android transport. No database or cross-device account system is introduced.
 

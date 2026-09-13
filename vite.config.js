@@ -2,7 +2,7 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { statusApi } from "./server/api.js";
 import { resolve } from "node:path";
-import { rmSync } from "node:fs";
+import { rmSync, renameSync } from "node:fs";
 function installApi(server) {
   server.middlewares.use(async (req, res, next) => {
     if (!(await statusApi(req, res))) next();
@@ -35,10 +35,19 @@ export default defineConfig(({ mode }) => ({
   plugins: [
     react(),
     {
-      name: "pulse-native-assets",
+      name: "pulse-entry-points",
       closeBundle() {
-        if (mode !== "web")
+        if (mode === "web") {
+          // Make marketing the physical index so platform SPA defaults cannot
+          // bypass a homepage rewrite and accidentally expose the dashboard.
+          renameSync(
+            resolve("dist/index.html"),
+            resolve("dist/dashboard.html"),
+          );
+          renameSync(resolve("dist/landing.html"), resolve("dist/index.html"));
+        } else {
           rmSync(resolve("dist/marketing"), { recursive: true, force: true });
+        }
       },
     },
     {
