@@ -186,25 +186,6 @@ img {
   padding-top: 70px;
   text-align: center;
 }
-.hero-kicker {
-  display: inline-flex;
-  align-items: center;
-  gap: 9px;
-  border: 1px solid #dde4d9;
-  background: #f0f5ed;
-  padding: 7px 12px;
-  border-radius: 30px;
-  font-size: 11px;
-  color: #536550;
-  margin-bottom: 26px;
-}
-.hero-kicker > span {
-  width: 6px;
-  height: 6px;
-  background: #5c896c;
-  border-radius: 50%;
-  box-shadow: 0 0 0 3px #5c896c0d;
-}
 .m-hero h1 {
   font-size: clamp(44px, 5.4vw, 74px);
   line-height: 1.12;
@@ -1140,10 +1121,6 @@ img {
   }
   .m-hero {
     padding-top: 44px;
-  }
-  .hero-kicker {
-    font-size: 10px;
-    margin-bottom: 23px;
   }
   .m-hero h1 {
     font-size: clamp(36px, 7.5vw, 56px);

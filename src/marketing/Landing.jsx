@@ -194,9 +194,6 @@ export default function Landing() {
       </header>
       <main id="main">
         <section className="m-hero m-container">
-          <div className="hero-kicker">
-            <span />A little less “is it just me?”
-          </div>
           <h1>
             Know what’s down.
             <br />
