@@ -841,10 +841,14 @@ h1 > span {
 .incidents-panel {
   display: flex;
   flex-direction: column;
+  block-size: 620px;
+  min-block-size: 0;
+  overflow: hidden;
 }
 .incidents-panel .panel-heading {
   padding: 21px 18px 16px;
   border-bottom: 1px solid #eef0eb;
+  flex-shrink: 0;
 }
 .signal-icon {
   color: #9caa92;
@@ -884,8 +888,10 @@ h1 > span {
 }
 .incident-stream {
   flex: 1;
+  min-height: 0;
   max-height: none;
-  overflow: auto;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   scrollbar-width: thin;
   scrollbar-color: #dce5d7 transparent;
 }
@@ -981,6 +987,7 @@ h1 > span {
   font-size: 9px;
   color: #7c8e73;
   margin-top: auto;
+  flex-shrink: 0;
   border-top: 1px solid #edf0e8;
   background: #fefefc;
 }
@@ -2514,7 +2521,7 @@ h1 > span {
   .incident-stream {
     display: block;
     max-height: none;
-    overflow: visible;
+    overflow-y: auto;
   }
   .incident-stream > .incident-item {
     border-bottom: 1px solid #edf0e8;

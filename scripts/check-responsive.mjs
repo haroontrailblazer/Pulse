@@ -21,16 +21,25 @@ try {
       { provider: "googlecloud", id: "tokyo", name: "Tokyo Cloud incident", impact: "major", status: "investigating", updatedAt: timestamp, body: "Official service update." },
       { provider: "azure", id: "virginia", name: "Virginia platform degradation", impact: "minor", status: "monitoring", updatedAt: timestamp, body: "Official service update." },
     ];
+    const fixtureIncidents = incidents.flatMap((incident) => [
+      incident,
+      {
+        ...incident,
+        id: `${incident.id}-follow-up`,
+        name: `${incident.name} follow-up`,
+      },
+    ]);
     const data = {
       providers: providers.map((p) => {
-        const incident = incidents.find((item) => item.provider === p.id);
+        const providerIncidents = fixtureIncidents.filter((item) => item.provider === p.id);
+        const incident = providerIncidents[0];
         return {
           ...unknownProvider(p),
           status: incident?.impact === "major" ? "outage" : incident ? "degraded" : "operational",
           stale: false,
           checkedAt: timestamp,
           components: p.id === "openai" ? [{ id: "sf-api", name: "San Francisco / API", status: "degraded_performance" }] : [],
-          incidents: incident ? [incident] : [],
+          incidents: providerIncidents,
         };
       }),
       history: [], refreshing: false, fetchedAt: timestamp, completedChecks: providers.length, revision: 1,
@@ -46,11 +55,16 @@ try {
     assert.equal(await page.locator(".summary-grid").count(), 1);
     assert.equal(await page.locator(".overview-grid").count(), 1);
     assert.equal(await page.locator(".service-table").count(), 1);
-    assert.equal(await page.locator(".incident-stream .incident-item").count(), incidents.length);
+    assert.equal(await page.locator(".incident-stream .incident-item").count(), fixtureIncidents.length);
     assert.equal(
-      await page.locator(".incident-stream").evaluate((node) => node.scrollHeight <= node.clientHeight),
+      await page.locator(".incident-stream").evaluate((node) => getComputedStyle(node).overflowY),
+      "auto",
+      "Live incidents must scroll within their card",
+    );
+    assert.equal(
+      await page.locator(".incident-stream").evaluate((node) => node.scrollHeight > node.clientHeight),
       true,
-      "Live incidents must not be clipped on the Overview page",
+      "Live incident rows must stay within the fixed card",
     );
     assert.ok(await page.locator(".atlas-hub.outage").count() > 0, "Map should show official outage locations");
     assert.ok(await page.locator(".atlas-hub.degraded").count() > 0, "Map should show official degraded locations");
@@ -71,6 +85,8 @@ try {
       const menu = document.querySelector(".page-menu svg");
       const directory = document.querySelector(".services-panel");
       const list = document.querySelector(".service-table-wrap");
+      const map = document.querySelector(".atlas-map");
+      const incidentsPanel = document.querySelector(".incidents-panel");
       return {
         width: innerWidth,
         scroll: document.documentElement.scrollWidth,
@@ -86,6 +102,8 @@ try {
         listHeight: list.clientHeight,
         listScrollHeight: list.scrollHeight,
         listOverflow: getComputedStyle(list).overflowY,
+        mapHeight: map.getBoundingClientRect().height,
+        incidentsHeight: incidentsPanel.getBoundingClientRect().height,
       };
     });
     assert.ok(geometry.scroll <= geometry.width, `Horizontal overflow at ${viewport.width}`);
@@ -93,6 +111,7 @@ try {
     assert.ok(geometry.titleHeight <= geometry.titleLine * 1.1, `Page title wraps at ${viewport.width}`);
     assert.equal(geometry.listOverflow, "auto", `Directory must scroll internally at ${viewport.width}`);
     assert.ok(geometry.listScrollHeight > geometry.listHeight, `Directory rows must be contained by the fixed card at ${viewport.width}`);
+    assert.ok(Math.abs(geometry.mapHeight - geometry.incidentsHeight) <= 0.5, `Live incidents must match the map card height at ${viewport.width}`);
     if (viewport.width <= 760)
       assert.ok(Math.abs(geometry.dotLeft - geometry.menuLeft) <= 0.5, `Menu glyph must align with the eyebrow dot at ${viewport.width}`);
     const android = await page.evaluate(() => {
