@@ -26,6 +26,9 @@ for (const file of [
   "desktop/preload.cjs",
   "desktop/background.cjs",
   "shared/alerts.js",
+  "shared/providers.js",
+  "shared/cloud-feeds.js",
+  "server/status.js",
 ])
   if (
     sha(
@@ -37,5 +40,5 @@ for (const file of [
   )
     throw Error("Native source mismatch " + file);
 console.log(
-  `${files.length} Windows web/brand assets and four background modules match current sources.`,
+  `${files.length} Windows web/brand assets and seven monitoring modules match current sources.`,
 );

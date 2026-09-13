@@ -41,7 +41,7 @@ Open http://localhost:3000. The production server serves both `dist` and `/api/s
 
 ## Data boundaries
 
-Pulse is independent of the companies listed. It reports provider-published health, not independent availability measurements. Failed or unsupported feeds are **unavailable**, never assumed healthy. AWS and Azure currently have official dashboard links but no automated ingestion adapter. Other feeds can fail temporarily or change their API format.
+Pulse is independent of the companies listed. It reports provider-published health, not independent availability measurements. Failed or unsupported feeds are **unavailable**, never assumed healthy. AWS uses the public Health Dashboard current-events feed, Azure uses its public RSS feed, Google Cloud uses its incident JSON feed, and Replicate is scoped to its component on Cloudflare Status. These cloud feeds exclude account-specific health events. Other feeds can fail temporarily or change their API format.
 
 The web/desktop monitor streams each provider result over Server-Sent Events as it completes. Android runs the same monitoring engine through native HTTP. Each request has a 15-second timeout. Automatic sweeps start at two-minute intervals without overlapping; provider publishing delays still apply. Counts cover this catalog only. Source timestamps are shown separately from retrieval timestamps. A provider can report operational while still listing an incident; inspect the specific incident and components.
 
@@ -77,7 +77,7 @@ npm.cmd run desktop
 npm.cmd run build:windows
 ```
 
-Expected portable artifact: `releases/Pulse-1.0.2-Windows.exe`. Packaging is unsigned; code-signing certificates and public distribution are not configured. The app uses a sandboxed renderer with Node integration disabled and a local status server bound to `127.0.0.1:47823`. Its fixed origin keeps the local watchlist stable across restarts. Port 47823 must be available. External HTTPS links open in the system browser.
+Expected portable artifact: `releases/Pulse-1.0.3-Windows.exe`. Packaging is unsigned; code-signing certificates and public distribution are not configured. The app uses a sandboxed renderer with Node integration disabled and a local status server bound to `127.0.0.1:47823`. Its fixed origin keeps the local watchlist stable across restarts. Port 47823 must be available. External HTTPS links open in the system browser.
 
 ## Android app
 
@@ -91,7 +91,7 @@ npm.cmd run build:android
 npm.cmd run android:open
 ```
 
-APK output: `releases/Pulse-1.0.2-Android.apk` (also in `android/app/build/outputs/apk/debug/app-debug.apk`). This is a debug-signed APK for installation and testing. A production release APK/AAB requires your signing key. Do not commit signing secrets or keystores. The Android app fetches the allowlisted public status feeds through Capacitor's native HTTP transport, so it does not depend on a localhost server or browser CORS.
+APK output: `releases/Pulse-1.0.3-Android.apk` (also in `android/app/build/outputs/apk/debug/app-debug.apk`). This is a debug-signed APK for installation and testing. A production release APK/AAB requires your signing key. Do not commit signing secrets or keystores. The Android app fetches the allowlisted public status feeds through native HTTP, including BOM-aware decoding for AWS and XML support for Azure, so it does not depend on a localhost server or browser CORS.
 
 ## Verification
 
@@ -164,14 +164,23 @@ The public entry point is a marketing page explaining Pulse, with actual app scr
 
 Vercel serves /api/status as a bounded Node function. The hosted dashboard polls every two minutes while visible and pauses when hidden. Responses can be shared by the CDN for 30 seconds; freshness checks still exclude outdated readings. Native builds retain their existing local server or direct Android transport. No database or cross-device account system is introduced.
 
-Download links in both the landing page and dashboard point to versioned static files under https://pulse-status-zeta.vercel.app/downloads/v1.0.2, defined in shared/downloads.js. The deployment command `npm run build:deploy` fetches the published release once, verifies byte counts and SHA-256 against shared/release-assets.json, and stages the installers on the website CDN. Users download directly from that CDN; no runtime GitHub proxy or serverless function handles the file transfer. The APK and portable EXE include the compact sidebar and smaller wordmark, removed Watchlist card, simplified Dependency insights, search-first mobile Overview, alerts control beside Refresh, title-aligned notifications without a top bar, and appearance controls in Settings. See design/marketing-assets.md for artwork provenance and screenshot details.
+Download links in both the landing page and dashboard point to versioned static files under https://pulse-status-zeta.vercel.app/downloads/v1.0.3, defined in shared/downloads.js. The deployment command `npm run build:deploy` fetches the published release once, verifies byte counts and SHA-256 against shared/release-assets.json, and stages the installers on the website CDN. Users download directly from that CDN; no runtime GitHub proxy or serverless function handles the file transfer. The APK and portable EXE include the compact sidebar and smaller wordmark, removed Watchlist card, simplified Dependency insights, search-first mobile Overview, alerts control beside Refresh, title-aligned notifications without a top bar, and appearance controls in Settings. See design/marketing-assets.md for artwork provenance and screenshot details.
 
 Public website: https://pulse-status-zeta.vercel.app
 
 Open the dashboard: https://pulse-status-zeta.vercel.app/app
 
-Public installers and checksums: https://github.com/haroontrailblazer/Pulse/releases/tag/v1.0.2
+Public installers and checksums: https://github.com/haroontrailblazer/Pulse/releases/tag/v1.0.3
 
 The manual Build Windows release GitHub Actions workflow can build and upload a Windows EXE directly to an existing draft release. It installs the Electron runtime explicitly, runs the tests, checks the existing Android checksum, and uploads a matching combined checksum manifest. The release stays a draft until final review and publication.
 
 For each new installer release, update shared/release-assets.json with the verified names, sizes and checksums before deploying. The mirror fails the deployment on a mismatch or unavailable artifact, so the previous working deployment remains available. Ordinary web and native builds do not bundle the installers. GitHub remains the release archive.
+
+
+### Official cloud feeds (1.0.3)
+
+Replicate now follows its `fvgfcmy66tdr` component on Cloudflare Status, after the old Replicate status domain migrated. Unrelated Cloudflare incidents are excluded. AWS uses the public dashboard's `/public/currentevents` endpoint, with BOM-aware UTF-16 decoding, regional incident details, and resolved-event filtering. Azure uses the official RSS feed with validated XML and public-advisory coverage. Google Cloud retains its official JSON feed; transient requests can retry once within the existing 15-second request budget, and explicit `SERVICE_OUTAGE` updates now retain outage severity.
+
+The foreground Android bridge and background worker share the same allowlisted, BOM-aware HTTP reader. The widget/background parser supports all four formats. Checks still pause in hidden browser tabs; polling intervals are unchanged. Public cloud status does not cover private account-specific events. Upstream errors remain unavailable rather than becoming a false all-clear.
+
+Validation: 61 Node tests; 8 Android feed tests plus the existing example test; live official-feed checks for all four providers. The installed widget/notification experience still requires physical-device testing.

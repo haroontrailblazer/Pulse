@@ -32,7 +32,7 @@ export function nextAlert(previous, provider) {
     notify: !!signature && signature.split("|").some((part) => !old.has(part)),
   };
 }
-export function requestBudget(watched, feeds = 26) {
+export function requestBudget(watched, feeds = 28) {
   return {
     oldHourly: feeds * 120,
     foregroundHourly: feeds * 30,

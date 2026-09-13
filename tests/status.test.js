@@ -60,7 +60,7 @@ test("source-only providers do not request a nonexistent status API", async (t) 
   const spy = t.mock.method(globalThis, "fetch", async () => {
     throw new Error("should not fetch");
   });
-  const result = await fetchProvider(providers.find((p) => p.id === "aws"));
+  const result = await fetchProvider({ ...provider, format: "source-only" });
   assert.equal(spy.mock.callCount(), 0);
   assert.equal(result.status, "unknown");
   assert.match(result.description, /not configured/);

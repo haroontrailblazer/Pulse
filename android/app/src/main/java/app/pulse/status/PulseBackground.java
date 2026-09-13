@@ -11,6 +11,22 @@ import java.util.*;
 
 @CapacitorPlugin(name="PulseBackground",permissions={@Permission(alias="notifications",strings={Manifest.permission.POST_NOTIFICATIONS})})
 public class PulseBackground extends Plugin {
+    private final java.util.concurrent.ExecutorService feeds = java.util.concurrent.Executors.newFixedThreadPool(4);
+    @PluginMethod public void fetchFeed(PluginCall call) {
+        feeds.execute(() -> {
+            try {
+                JSONArray catalog = PulseStore.catalog(getContext());
+                for (int n = 0; n < catalog.length(); n++) {
+                    JSONObject provider = catalog.getJSONObject(n);
+                    if (provider.getString("id").equals(call.getString("id")) && !provider.optString("format").equals("source-only")) {
+                        call.resolve(new JSObject().put("text", OfficialFeed.read(provider))); return;
+                    }
+                }
+                call.reject("Unknown status provider");
+            } catch (Exception error) { call.reject("Official feed unavailable", error); }
+        });
+    }
+    @Override protected void handleOnDestroy() { feeds.shutdownNow(); }
     @Override public void load() { PulseStore.channel(getContext()); PulseStore.schedule(getContext()); }
     @PluginMethod public void status(PluginCall call) { call.resolve(state()); }
     private JSObject state() { return new JSObject().put("enabled",PulseStore.prefs(getContext()).getBoolean("enabled",false)).put("permission",PulseStore.permission(getContext())?"granted":"denied"); }

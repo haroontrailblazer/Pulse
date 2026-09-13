@@ -524,7 +524,7 @@ export default function Landing() {
             <TiltCard>
               <div className="platform-label">
                 <span>02 / AT YOUR DESK</span>
-                <span>v1.0.2</span>
+                <span>v1.0.3</span>
               </div>
               <PlatformArt type="windows" />
               <h3>Pulse for Windows</h3>
@@ -550,7 +550,7 @@ export default function Landing() {
             <TiltCard>
               <div className="platform-label">
                 <span>03 / AWAY FROM YOUR DESK</span>
-                <span>v1.0.2</span>
+                <span>v1.0.3</span>
               </div>
               <PlatformArt type="android" />
               <h3>Pulse for Android</h3>

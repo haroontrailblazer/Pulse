@@ -67,10 +67,10 @@ test("component issues and active incidents alert even with an operational aggre
 });
 test("request budget uses feed count and watched services, not fictional battery percentages", () => {
   const count = providers.filter((p) => p.format !== "source-only").length;
-  assert.equal(count, 26);
+  assert.equal(count, 28);
   assert.deepEqual(requestBudget(4, count), {
-    oldHourly: 3120,
-    foregroundHourly: 780,
+    oldHourly: 3360,
+    foregroundHourly: 840,
     androidHourly: 16,
     desktopHourly: 48,
   });

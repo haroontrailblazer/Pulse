@@ -1,9 +1,9 @@
 {
   "name": "pulse-status",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "private": true,
   "type": "module",
-  "description": "Pulse — a clearer picture of the internet's health",
+  "description": "Pulse \u00e2\u20ac\u201d a clearer picture of the internet's health",
   "author": "Pulse",
   "main": "desktop/main.cjs",
   "scripts": {
@@ -50,6 +50,7 @@
     "@capacitor/share": "^8.0.1",
     "@phosphor-icons/react": "^2.1.10",
     "d3-geo": "^3.1.1",
+    "fast-xml-parser": "^5.11.1",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "topojson-client": "^3.1.0",

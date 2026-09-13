@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Capacitor, CapacitorHttp } from "@capacitor/core";
+import { Capacitor, CapacitorHttp, registerPlugin } from "@capacitor/core";
 import {
   providers,
   unknownProvider,
@@ -9,6 +9,7 @@ import {
 import { createMonitor, isFresh, REFRESH_MS } from "../shared/monitor.js";
 
 const native = Capacitor.isNativePlatform();
+const officialFeeds = native ? registerPlugin("PulseBackground") : null;
 const base = import.meta.env.VITE_API_BASE_URL || "";
 const initial = () => ({
   providers: providers.map(unknownProvider),
@@ -33,23 +34,29 @@ export default function useLiveStatus(autoRefresh) {
         if (provider.format === "source-only") return unknownProvider(provider);
         const start = Date.now();
         try {
-          const response = await CapacitorHttp.get({
-            url: feedUrl(provider),
-            connectTimeout: 15000,
-            readTimeout: 15000,
-            headers: {
-              Accept: "application/json",
-              "Cache-Control": "no-cache",
-            },
-          });
+          const usesBridge = [
+            "aws",
+            "azure-rss",
+            "google",
+            "component",
+          ].includes(provider.format);
+          const response = usesBridge
+            ? {
+                status: 200,
+                data: (await officialFeeds.fetchFeed({ id: provider.id })).text,
+              }
+            : await CapacitorHttp.get({
+                url: feedUrl(provider),
+                connectTimeout: 15000,
+                readTimeout: 15000,
+                headers: {
+                  Accept: "application/json",
+                  "Cache-Control": "no-cache",
+                },
+              });
           if (response.status !== 200)
             throw new Error(`Official feed returned HTTP ${response.status}`);
-          const result = normalizeFeed(
-            provider,
-            typeof response.data === "string"
-              ? JSON.parse(response.data)
-              : response.data,
-          );
+          const result = normalizeFeed(provider, response.data);
           return {
             ...result,
             responseMs: Date.now() - start,

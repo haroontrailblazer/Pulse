@@ -9,6 +9,7 @@ writeFileSync(
       name: p.name,
       url: feedUrl(p),
       format: p.format || "statuspage",
+      ...(p.componentId ? { componentId: p.componentId } : {}),
     })),
   ),
 );

@@ -20,7 +20,65 @@ final class FeedReading {
         String format = provider.optString("format");
         JSONArray components = new JSONArray(), incidents = new JSONArray();
         String status;
-        if (format.equals("google")) {
+        if (format.equals("azure-rss")) {
+            status = "operational";
+            try {
+                if (text.toUpperCase(Locale.ROOT).contains("<!DOCTYPE") || text.toUpperCase(Locale.ROOT).contains("<!ENTITY")) throw new Exception("Unsafe XML");
+                javax.xml.parsers.DocumentBuilderFactory factory = javax.xml.parsers.DocumentBuilderFactory.newInstance();
+                factory.setExpandEntityReferences(false);
+                org.w3c.dom.Document doc = factory.newDocumentBuilder().parse(new org.xml.sax.InputSource(new java.io.StringReader(text)));
+                org.w3c.dom.Element channel = (org.w3c.dom.Element) doc.getElementsByTagName("channel").item(0);
+                if (!doc.getDocumentElement().getTagName().equals("rss") || channel == null || !xmlText(channel,"title").equals("Azure Status") || !xmlText(channel,"link").startsWith("https://azure.status.microsoft/")) throw new Exception("Unknown RSS");
+                org.w3c.dom.NodeList items = channel.getElementsByTagName("item");
+                for (int n=0; n<items.getLength(); n++) {
+                    org.w3c.dom.Element item = (org.w3c.dom.Element) items.item(n);
+                    String title=xmlText(item,"title"), id=xmlText(item,"guid");
+                    if (id.isEmpty()) id=xmlText(item,"link");
+                    if(title.isEmpty() || id.isEmpty()) throw new Exception("Invalid Azure incident");
+                    java.time.ZonedDateTime.parse(xmlText(item,"pubDate"), java.time.format.DateTimeFormatter.RFC_1123_DATE_TIME);
+                    if(title.matches("(?i)^(?:\\[?(?:resolved|mitigated|completed)\\]?\\s*[-:–]|(?:final\\s+)?(?:pir|post[- ]incident review|root cause analysis)\\b).*$")) continue;
+                    status="degraded";
+                    incidents.put(new JSONObject().put("id",id).put("name",title).put("impact","minor").put("status","active"));
+                }
+            } catch(Exception error) { throw new JSONException("Invalid Azure RSS feed: " + error.getMessage()); }
+        } else if (format.equals("aws")) {
+            status="operational";
+            JSONArray events=new JSONArray(text);
+            for(int n=0; n<events.length(); n++) {
+                JSONObject event=events.getJSONObject(n);
+                String code=event.getString("status"), id=event.getString("arn"), service=event.getString("service"), name=event.getString("service_name");
+                event.getJSONArray("event_log"); event.getString("summary");
+                if(!Arrays.asList("0","1","2","3").contains(code)) throw new JSONException("Unknown AWS status");
+                if(code.equals("0")) continue;
+                if(code.equals("3")) status="outage"; else if(!status.equals("outage")) status="degraded";
+                components.put(new JSONObject().put("id",service).put("name",name).put("status",code.equals("3")?"major_outage":"degraded_performance"));
+                incidents.put(new JSONObject().put("id",id).put("name",name + ": " + event.getString("summary")).put("impact",code.equals("3")?"major":"minor").put("status","active"));
+            }
+        } else if (format.equals("component")) {
+            JSONObject data = new JSONObject(text), component=null;
+            JSONArray raw=data.getJSONArray("components");
+            String target=provider.getString("componentId");
+            for(int n=0;n<raw.length();n++) if(raw.getJSONObject(n).getString("id").equals(target) && !raw.getJSONObject(n).optBoolean("group")) component=raw.getJSONObject(n);
+            if(component==null) throw new JSONException("Missing Replicate component");
+            switch(component.getString("status")) {
+                case "operational": status="operational"; break;
+                case "degraded_performance": case "partial_outage": status="degraded"; break;
+                case "major_outage": status="outage"; break;
+                case "under_maintenance": status="maintenance"; break;
+                default: throw new JSONException("Unknown component state");
+            }
+            components.put(component);
+            raw=data.optJSONArray("incidents");
+            if(raw!=null) for(int n=0;n<raw.length();n++) {
+                JSONObject incident=raw.getJSONObject(n);
+                if(Arrays.asList("resolved","postmortem","completed","scheduled").contains(incident.optString("status"))) continue;
+                JSONArray affected=incident.optJSONArray("components");
+                if(affected!=null) for(int j=0;j<affected.length();j++) {
+                    Object entry=affected.get(j);
+                    if(target.equals(entry instanceof JSONObject ? ((JSONObject)entry).optString("id") : entry.toString())) { incidents.put(incident);break; }
+                }
+            }
+        } else if (format.equals("google")) {
             JSONArray data = new JSONArray(text);
             status = "operational";
             for (int n = 0; n < data.length(); n++) {
@@ -28,7 +86,8 @@ final class FeedReading {
                 i.getString("id"); i.getString("begin"); i.getJSONArray("updates");
                 JSONObject latest = i.optJSONObject("most_recent_update");
                 if (i.optString("end", "").isEmpty() && (latest == null || !latest.optString("status").equals("AVAILABLE"))) {
-                    status = "degraded";
+                    if(latest != null && latest.optString("status").equals("SERVICE_OUTAGE")) status="outage";
+                    else if(!status.equals("outage")) status = "degraded";
                     incidents.put(new JSONObject().put("id",i.getString("id")).put("name",i.optString("external_desc","Google Cloud incident")).put("impact",i.optString("severity").equals("high")?"major":"minor").put("status","active"));
                 }
             }
@@ -62,6 +121,10 @@ final class FeedReading {
             }
         }
         return result.put("status",status).put("checkedAt",Instant.now().toString()).put("components",components).put("incidents",incidents);
+    }
+    private static String xmlText(org.w3c.dom.Element element, String name) {
+        org.w3c.dom.Node node=element.getElementsByTagName(name).item(0);
+        return node==null?"":node.getTextContent().trim();
     }
     static String signature(JSONObject reading) {
         if (reading.optBoolean("stale") || reading.optString("status","unknown").equals("unknown") || reading.optString("checkedAt").isEmpty()) return null;

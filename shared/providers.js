@@ -1,3 +1,9 @@
+import {
+  normalizeAzure,
+  normalizeAws,
+  normalizeComponent,
+} from "./cloud-feeds.js";
+
 export const providers = [
   {
     id: "npm",
@@ -133,7 +139,8 @@ export const providers = [
     product: "Compute, storage & cloud services",
     category: "Cloud & infrastructure",
     url: "https://health.aws.amazon.com/health/status",
-    format: "source-only",
+    format: "aws",
+    endpoint: "https://health.aws.amazon.com/public/currentevents",
     mark: "aws",
     color: "#b5863d",
     industries: [
@@ -168,7 +175,8 @@ export const providers = [
     product: "Cloud infrastructure & AI services",
     category: "Cloud & infrastructure",
     url: "https://azure.status.microsoft",
-    format: "source-only",
+    format: "azure-rss",
+    endpoint: "https://azure.status.microsoft/en-us/status/feed/",
     mark: "A",
     color: "#277bc1",
     industries: [
@@ -255,7 +263,10 @@ export const providers = [
     name: "Replicate",
     product: "AI model inference",
     category: "AI & machine learning",
-    url: "https://www.replicatestatus.com",
+    url: "https://www.cloudflarestatus.com/services?search=replicate",
+    endpoint: "https://www.cloudflarestatus.com/api/v2/summary.json",
+    format: "component",
+    componentId: "fvgfcmy66tdr",
     mark: "R",
     color: "#45494e",
     industries: ["AI products", "Media & streaming"],
@@ -392,6 +403,12 @@ export function feedUrl(provider) {
   return provider.endpoint || `${provider.url}/api/v2/summary.json`;
 }
 export function normalizeFeed(provider, data, now = new Date().toISOString()) {
+  if (provider.format === "azure-rss")
+    return normalizeAzure(provider, data, now);
+  if (typeof data === "string") data = JSON.parse(data.replace(/^\uFEFF/, ""));
+  if (provider.format === "aws") return normalizeAws(provider, data, now);
+  if (provider.format === "component")
+    return normalizeComponent(provider, data, now, normalizeSummary);
   if (provider.format === "betterstack")
     return normalizeBetterStack(provider, data, now);
   if (provider.format !== "google")
@@ -422,7 +439,13 @@ export function normalizeFeed(provider, data, now = new Date().toISOString()) {
   }));
   return {
     ...provider,
-    status: active.length ? "degraded" : "operational",
+    status: active.some(
+      (i) => i.most_recent_update?.status === "SERVICE_OUTAGE",
+    )
+      ? "outage"
+      : active.length
+        ? "degraded"
+        : "operational",
     description: active.length
       ? "Active incidents reported in Google Cloud’s public incident feed."
       : "No ongoing incidents in Google Cloud’s public incident feed. This does not include account-specific health events.",
