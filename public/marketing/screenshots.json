@@ -1,19 +1,86 @@
 {
-  "capturedAt": "2026-09-13T14:29:42.284Z",
+  "capturedAt": "2026-09-13T15:10:18.104Z",
+  "sourceUrl": "https://pulse-status-zeta.vercel.app/app",
   "source": "Actual Pulse application using official status feeds. Screenshots are illustrative snapshots, not current readings.",
+  "tool": "Playwright",
+  "browser": "153.0.4234.32",
   "viewport": {
-    "width": 1442,
-    "height": 865
+    "width": 1440,
+    "height": 900
   },
+  "deviceScaleFactor": 2,
+  "format": "Lossless PNG",
+  "fontsReady": true,
   "files": [
-    "overview.jpg",
-    "map-light.jpg",
-    "map-dark.jpg",
-    "incidents.jpg",
-    "insights.jpg"
-  ],
-  "imagePixels": {
-    "height": 1082,
-    "width": 1803
-  }
+    {
+      "file": "overview.png",
+      "width": 1440,
+      "height": 900,
+      "bytes": 188389,
+      "sha256": "075eb9d317e728424fb4a4c1fb1c6d17b6908fe3214e14f62339bcc5b39239e6"
+    },
+    {
+      "file": "overview@2x.png",
+      "width": 2880,
+      "height": 1800,
+      "bytes": 472676,
+      "sha256": "605c1343a16b79de5427beac351ac58a34577098262c14240479f1f601fd4335"
+    },
+    {
+      "file": "map-light.png",
+      "width": 1440,
+      "height": 900,
+      "bytes": 202010,
+      "sha256": "dd6b251834fce7f82f4eed21a81d9f9153dc70a49403665f2fe0a6ea75c5fcb8"
+    },
+    {
+      "file": "map-light@2x.png",
+      "width": 2880,
+      "height": 1800,
+      "bytes": 511968,
+      "sha256": "8a8b7b54a16c34026f5661b45a4d0655fe54ae1f3119d9de548316168560073f"
+    },
+    {
+      "file": "map-dark.png",
+      "width": 1440,
+      "height": 900,
+      "bytes": 197059,
+      "sha256": "dd12fab5e6cf2b32ad4f08bf6616048805a5444c41cb8555690a54bc63a69d95"
+    },
+    {
+      "file": "map-dark@2x.png",
+      "width": 2880,
+      "height": 1800,
+      "bytes": 494126,
+      "sha256": "b5853c04ced56369ca868a78c1cbc36c370a1b8755f7ae691bec2cfa2cc64e80"
+    },
+    {
+      "file": "incidents.png",
+      "width": 1440,
+      "height": 900,
+      "bytes": 134264,
+      "sha256": "c142db410feced6ebc59e7532e7fe675a88c9ac48682e6862da82ea59619f1a2"
+    },
+    {
+      "file": "incidents@2x.png",
+      "width": 2880,
+      "height": 1800,
+      "bytes": 315874,
+      "sha256": "97c8595d41c778c76273a5ee7d774626ea23c3b0a38e2edb4d71d96e102c01aa"
+    },
+    {
+      "file": "insights.png",
+      "width": 1440,
+      "height": 900,
+      "bytes": 147685,
+      "sha256": "2a21a82021905cf5e3a8abee1115ea51cc4cfe9d6eccbe33ec8e205137fcbdb3"
+    },
+    {
+      "file": "insights@2x.png",
+      "width": 2880,
+      "height": 1800,
+      "bytes": 348626,
+      "sha256": "648a13fbe1a1bc35ef19ff254329b362e098c86c3be8cb5da69f0c479009dfb2"
+    }
+  ]
 }

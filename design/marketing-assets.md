@@ -4,7 +4,9 @@ The public landing page lives in `landing.html` and `src/marketing/`. It uses th
 
 ## Product screenshots
 
-`public/marketing/{overview,map-light,map-dark,incidents,insights}.jpg` are captures of the actual local Pulse application with official source data. They are 1803 × 1082 pixels. Capture time and viewport details are recorded in `public/marketing/screenshots.json`. The page labels screenshots as illustrative snapshots and links to the dashboard for current readings. No incident values were fabricated for the screenshots.
+`public/marketing/{overview,map-light,map-dark,incidents,insights}.png` and the matching `@2x.png` files are lossless Playwright captures of the live Pulse application with official source data. The browser viewport is exactly 1440 × 900 CSS pixels with a device scale factor of 2. The source screenshots are 2880 × 1800 pixels; 1440 × 900 alternatives are captured at CSS scale for smaller displays. The page uses responsive `srcset`/`sizes` and opens the 2× file in the image viewer. Fonts are fully loaded before capture. Capture time, browser version, dimensions, and SHA-256 hashes are recorded in `public/marketing/screenshots.json`. The old JPEG captures have been replaced. No incident values were fabricated for the screenshots.
+
+Regenerate with `npm run screenshots` after `npx playwright install chromium`, or set `PLAYWRIGHT_CHANNEL=msedge` to use installed Edge. `PULSE_CAPTURE_URL` can select another deployed app URL. Run `node scripts/verify-marketing-images.mjs` to verify responsive image selection, pixel density, zoom images, and mobile overflow. Set `PULSE_MARKETING_URL` to test the public site instead of the local landing page.
 
 ## Platform artwork
 

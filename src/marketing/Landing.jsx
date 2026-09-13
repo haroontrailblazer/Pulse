@@ -265,7 +265,7 @@ export default function Landing() {
                   aria-label="Enlarge map screenshot"
                   onClick={() =>
                     openImage(
-                      `/marketing/map-${dark ? "dark" : "light"}.jpg`,
+                      `/marketing/map-${dark ? "dark" : "light"}@2x.png`,
                       "Pulse global map screenshot",
                     )
                   }
@@ -278,16 +278,18 @@ export default function Landing() {
                 aria-label="Explore this map screenshot"
                 onClick={() =>
                   openImage(
-                    `/marketing/map-${dark ? "dark" : "light"}.jpg`,
+                    `/marketing/map-${dark ? "dark" : "light"}@2x.png`,
                     "Pulse global map screenshot",
                   )
                 }
               >
                 <img
-                  src={`/marketing/map-${dark ? "dark" : "light"}.jpg`}
+                  src={`/marketing/map-${dark ? "dark" : "light"}@2x.png`}
+                  srcSet={`/marketing/map-${dark ? "dark" : "light"}.png 1440w, /marketing/map-${dark ? "dark" : "light"}@2x.png 2880w`}
+                  sizes="(max-width: 760px) calc(100vw - 36px), (max-width: 1050px) calc(100vw - 48px), (max-width: 1296px) calc(100vw - 80px), 1216px"
                   alt={`The Pulse global map in ${dark ? "dark" : "light"} mode, with regional status markers and service filters`}
-                  width="1803"
-                  height="1082"
+                  width="1440"
+                  height="900"
                   fetchPriority="high"
                 />
               </button>
@@ -396,18 +398,20 @@ export default function Landing() {
               className="tour-screen"
               onClick={() =>
                 openImage(
-                  `/marketing/${active.file}.jpg`,
+                  `/marketing/${active.file}@2x.png`,
                   `${active.name}: Pulse application screenshot`,
                 )
               }
               aria-label={`Enlarge ${active.name} screenshot`}
             >
               <img
-                src={`/marketing/${active.file}.jpg`}
+                src={`/marketing/${active.file}@2x.png`}
+                srcSet={`/marketing/${active.file}.png 1440w, /marketing/${active.file}@2x.png 2880w`}
+                sizes="(max-width: 760px) calc(100vw - 36px), (max-width: 1050px) 62vw, 800px"
                 alt={`${active.name} in the actual Pulse application`}
                 loading="lazy"
-                width="1803"
-                height="1082"
+                width="1440"
+                height="900"
               />
               <span>
                 <ExternalLink size={14} /> Take a closer look
