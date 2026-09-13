@@ -169,3 +169,7 @@ Download links in both the landing page and dashboard point to the versioned Git
 Public website: https://pulse-status-zeta.vercel.app
 
 Open the dashboard: https://pulse-status-zeta.vercel.app/app
+
+Public installers and checksums: https://github.com/haroontrailblazer/Pulse/releases/tag/v1.0.0
+
+The manual Build Windows release GitHub Actions workflow can build and upload a Windows EXE directly to an existing draft release. It installs the Electron runtime explicitly, runs the tests, checks the existing Android checksum, and uploads a matching combined checksum manifest. The release stays a draft until final review and publication.
