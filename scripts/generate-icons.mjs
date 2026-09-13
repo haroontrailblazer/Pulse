@@ -1,6 +1,6 @@
 import { Resvg } from "@resvg/resvg-js";
 import { mkdirSync, writeFileSync } from "node:fs";
-import { pulseSvg } from "../shared/brand.js";
+import { pulseSvg, pulsePath } from "../shared/brand.js";
 
 const icon = pulseSvg({ color: "#ffffff", background: "#161616" });
 const round = pulseSvg({
@@ -27,6 +27,10 @@ writeFileSync(
   png(pulseSvg({ color: "#ffffff" }), 1024),
 );
 writeFileSync("desktop/icon.png", png(icon, 256));
+writeFileSync(
+  "android/app/src/main/res/drawable/ic_pulse_notification.xml",
+  `<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="24dp" android:height="24dp" android:viewportWidth="64" android:viewportHeight="64"><path android:fillColor="#FFFFFF" android:pathData="${pulsePath}"/></vector>\n`,
+);
 
 // Multiple native resolutions keep the Windows icon sharp at taskbar sizes.
 const sizes = [16, 24, 32, 48, 64, 128, 256];

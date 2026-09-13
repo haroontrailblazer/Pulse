@@ -61,6 +61,7 @@ import WorldMap from "./WorldMap";
 import MobileOverview from "./MobileOverview";
 import PulseMark from "./PulseMark";
 import ProviderLogo from "./ProviderLogo";
+import { downloads } from "../shared/downloads";
 
 const navigation = [
   { name: "Overview", icon: LayoutDashboard },
@@ -413,14 +414,6 @@ export default function App() {
             pulse<span className="brand-period">.</span>
           </a>
           <button
-            className="icon-button sidebar-settings"
-            aria-label="Settings"
-            title="Settings"
-            onClick={() => setModal("settings")}
-          >
-            <Settings size={19} />
-          </button>
-          <button
             className="icon-button sidebar-close"
             aria-label="Close navigation"
             onClick={closeNavigation}
@@ -508,7 +501,7 @@ export default function App() {
               Wherever you work.
             </p>
             <button onClick={() => setModal("apps")}>
-              Meet Pulse for desktop <ArrowUpRight size={15} />
+              Get Pulse for your device <ArrowUpRight size={15} />
             </button>
           </div>
         </div>
@@ -517,6 +510,14 @@ export default function App() {
             <CircleHelp size={18} />
             <span>Help & methodology</span>
             <ArrowUpRight size={14} />
+          </button>
+          <button
+            className="nav-item sidebar-settings"
+            onClick={() => setModal("settings")}
+          >
+            <Settings size={18} />
+            <span>Settings</span>
+            <ChevronRight size={14} />
           </button>
         </div>
       </aside>
@@ -1403,17 +1404,27 @@ export default function App() {
                 </span>
                 <Check size={17} />
               </div>
-              <div className="app-option">
+              <a
+                className="app-option"
+                href={downloads.windows}
+                target="_blank"
+                rel="noreferrer"
+              >
                 <Layers3 size={23} />
                 <span>
                   <strong>Windows desktop</strong>
                   <small>
-                    Portable .exe built from this project. See the releases
-                    folder.
+                    Download the portable EXE for Windows 10+ (64-bit).
                   </small>
                 </span>
-              </div>
-              <div className="app-option">
+                <Download size={17} />
+              </a>
+              <a
+                className="app-option"
+                href={downloads.android}
+                target="_blank"
+                rel="noreferrer"
+              >
                 <PulseMark size={28} />
                 <span>
                   <strong>Android</strong>
@@ -1422,10 +1433,15 @@ export default function App() {
                     widget.
                   </small>
                 </span>
-              </div>
+                <Download size={17} />
+              </a>
               <p className="methodology-note">
-                Installers are distributed separately. There are no public
-                download links configured yet.
+                Early-access builds: Windows is unsigned; Android uses a
+                development signature.{" "}
+                <a href={downloads.checksums} target="_blank" rel="noreferrer">
+                  Verify downloads
+                </a>
+                .
               </p>
             </div>
           )}

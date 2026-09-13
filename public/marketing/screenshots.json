@@ -1,0 +1,19 @@
+{
+  "capturedAt": "2026-09-13T14:29:42.284Z",
+  "source": "Actual Pulse application using official status feeds. Screenshots are illustrative snapshots, not current readings.",
+  "viewport": {
+    "width": 1442,
+    "height": 865
+  },
+  "files": [
+    "overview.jpg",
+    "map-light.jpg",
+    "map-dark.jpg",
+    "incidents.jpg",
+    "insights.jpg"
+  ],
+  "imagePixels": {
+    "height": 1082,
+    "width": 1803
+  }
+}

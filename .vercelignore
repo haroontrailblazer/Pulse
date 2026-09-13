@@ -1,0 +1,9 @@
+.cache
+android
+desktop
+releases
+design
+tests
+node_modules
+dist
+.git

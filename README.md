@@ -37,7 +37,7 @@ Open http://localhost:3000. The production server serves both `dist` and `/api/s
 - Responsive phone layout, keyboard-accessible dialogs, reduced-motion support, and bundled fonts.
 - OpenCode Data-inspired light/dark colors: white and neutral grays with black controls in light mode; charcoal and white controls in dark mode. Existing typography, spacing, and layout are preserved. Dashboard, atlas, dialogs, developer tools, and branding share semantic color tokens in `src/theme.css`; service-state colors remain distinct from interaction colors. The top-bar toggle starts from the device preference and remembers an explicit choice before the interface renders.
 - Height-aware sidebar: navigation, watched services, and the desktop download card scroll independently while Help, Settings, and the workspace footer stay accessible. Watchlists longer than five services include a link to the full list. The phone drawer supports a close button, Escape, keyboard focus containment, background scroll locking, and safe-area padding.
-- Custom Pulse P-and-signal logo with matching light/dark treatment, vector and PNG assets, a multi-resolution Windows icon, and correctly padded Android adaptive icons. See `design/README.md` for files and regeneration instructions.
+- Custom Pulse signal mark: opposing receiver arcs around a central system node, with matching light/dark treatment, vector and PNG assets, a multi-resolution Windows icon, and correctly padded Android adaptive icons. See `design/README.md` for files and regeneration instructions.
 
 ## Data boundaries
 
@@ -157,3 +157,11 @@ At widths up to 760 px, Overview renders a dedicated compact interface: a watchl
 Global map fits the available viewport below the app toolbar. All status filters, regional markers, zoom controls, service lists, official evidence, watch toggles and explanatory legends stay inside the map. Tap a location or a severity filter to open its floating inspector; the inspector scrolls independently. Short phone and landscape views focus the selected regional marker while its details are open. Marker touch targets are separated with connectors to their true projected locations. Provider-wide incidents never create inferred city outages.
 
 Export brief and the repeated Add to watchlist buttons in page headings have been removed. Watchlist management remains available from service details, the mobile overview, sidebar and the map inspector. The existing monitoring cadence and background notification behavior remain unchanged.
+
+## Public website and Vercel
+
+The public entry point is a marketing page explaining Pulse, with actual app screenshots, an interactive feature tour, and web-first platform choices. On Vercel, / serves landing.html and /app serves the dashboard. Preview the landing locally at /landing.html. Run npm run build:web for the hosted build; regular npm run build remains the native dashboard build and excludes marketing images.
+
+Vercel serves /api/status as a bounded Node function. The hosted dashboard polls every two minutes while visible and pauses when hidden. Responses can be shared by the CDN for 30 seconds; freshness checks still exclude outdated readings. Native builds retain their existing local server or direct Android transport. No database or cross-device account system is introduced.
+
+Download links in both the landing page and dashboard point to the versioned GitHub v1.0.0 release assets defined in shared/downloads.js. The APK and portable EXE include the latest logo and corrected bottom Settings row. See design/marketing-assets.md for artwork provenance and screenshot details.

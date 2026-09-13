@@ -143,7 +143,10 @@ export default function useLiveStatus(autoRefresh) {
         fallback = setInterval(refresh, REFRESH_MS);
       }
     };
-    if (typeof EventSource !== "undefined") {
+    if (
+      import.meta.env.VITE_STATUS_TRANSPORT !== "poll" &&
+      typeof EventSource !== "undefined"
+    ) {
       stream = new EventSource(`${base}/api/status/stream`);
       stream.onmessage = (event) => {
         try {

@@ -1,4 +1,4 @@
-import { pulsePath, pulseNode, pulseTransform } from "../shared/brand";
+import { pulsePath } from "../shared/brand";
 
 export default function PulseMark({ size = 32, className }) {
   return (
@@ -10,10 +10,7 @@ export default function PulseMark({ size = 32, className }) {
       aria-hidden="true"
       className={className}
     >
-      <g transform={pulseTransform}>
-        <path d={pulsePath} />
-        <circle {...pulseNode} />
-      </g>
+      <path d={pulsePath} />
     </svg>
   );
 }

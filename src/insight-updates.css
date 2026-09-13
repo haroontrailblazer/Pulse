@@ -1,15 +1,6 @@
 .sidebar .sidebar-settings {
-  margin-left: auto;
-  width: 36px;
-  height: 36px;
-  flex-shrink: 0;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  color: var(--secondary);
-}
-.sidebar .sidebar-settings:hover {
-  background: var(--surface-hover);
-  color: var(--text);
+  min-height: 44px;
+  margin: 4px 0 8px;
 }
 .sidebar .sidebar-settings:focus-visible {
   outline: 2px solid var(--accent);
