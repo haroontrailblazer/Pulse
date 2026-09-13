@@ -636,7 +636,6 @@ export default function App() {
               items={items}
               watchlist={watchlist}
               now={now}
-              fetchedAt={fetchedAt}
               loading={loading}
               onRefresh={refresh}
               onProvider={openProvider}
