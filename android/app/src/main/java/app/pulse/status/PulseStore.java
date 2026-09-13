@@ -50,10 +50,11 @@ final class PulseStore {
         if(!needed(c)||watchlist(c).isEmpty()) { manager.cancelUniqueWork(PERIODIC); manager.cancelUniqueWork(ONCE); return; }
         manager.enqueueUniquePeriodicWork(PERIODIC,ExistingPeriodicWorkPolicy.UPDATE,new PeriodicWorkRequest.Builder(PulseWorker.class,15,TimeUnit.MINUTES).setConstraints(periodicConstraints()).build());
     }
-    static synchronized void refresh(Context c) {
+    static void refresh(Context c) { refresh(c,false); }
+    static synchronized void refresh(Context c,boolean userRequested) {
         if(!needed(c)||watchlist(c).isEmpty()) return;
         long now=System.currentTimeMillis();
-        if(now-prefs(c).getLong("lastRequested",0)<FRESH_REUSE_MS) return;
+        if(now-prefs(c).getLong("lastRequested",0)<(userRequested?5_000:FRESH_REUSE_MS)) return;
         prefs(c).edit().putLong("lastRequested",now).apply();
         OneTimeWorkRequest request=new OneTimeWorkRequest.Builder(PulseWorker.class)
             .setConstraints(immediateConstraints())

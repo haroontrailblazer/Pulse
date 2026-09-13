@@ -14,7 +14,7 @@ public class PulseWidget extends AppWidgetProvider {
     @Override public void onUpdate(Context c,AppWidgetManager manager,int[] ids) { updateAll(c);PulseStore.schedule(c);PulseStore.refresh(c); }
     @Override public void onEnabled(Context c) { PulseStore.schedule(c);PulseStore.refresh(c); }
     @Override public void onDisabled(Context c) { PulseStore.schedule(c); }
-    @Override public void onReceive(Context c,Intent intent) { super.onReceive(c,intent);if(REFRESH.equals(intent.getAction())) { PulseStore.refresh(c);updateAll(c); } }
+    @Override public void onReceive(Context c,Intent intent) { super.onReceive(c,intent);if(REFRESH.equals(intent.getAction())) { PulseStore.refresh(c,true);updateAll(c); } }
     static int rank(JSONObject r) { return FeedReading.severity(r); }
     static void updateAll(Context c) {
         AppWidgetManager manager=AppWidgetManager.getInstance(c);
