@@ -817,28 +817,29 @@ export default function App() {
                 </div>
               </div>
               <div className="service-table-wrap">
-                <table className="service-table">
-                  <thead>
-                    <tr>
-                      <th>Service</th>
-                      <th>Status</th>
-                      <th>Category</th>
-                      <th>
-                        Component health{" "}
-                        <button
-                          title="Each bar is a reported component, not historical uptime"
-                          onClick={() => setModal("methodology")}
-                          aria-label="About component health"
-                        >
-                          <CircleHelp size={12} />
-                        </button>
-                      </th>
-                      <th aria-label="Watchlist" />
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {visible.map((p) => (
-                      <tr key={p.id}>
+                {visible.length ? (
+                  <table className="service-table">
+                    <thead>
+                      <tr>
+                        <th>Service</th>
+                        <th>Status</th>
+                        <th>Category</th>
+                        <th>
+                          Component health{" "}
+                          <button
+                            title="Each bar is a reported component, not historical uptime"
+                            onClick={() => setModal("methodology")}
+                            aria-label="About component health"
+                          >
+                            <CircleHelp size={12} />
+                          </button>
+                        </th>
+                        <th aria-label="Watchlist" />
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {visible.map((p) => (
+                        <tr key={p.id}>
                         <td>
                           <button
                             className="service-name"
@@ -906,29 +907,29 @@ export default function App() {
                             />
                           </button>
                         </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : (
+                  <div className="empty-state">
+                    <Search size={26} />
+                    <h3>No services in this view</h3>
+                    <p>Try another search or add a service to your watchlist.</p>
+                    <button
+                      className="button secondary"
+                      onClick={() => {
+                        setSearch("");
+                        setCategory("All categories");
+                        setFilter("All services");
+                        if (page === "Watchlist") setModal("monitor");
+                      }}
+                    >
+                      Reset view
+                    </button>
+                  </div>
+                )}
               </div>
-              {!visible.length && (
-                <div className="empty-state">
-                  <Search size={26} />
-                  <h3>No services in this view</h3>
-                  <p>Try another search or add a service to your watchlist.</p>
-                  <button
-                    className="button secondary"
-                    onClick={() => {
-                      setSearch("");
-                      setCategory("All categories");
-                      setFilter("All services");
-                      if (page === "Watchlist") setModal("monitor");
-                    }}
-                  >
-                    Reset view
-                  </button>
-                </div>
-              )}
               <div className="table-footer">
                 <span>
                   Showing {visible.length} of {directoryItems.length} services

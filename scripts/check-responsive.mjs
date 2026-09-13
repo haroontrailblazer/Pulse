@@ -69,6 +69,8 @@ try {
       const style = getComputedStyle(title);
       const dot = document.querySelector(".page-heading .eyebrow > span");
       const menu = document.querySelector(".page-menu svg");
+      const directory = document.querySelector(".services-panel");
+      const list = document.querySelector(".service-table-wrap");
       return {
         width: innerWidth,
         scroll: document.documentElement.scrollWidth,
@@ -80,11 +82,17 @@ try {
         eyebrowTop: document.querySelector(".page-heading .eyebrow").getBoundingClientRect().top,
         dotLeft: dot?.getBoundingClientRect().left ?? null,
         menuLeft: menu?.getBoundingClientRect().left ?? null,
+        directoryHeight: directory.getBoundingClientRect().height,
+        listHeight: list.clientHeight,
+        listScrollHeight: list.scrollHeight,
+        listOverflow: getComputedStyle(list).overflowY,
       };
     });
     assert.ok(geometry.scroll <= geometry.width, `Horizontal overflow at ${viewport.width}`);
     assert.ok(geometry.titleScroll <= geometry.titleWidth, `Page title overflows at ${viewport.width}`);
     assert.ok(geometry.titleHeight <= geometry.titleLine * 1.1, `Page title wraps at ${viewport.width}`);
+    assert.equal(geometry.listOverflow, "auto", `Directory must scroll internally at ${viewport.width}`);
+    assert.ok(geometry.listScrollHeight > geometry.listHeight, `Directory rows must be contained by the fixed card at ${viewport.width}`);
     if (viewport.width <= 760)
       assert.ok(Math.abs(geometry.dotLeft - geometry.menuLeft) <= 0.5, `Menu glyph must align with the eyebrow dot at ${viewport.width}`);
     const android = await page.evaluate(() => {

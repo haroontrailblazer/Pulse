@@ -997,6 +997,15 @@ h1 > span {
 }
 .services-panel {
   margin-bottom: 30px;
+  display: flex;
+  flex-direction: column;
+  block-size: clamp(480px, 70dvh, 720px);
+  min-block-size: 0;
+}
+.services-panel > .panel-heading,
+.services-panel > .directory-toolbar,
+.services-panel > .table-footer {
+  flex-shrink: 0;
 }
 .services-heading {
   padding-bottom: 19px;
@@ -1110,6 +1119,14 @@ h1 > span {
   min-height: 32px;
   width: 139px;
 }
+.service-table-wrap {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line) transparent;
+}
 .service-table {
   width: 100%;
   border-collapse: collapse;
@@ -1117,6 +1134,9 @@ h1 > span {
   table-layout: fixed;
 }
 .service-table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
   text-align: left;
   font-size: 8px;
   font-weight: 500;
@@ -2542,6 +2562,10 @@ h1 > span {
   }
   .services-heading {
     padding: 18px 15px;
+  }
+  .services-panel {
+    block-size: min(620px, calc(100dvh - 76px));
+    min-block-size: 440px;
   }
   .refresh-button {
     font-size: 7px;
