@@ -705,7 +705,6 @@ export default function App() {
               />
             </div>
           )}
-          {page === "Watchlist" && <BackgroundSettings watchlist={watchlist} />}
           {((page === "Overview" && !mobileOverview) ||
             page === "Global map") && (
             <div
