@@ -1,0 +1,19 @@
+name: Verify direct installer downloads
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  downloads:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+      - name: Verify full downloads, hashes and resume support
+        run: node scripts/verify-download-cdn.mjs
