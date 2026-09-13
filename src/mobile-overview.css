@@ -4,10 +4,20 @@
   gap: 25px;
 }
 .mobile-overview-heading {
+  display: grid;
+  gap: 12px;
+}
+.mobile-overview-status {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: 12px;
+}
+.mobile-overview-status > p {
+  flex: 1;
+  min-width: 0;
+  font-size: 11px;
+  margin: 0;
 }
 .mobile-overview-heading h1 {
   font-size: 27px;
@@ -209,24 +219,6 @@
   .mobile-service > svg {
     display: none;
   }
-}
-.topbar.mobile-overview-topbar .breadcrumb {
-  font-size: 12px;
-  gap: 8px;
-}
-.topbar.mobile-overview-topbar .breadcrumb > svg {
-  display: none;
-}
-.topbar.mobile-overview-topbar .icon-button {
-  width: 42px;
-  height: 42px;
-}
-.topbar.mobile-overview-topbar .topbar-actions > .icon-button svg {
-  width: 19px;
-  height: 19px;
-}
-.topbar.mobile-overview-topbar {
-  padding-inline: 12px;
 }
 .mobile-overview .mobile-section-heading > button {
   min-height: 40px;

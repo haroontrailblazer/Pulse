@@ -39,6 +39,7 @@ export default function WorldMap({
   now = Date.now(),
   onToggleWatch,
   feedError,
+  navigationButton,
 }) {
   const frame = useRef(null),
     closeRef = useRef(null),
@@ -282,17 +283,20 @@ export default function WorldMap({
 
       <div className="atlas-map-header">
         <div className="atlas-map-title">
-          <div>
-            <Heading>Infrastructure map</Heading>
-            <button
-              className="atlas-coverage"
-              onClick={(event) => openPanel("about", event)}
-            >
-              {feedError
-                ? "Connection needs attention"
-                : `${atlas.fresh}/${stackOnly ? providers.filter((p) => watchlist.includes(p.id)).length : providers.length} feeds current`}
-              <CircleHelp size={13} />
-            </button>
+          <div className="map-title-with-menu">
+            {navigationButton}
+            <div>
+              <Heading>Infrastructure map</Heading>
+              <button
+                className="atlas-coverage"
+                onClick={(event) => openPanel("about", event)}
+              >
+                {feedError
+                  ? "Connection needs attention"
+                  : `${atlas.fresh}/${stackOnly ? providers.filter((p) => watchlist.includes(p.id)).length : providers.length} feeds current`}
+                <CircleHelp size={13} />
+              </button>
+            </div>
           </div>
           <select
             aria-label="Map region"

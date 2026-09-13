@@ -65,11 +65,11 @@ import { downloads } from "../shared/downloads";
 
 const navigation = [
   { name: "Overview", icon: LayoutDashboard },
-  { name: "Global map", icon: Globe2 },
   { name: "Incidents", icon: Radio },
-  { name: "Dependency insights", icon: Network },
   { name: "Watchlist", icon: Star },
+  { name: "Global map", icon: Globe2 },
   { name: "Developer tools", icon: Command },
+  { name: "Dependency insights", icon: Network },
 ];
 function saved(key, fallback) {
   try {
@@ -367,6 +367,33 @@ export default function App() {
         incidents: detailProvider.incidents.map(latestIncident),
       }
     : undefined;
+  const navigationButton = compact ? (
+    <button
+      className="icon-button page-menu"
+      ref={menuRef}
+      aria-label="Open navigation"
+      aria-expanded={mobileNav}
+      aria-controls="workspace-navigation"
+      onClick={() => setMobileNav(true)}
+    >
+      <Menu size={20} />
+    </button>
+  ) : null;
+  const notificationButton = (
+    <button
+      className="icon-button notification-button"
+      aria-label="Open incident notifications"
+      onClick={() => {
+        setModal("notifications");
+        void refresh();
+      }}
+    >
+      <Bell size={20} />
+      {unreadIncidents > 0 && (
+        <i aria-label={`${unreadIncidents} unread incident updates`} />
+      )}
+    </button>
+  );
   return (
     <div className="app-shell">
       {mobileNav && <div className="nav-scrim" onClick={closeNavigation} />}
@@ -528,54 +555,6 @@ export default function App() {
         </div>
       </aside>
       <div className="main-shell">
-        <header
-          className={`topbar ${mobileOverview ? "mobile-overview-topbar" : ""}`}
-        >
-          <div className="breadcrumb">
-            <button
-              className="icon-button mobile-menu"
-              ref={menuRef}
-              aria-label="Open navigation"
-              aria-expanded={mobileNav}
-              aria-controls="workspace-navigation"
-              onClick={() => setMobileNav(true)}
-            >
-              <Menu size={20} />
-            </button>
-            <span>Pulse</span>
-            <ChevronRight size={13} />
-            <strong>{page}</strong>
-          </div>
-          <div className="topbar-actions">
-            <span className="source-label">
-              <i />
-              Official status sources
-            </span>
-            <span className="topbar-divider" />
-            <button
-              className="theme-toggle"
-              onClick={toggleTheme}
-              aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
-              title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
-            >
-              {theme === "dark" ? <Sun size={17} /> : <Moon size={17} />}
-              <span>{theme === "dark" ? "Light" : "Dark"}</span>
-            </button>
-            <button
-              className="icon-button notification-button"
-              aria-label="Open incident notifications"
-              onClick={() => {
-                setModal("notifications");
-                void refresh();
-              }}
-            >
-              <Bell size={18} />
-              {unreadIncidents > 0 && (
-                <i aria-label={`${unreadIncidents} unread incident updates`} />
-              )}
-            </button>
-          </div>
-        </header>
         <main
           className={
             page === "Global map"
@@ -591,23 +570,27 @@ export default function App() {
                 <div className="eyebrow">
                   <span /> A CLEARER PICTURE OF THE INTERNET
                 </div>
-                <h1>
-                  {page === "Overview" ? (
-                    <>
-                      Internet health, <span>in view.</span>
-                    </>
-                  ) : page === "Global map" ? (
-                    "A connected world."
-                  ) : page === "Incidents" ? (
-                    "Every signal. Less noise."
-                  ) : page === "Watchlist" ? (
-                    "Your stack, at a glance."
-                  ) : page === "Developer tools" ? (
-                    "Built for your next deploy."
-                  ) : (
-                    "See the bigger picture."
-                  )}
-                </h1>
+                <div className="page-title-row">
+                  {navigationButton}
+                  <h1>
+                    {page === "Overview" ? (
+                      <>
+                        Internet health, <span>in view.</span>
+                      </>
+                    ) : page === "Global map" ? (
+                      "A connected world."
+                    ) : page === "Incidents" ? (
+                      "Every signal. Less noise."
+                    ) : page === "Watchlist" ? (
+                      "Your stack, at a glance."
+                    ) : page === "Developer tools" ? (
+                      "Built for your next deploy."
+                    ) : (
+                      "See the bigger picture."
+                    )}
+                  </h1>
+                  {notificationButton}
+                </div>
                 <p>
                   {page === "Overview"
                     ? "Know what’s down. Understand what it means. Stay one step ahead."
@@ -643,6 +626,8 @@ export default function App() {
               onNavigate={go}
               onAdd={() => setModal("monitor")}
               searchRef={searchRef}
+              navigationButton={navigationButton}
+              notificationButton={notificationButton}
             />
           )}
           {page === "Developer tools" && (
@@ -711,6 +696,9 @@ export default function App() {
             >
               <WorldMap
                 expanded={page === "Global map"}
+                navigationButton={
+                  page === "Global map" ? navigationButton : null
+                }
                 providers={items}
                 watchlist={watchlist}
                 now={now}
@@ -1326,6 +1314,20 @@ export default function App() {
           )}
           {modal === "settings" && (
             <>
+              <div className="setting-row">
+                <span>
+                  <strong>Appearance</strong>
+                  <small>Choose light or dark mode.</small>
+                </span>
+                <button
+                  className="theme-toggle"
+                  onClick={toggleTheme}
+                  aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+                >
+                  {theme === "dark" ? <Sun size={17} /> : <Moon size={17} />}
+                  <span>{theme === "dark" ? "Light mode" : "Dark mode"}</span>
+                </button>
+              </div>
               <BackgroundSettings watchlist={watchlist} />
               <div className="setting-row">
                 <span>

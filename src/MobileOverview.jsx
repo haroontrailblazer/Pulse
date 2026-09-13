@@ -39,6 +39,8 @@ export default function MobileOverview({
   onNavigate,
   onAdd,
   searchRef,
+  navigationButton,
+  notificationButton,
 }) {
   const data = useMemo(
     () => overviewSnapshot(items, watchlist, now),
@@ -55,30 +57,34 @@ export default function MobileOverview({
   return (
     <div className="mobile-overview">
       <header className="mobile-overview-heading">
-        <div>
+        <div className="page-title-row">
+          {navigationButton}
           <h1>Internet status</h1>
+          {notificationButton}
+        </div>
+        <div className="mobile-overview-status">
           <p>
             {loading
               ? "Checking official sources…"
               : `${data.fresh} of ${items.length} feeds current`}
           </p>
-        </div>
-        <div className="overview-heading-actions">
-          <BackgroundSettings
-            watchlist={watchlist}
-            compact
-            onConfigure={onAlerts}
-          />
-          <button
-            className="mobile-refresh"
-            disabled={loading}
-            onClick={onRefresh}
-            aria-label={
-              loading ? "Checking status feeds" : "Refresh status feeds"
-            }
-          >
-            <RefreshCw size={18} />
-          </button>
+          <div className="overview-heading-actions">
+            <BackgroundSettings
+              watchlist={watchlist}
+              compact
+              onConfigure={onAlerts}
+            />
+            <button
+              className="mobile-refresh"
+              disabled={loading}
+              onClick={onRefresh}
+              aria-label={
+                loading ? "Checking status feeds" : "Refresh status feeds"
+              }
+            >
+              <RefreshCw size={18} />
+            </button>
+          </div>
         </div>
       </header>
 
