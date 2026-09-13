@@ -138,6 +138,31 @@ try {
     await page.getByRole("heading", { name: "Service directory", exact: false }).waitFor();
     assert.equal(await page.locator("html").getAttribute("data-theme"), "dark");
     await page.screenshot({ path: `test-results/overview-${viewport.width}-dark.png`, fullPage: true });
+    const overviewHeaderTop = await page.locator(".page-heading .eyebrow").evaluate((node) => node.getBoundingClientRect().top);
+    if (viewport.width <= 760) await page.getByRole("button", { name: "Open navigation" }).click();
+    await page.getByRole("button", { name: "Global map", exact: true }).click();
+    await page.getByRole("heading", { name: "A connected world.", exact: true }).waitFor();
+    const mapHeader = await page.evaluate(() => {
+      const eyebrow = document.querySelector(".page-heading .eyebrow");
+      const dot = document.querySelector(".page-heading .eyebrow > span");
+      const menu = document.querySelector(".page-menu svg");
+      return {
+        eyebrowTop: eyebrow.getBoundingClientRect().top,
+        dotLeft: dot?.getBoundingClientRect().left ?? null,
+        menuLeft: menu?.getBoundingClientRect().left ?? null,
+        mapHeight: document.querySelector(".map-main .atlas-map").getBoundingClientRect().height,
+      };
+    });
+    assert.ok(Math.abs(mapHeader.eyebrowTop - overviewHeaderTop) <= 0.5, `Global map header must align with every page at ${viewport.width}`);
+    assert.ok(mapHeader.mapHeight > 0, `Global map workspace must remain below the shared header at ${viewport.width}`);
+    if (viewport.width <= 760)
+      assert.ok(Math.abs(mapHeader.dotLeft - mapHeader.menuLeft) <= 0.5, `Global map menu glyph must align with the eyebrow dot at ${viewport.width}`);
+    const androidMapTop = await page.evaluate(() => {
+      document.documentElement.dataset.platform = "android";
+      return document.querySelector(".page-heading .eyebrow").getBoundingClientRect().top;
+    });
+    assert.ok(androidMapTop >= 36, `Android Global map header must clear the status bar at ${viewport.width}`);
+    await page.evaluate(() => delete document.documentElement.dataset.platform);
     assert.deepEqual(errors, []);
     checks.push({ ...viewport, ...geometry, errors });
     await context.close();

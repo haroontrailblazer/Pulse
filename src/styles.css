@@ -508,7 +508,7 @@ main {
   margin-left: auto;
 }
 @media (max-width: 760px) {
-  .main-shell > main:not(.map-main) {
+  .main-shell > main {
     padding-top: max(20px, env(safe-area-inset-top));
   }
   .page-title-row {

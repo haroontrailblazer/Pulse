@@ -39,7 +39,6 @@ export default function WorldMap({
   now = Date.now(),
   onToggleWatch,
   feedError,
-  navigationButton,
 }) {
   const frame = useRef(null),
     closeRef = useRef(null),
@@ -284,7 +283,6 @@ export default function WorldMap({
       <div className="atlas-map-header">
         <div className="atlas-map-title">
           <div className="map-title-with-menu">
-            {navigationButton}
             <div>
               <Heading>Infrastructure map</Heading>
               <button

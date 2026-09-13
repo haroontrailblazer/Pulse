@@ -560,8 +560,7 @@ export default function App() {
               : ""
           }
         >
-          {page !== "Global map" && (
-            <div className="page-heading">
+          <div className="page-heading">
               <div>
                 <div className="eyebrow">
                   <span /> A CLEARER PICTURE OF THE INTERNET
@@ -601,8 +600,7 @@ export default function App() {
                             : "Major issues and degradation across services, with practical next checks."}
                 </p>
               </div>
-            </div>
-          )}
+          </div>
           {error && page !== "Global map" && (
             <div className="error-banner" role="alert">
               <TriangleAlert size={17} />
@@ -676,9 +674,6 @@ export default function App() {
             >
               <WorldMap
                 expanded={page === "Global map"}
-                navigationButton={
-                  page === "Global map" ? navigationButton : null
-                }
                 providers={items}
                 watchlist={watchlist}
                 now={now}

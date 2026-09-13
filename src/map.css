@@ -538,13 +538,9 @@
 .atlas-map.narrow .atlas-filter svg {
   width: 15px;
 }
-main.map-main {
-  padding: 12px;
-  height: 100dvh;
-  min-height: 0;
-}
 .map-main .overview-grid {
-  height: 100%;
+  height: clamp(460px, calc(100dvh - 200px), 720px);
+  min-height: 0;
   margin: 0;
   display: block;
 }
@@ -557,14 +553,11 @@ main.map-main {
     line-height: 1.2;
     white-space: nowrap;
   }
-  main.map-main {
-    height: 100dvh;
-    padding: 8px;
-    padding-top: max(8px, env(safe-area-inset-top));
-    padding-bottom: max(8px, env(safe-area-inset-bottom));
+  .map-main .overview-grid {
+    height: clamp(460px, calc(100dvh - 180px), 620px);
   }
-  .atlas-map {
-    height: 600px;
+  .map-main .atlas-map {
+    height: 100%;
   }
   .atlas-map-header {
     inset: 12px 12px auto;
