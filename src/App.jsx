@@ -506,6 +506,13 @@ export default function App() {
           </div>
         </div>
         <div className="sidebar-bottom">
+          {compact && import.meta.env.VITE_STATUS_TRANSPORT === "poll" && (
+            <button className="nav-item" onClick={() => setModal("apps")}>
+              <Download size={18} />
+              <span>Get the app</span>
+              <ArrowUpRight size={14} />
+            </button>
+          )}
           <button className="nav-item" onClick={() => setModal("methodology")}>
             <CircleHelp size={18} />
             <span>Help & methodology</span>
