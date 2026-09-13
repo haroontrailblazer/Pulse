@@ -638,6 +638,7 @@ export default function App() {
               now={now}
               loading={loading}
               onRefresh={refresh}
+              onAlerts={() => setModal("settings")}
               onProvider={openProvider}
               onNavigate={go}
               onAdd={() => setModal("monitor")}
@@ -785,16 +786,25 @@ export default function App() {
                   </h2>
                   <p>The building blocks of your digital world.</p>
                 </div>
-                <button
-                  className={`text-button refresh-button ${loading ? "loading" : ""}`}
-                  disabled={loading}
-                  onClick={refresh}
-                >
-                  <RefreshCw size={13} />
-                  {loading
-                    ? "Refreshing…"
-                    : `Updated ${age(fetchedAt).toLowerCase()}`}
-                </button>
+                <div className="overview-heading-actions">
+                  {page === "Overview" && (
+                    <BackgroundSettings
+                      watchlist={watchlist}
+                      compact
+                      onConfigure={() => setModal("settings")}
+                    />
+                  )}
+                  <button
+                    className={`text-button refresh-button ${loading ? "loading" : ""}`}
+                    disabled={loading}
+                    onClick={refresh}
+                  >
+                    <RefreshCw size={13} />
+                    {loading
+                      ? "Refreshing…"
+                      : `Updated ${age(fetchedAt).toLowerCase()}`}
+                  </button>
+                </div>
               </div>
               <div className="directory-toolbar">
                 <div className="tabs">

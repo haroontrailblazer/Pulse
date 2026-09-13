@@ -61,7 +61,11 @@ export function useBackgroundSync(watchlist, data) {
     };
   }, []);
 }
-export default function BackgroundSettings({ watchlist }) {
+export default function BackgroundSettings({
+  watchlist,
+  compact = false,
+  onConfigure,
+}) {
   const [state, setState] = useState(bridgeState);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
@@ -103,6 +107,20 @@ export default function BackgroundSettings({ watchlist }) {
     } finally {
       setBusy(false);
     }
+  }
+  if (compact) {
+    return (
+      <button
+        className="overview-alerts"
+        onClick={onConfigure}
+        aria-haspopup="dialog"
+      >
+        <Bell size={15} />
+        {native && state.enabled && state.permission === "granted"
+          ? "Alerts enabled"
+          : "Enable alerts"}
+      </button>
+    );
   }
   return (
     <section

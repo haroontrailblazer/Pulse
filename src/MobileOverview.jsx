@@ -2,6 +2,7 @@ import React, { useMemo, useState } from "react";
 import { ArrowRight, ChevronRight, Plus, RefreshCw, Search } from "./icons";
 import ProviderLogo from "./ProviderLogo";
 import StatusGlyph from "./StatusGlyph";
+import BackgroundSettings from "./BackgroundSettings";
 import { overviewSnapshot } from "../shared/overview";
 import "./mobile-overview.css";
 
@@ -33,6 +34,7 @@ export default function MobileOverview({
   now,
   loading,
   onRefresh,
+  onAlerts,
   onProvider,
   onNavigate,
   onAdd,
@@ -61,16 +63,23 @@ export default function MobileOverview({
               : `${data.fresh} of ${items.length} feeds current`}
           </p>
         </div>
-        <button
-          className="mobile-refresh"
-          disabled={loading}
-          onClick={onRefresh}
-          aria-label={
-            loading ? "Checking status feeds" : "Refresh status feeds"
-          }
-        >
-          <RefreshCw size={18} />
-        </button>
+        <div className="overview-heading-actions">
+          <BackgroundSettings
+            watchlist={watchlist}
+            compact
+            onConfigure={onAlerts}
+          />
+          <button
+            className="mobile-refresh"
+            disabled={loading}
+            onClick={onRefresh}
+            aria-label={
+              loading ? "Checking status feeds" : "Refresh status feeds"
+            }
+          >
+            <RefreshCw size={18} />
+          </button>
+        </div>
       </header>
 
       <section className="mobile-section" aria-labelledby="mobile-find-title">
