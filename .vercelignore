@@ -1,6 +1,6 @@
 .cache
-android
-desktop
+# Native source is included in the release fingerprint written into the web
+# build, so these source directories must remain available during deployment.
 releases
 design
 tests
