@@ -20,16 +20,16 @@ import { downloads } from "../../shared/downloads";
 
 const tour = [
   {
-    id: "map",
-    name: "See the bigger picture",
-    icon: Globe2,
-    title: "An outage has context. See it.",
-    body: "Explore regional signals on the map. Tap a location to see affected services, official updates, and what to check next.",
+    id: "incidents",
+    name: "Read the latest update",
+    icon: Bell,
+    title: "Less tab hopping. More clarity.",
+    body: "Read the latest published incident updates in one inbox. Filter to your watchlist and open the official source for the full story.",
     points: [
-      "Outages, degradation, and maintenance",
-      "Regional details when a source provides them",
+      "Unread updates and clear timestamps",
+      "Original provider reports, a click away",
     ],
-    file: "map-light",
+    file: "incidents",
   },
   {
     id: "overview",
@@ -44,16 +44,16 @@ const tour = [
     file: "overview",
   },
   {
-    id: "incidents",
-    name: "Read the latest update",
-    icon: Bell,
-    title: "Less tab hopping. More clarity.",
-    body: "Read the latest published incident updates in one inbox. Filter to your watchlist and open the official source for the full story.",
+    id: "map",
+    name: "See the bigger picture",
+    icon: Globe2,
+    title: "An outage has context. See it.",
+    body: "Explore regional signals on the map. Tap a location to see affected services, official updates, and what to check next.",
     points: [
-      "Unread updates and clear timestamps",
-      "Original provider reports, a click away",
+      "Outages, degradation, and maintenance",
+      "Regional details when a source provides them",
     ],
-    file: "incidents",
+    file: "map-light",
   },
   {
     id: "insights",
