@@ -69,7 +69,10 @@ export default function LiveConsole({
     : 120;
   const transport = {
     streaming: "Live connection",
-    polling: "Polling fallback",
+    polling:
+      import.meta.env.VITE_STATUS_TRANSPORT === "poll"
+        ? "Automatic checks"
+        : "Polling fallback",
     connecting: "Connecting",
     native: "On-device monitor",
     paused: "Auto-refresh paused",

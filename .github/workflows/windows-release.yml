@@ -1,0 +1,62 @@
+name: Build Windows release
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Existing draft release to receive the Windows executable
+        required: true
+        default: v1.0.0
+
+permissions:
+  contents: write
+
+concurrency:
+  group: windows-release-${{ inputs.release_tag }}
+  cancel-in-progress: false
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Build portable app
+        run: npm run build:windows
+      - name: Test source behavior
+        run: npm test
+      - name: Upload Windows build to the draft release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $taskVersion = (Get-Content package.json -Raw | ConvertFrom-Json).version
+          if ($env:RELEASE_TAG -ne ('v' + $taskVersion)) { throw 'Release tag must match the package version.' }
+          $taskRelease = gh release view $env:RELEASE_TAG --json isDraft | ConvertFrom-Json
+          if ($LASTEXITCODE -ne 0 -or -not $taskRelease.isDraft) { throw 'An existing draft release is required.' }
+          New-Item -ItemType Directory -Force .cache/release-input | Out-Null
+          gh release download $env:RELEASE_TAG --pattern '*.apk' --pattern 'SHA256SUMS.txt' --dir .cache/release-input
+          if ($LASTEXITCODE -ne 0) { throw 'Could not fetch the verified Android artifact.' }
+          $taskApkName = "Pulse-$taskVersion-Android.apk"
+          $taskExeName = "Pulse-$taskVersion-Windows.exe"
+          $taskApkHash = (Get-FileHash (Join-Path '.cache/release-input' $taskApkName)).Hash
+          $taskExpected = Get-Content .cache/release-input/SHA256SUMS.txt | Where-Object { $_.EndsWith($taskApkName) }
+          if (-not $taskExpected.StartsWith($taskApkHash)) { throw 'Android checksum differs from the verified release.' }
+          $taskExe = Join-Path 'releases' $taskExeName
+          $taskExeHash = (Get-FileHash $taskExe).Hash
+          @("$taskApkHash  $taskApkName", "$taskExeHash  $taskExeName") | Set-Content releases/SHA256SUMS.txt
+          gh release upload $env:RELEASE_TAG $taskExe releases/SHA256SUMS.txt --clobber
+          if ($LASTEXITCODE -ne 0) { throw 'Release upload failed.' }
+          Get-Content releases/SHA256SUMS.txt
+          Write-Output 'Windows build and matching checksums uploaded. Release remains a draft for final verification.'

@@ -165,3 +165,7 @@ The public entry point is a marketing page explaining Pulse, with actual app scr
 Vercel serves /api/status as a bounded Node function. The hosted dashboard polls every two minutes while visible and pauses when hidden. Responses can be shared by the CDN for 30 seconds; freshness checks still exclude outdated readings. Native builds retain their existing local server or direct Android transport. No database or cross-device account system is introduced.
 
 Download links in both the landing page and dashboard point to the versioned GitHub v1.0.0 release assets defined in shared/downloads.js. The APK and portable EXE include the latest logo and corrected bottom Settings row. See design/marketing-assets.md for artwork provenance and screenshot details.
+
+Public website: https://pulse-status-zeta.vercel.app
+
+Open the dashboard: https://pulse-status-zeta.vercel.app/app
