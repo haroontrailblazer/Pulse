@@ -164,7 +164,7 @@ The public entry point is a marketing page explaining Pulse, with actual app scr
 
 Vercel serves /api/status as a bounded Node function. The hosted dashboard polls every two minutes while visible and pauses when hidden. Responses can be shared by the CDN for 30 seconds; freshness checks still exclude outdated readings. Native builds retain their existing local server or direct Android transport. No database or cross-device account system is introduced.
 
-Download links in both the landing page and dashboard point to the versioned GitHub v1.0.2 release assets defined in shared/downloads.js. The APK and portable EXE include the compact sidebar and smaller wordmark, removed Watchlist card, simplified Dependency insights, search-first mobile Overview, alerts control beside Refresh, title-aligned notifications without a top bar, and appearance controls in Settings. See design/marketing-assets.md for artwork provenance and screenshot details.
+Download links in both the landing page and dashboard point to versioned static files under https://pulse-status-zeta.vercel.app/downloads/v1.0.2, defined in shared/downloads.js. The deployment command `npm run build:deploy` fetches the published release once, verifies byte counts and SHA-256 against shared/release-assets.json, and stages the installers on the website CDN. Users download directly from that CDN; no runtime GitHub proxy or serverless function handles the file transfer. The APK and portable EXE include the compact sidebar and smaller wordmark, removed Watchlist card, simplified Dependency insights, search-first mobile Overview, alerts control beside Refresh, title-aligned notifications without a top bar, and appearance controls in Settings. See design/marketing-assets.md for artwork provenance and screenshot details.
 
 Public website: https://pulse-status-zeta.vercel.app
 
@@ -173,3 +173,5 @@ Open the dashboard: https://pulse-status-zeta.vercel.app/app
 Public installers and checksums: https://github.com/haroontrailblazer/Pulse/releases/tag/v1.0.2
 
 The manual Build Windows release GitHub Actions workflow can build and upload a Windows EXE directly to an existing draft release. It installs the Electron runtime explicitly, runs the tests, checks the existing Android checksum, and uploads a matching combined checksum manifest. The release stays a draft until final review and publication.
+
+For each new installer release, update shared/release-assets.json with the verified names, sizes and checksums before deploying. The mirror fails the deployment on a mismatch or unavailable artifact, so the previous working deployment remains available. Ordinary web and native builds do not bundle the installers. GitHub remains the release archive.
