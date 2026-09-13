@@ -19,6 +19,21 @@ export const plainImpact = {
 };
 export function explainIndustry(items, industry, watchlist, now) {
   const relevant = items.filter((p) => p.industries.includes(industry));
+  return explainProviders(relevant, watchlist, now);
+}
+export function explainDisruptions(items, watchlist, now, onlyWatched = false) {
+  const relevant = onlyWatched
+    ? items.filter((p) => watchlist.includes(p.id))
+    : items;
+  const data = explainProviders(relevant, watchlist, now);
+  return {
+    ...data,
+    issues: data.issues.filter((i) =>
+      ["outage", "degraded"].includes(i.status),
+    ),
+  };
+}
+function explainProviders(relevant, watchlist, now) {
   const atlas = buildAtlas(relevant, now);
   const issues = atlas.issues.map((issue) => {
     const rank = { outage: 4, degraded: 3, maintenance: 2 };

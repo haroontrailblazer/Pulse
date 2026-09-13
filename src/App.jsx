@@ -212,7 +212,6 @@ export default function App() {
   const [mobileNav, setMobileNav] = useState(false);
   const [toast, setToast] = useState("");
   const [monitorSearch, setMonitorSearch] = useState("");
-  const [industry, setIndustry] = useState("AI products");
   const [readIncidents, setReadIncidents] = useState(() => {
     const value = saved("pulse-inbox-read", {});
     return value && typeof value === "object" && !Array.isArray(value)
@@ -620,7 +619,7 @@ export default function App() {
                           ? "A focused view of the services that matter most to you."
                           : page === "Developer tools"
                             ? "Registry health, component signals, and security utilities in one place."
-                            : "Understand where disruption could ripple across industries."}
+                            : "Major issues and degradation across services, with practical next checks."}
                 </p>
               </div>
             </div>
@@ -1041,7 +1040,6 @@ export default function App() {
                             className="insight-card"
                             key={name}
                             onClick={() => {
-                              setIndustry(name);
                               go("Dependency insights");
                             }}
                           >
@@ -1086,8 +1084,6 @@ export default function App() {
               {page === "Dependency insights" && (
                 <InsightDetails
                   items={items}
-                  industry={industry}
-                  onIndustry={setIndustry}
                   watchlist={watchlist}
                   onWatch={toggleWatch}
                   onProvider={openProvider}

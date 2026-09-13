@@ -118,70 +118,12 @@
   margin-top: 24px;
   padding: 26px;
 }
-.clear-insights-heading {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 20px;
-}
-.clear-insights h2 {
-  font-size: 20px;
-  margin: 0;
-}
-.clear-insights-heading p {
-  color: var(--muted);
-  font-size: 12px;
-  margin: 8px 0 0;
-  line-height: 1.7;
-}
-.clear-insights select {
-  max-width: 100%;
-  padding: 10px 12px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--surface);
-  color: var(--text);
-}
-.impact-summary {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  margin: 24px 0 18px;
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  overflow: hidden;
-  background: var(--surface-soft);
-}
-.impact-summary > div {
-  padding: 18px;
-  border-right: 1px solid var(--line);
-}
-.impact-summary > div:last-child {
-  border: 0;
-}
-.impact-summary strong {
-  display: block;
-  font-size: 27px;
-  font-family: "Manrope Variable", sans-serif;
-  line-height: 1.3;
-}
-.impact-summary span {
-  display: block;
-  font-size: 11px;
-  color: var(--muted);
-  margin-top: 6px;
-  line-height: 1.5;
-}
-.impact-lead {
-  font-size: 13px;
-  line-height: 1.85;
-  color: var(--secondary);
-}
 .impact-controls {
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 15px;
-  margin: 20px 0;
+  margin: 0 0 20px;
 }
 .impact-cards {
   display: grid;
@@ -236,8 +178,7 @@
   font-size: 11px;
   line-height: 1.8;
 }
-.impact-explanation summary,
-.relevant-services summary {
+.impact-explanation summary {
   cursor: pointer;
   font-weight: 600;
 }
@@ -275,36 +216,6 @@
 .impact-empty svg {
   flex-shrink: 0;
 }
-.relevant-services {
-  margin-top: 24px;
-  font-size: 12px;
-  border-top: 1px solid var(--line);
-  padding-top: 20px;
-}
-.relevant-services > div {
-  margin-top: 14px;
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-}
-.relevant-services button {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  text-align: left;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--surface);
-  color: var(--text);
-  padding: 12px;
-}
-.relevant-services button > span:first-child {
-  flex: 1;
-  font-size: 12px;
-}
-.relevant-services .status-pill {
-  font-size: 9px;
-}
 .impact-message {
   font-size: 12px;
   color: var(--positive);
@@ -313,23 +224,10 @@
   .impact-cards {
     grid-template-columns: 1fr;
   }
-  .clear-insights-heading {
-    align-items: flex-start;
-    flex-direction: column;
-  }
 }
 @media (max-width: 600px) {
   .clear-insights {
     padding: 18px;
-  }
-  .clear-insights h2 {
-    font-size: 18px;
-  }
-  .impact-summary > div {
-    padding: 13px 10px;
-  }
-  .impact-summary strong {
-    font-size: 23px;
   }
   .impact-controls,
   .inbox-toolbar,
@@ -347,9 +245,6 @@
   }
   .impact-explanation {
     padding: 17px;
-  }
-  .relevant-services > div {
-    grid-template-columns: 1fr;
   }
   .inbox-toolbar .button {
     align-self: flex-end;

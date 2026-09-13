@@ -5,7 +5,7 @@ import {
   incidentRevision,
   latestIncident,
 } from "../shared/incidents.js";
-import { explainIndustry } from "../shared/insights.js";
+import { explainIndustry, explainDisruptions } from "../shared/insights.js";
 const now = Date.parse("2026-09-13T10:10:00Z");
 const provider = (extra = {}) => ({
   id: "test",
@@ -17,6 +17,38 @@ const provider = (extra = {}) => ({
   incidents: [],
   components: [],
   ...extra,
+});
+
+test("disruption insights span industries and restrict evidence and coverage to the selected watchlist scope", () => {
+  const items = [
+    provider({ id: "ai", industries: ["AI products"], status: "degraded" }),
+    provider({
+      id: "commerce",
+      industries: ["E-commerce"],
+      components: [{ name: "Checkout", status: "major_outage" }],
+    }),
+    provider({ id: "maintenance", status: "maintenance" }),
+    provider({ id: "healthy" }),
+    provider({ id: "stale", status: "outage", stale: true }),
+  ];
+  const all = explainDisruptions(items, ["ai"], now);
+  assert.deepEqual(
+    all.issues.map((i) => i.provider.id),
+    ["commerce", "ai"],
+  );
+  assert.equal(all.unavailable, 1);
+  const watched = explainDisruptions(items, ["ai"], now, true);
+  assert.deepEqual(
+    watched.issues.map((i) => i.provider.id),
+    ["ai"],
+  );
+  assert.equal(watched.unavailable, 0);
+  assert.equal(watched.fresh, 1);
+  assert.equal(explainDisruptions(items, [], now, true).issues.length, 0);
+  assert.equal(
+    explainDisruptions(items, ["healthy"], now, true).issues.length,
+    0,
+  );
 });
 test("inbox chooses the latest update body and sorts by source update with valid fallbacks", () => {
   const list = collectIncidents(
