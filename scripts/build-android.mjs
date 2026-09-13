@@ -1,5 +1,6 @@
 import {
   existsSync,
+  readFileSync,
   readdirSync,
   mkdirSync,
   writeFileSync,
@@ -90,7 +91,10 @@ if (result.error) {
   process.exit(1);
 }
 if (result.status !== 0) process.exit(result.status || 1);
-const output = join(root, "releases", "Pulse-1.0.0-Android.apk");
+const versionName = JSON.parse(
+  readFileSync(join(root, "package.json"), "utf8"),
+).version;
+const output = join(root, "releases", `Pulse-${versionName}-Android.apk`);
 mkdirSync(join(root, "releases"), { recursive: true });
 copyFileSync(
   join(

@@ -6,7 +6,7 @@ on:
       release_tag:
         description: Existing draft release to receive the Windows executable
         required: true
-        default: v1.0.0
+        default: v1.0.1
 
 permissions:
   contents: write
@@ -33,6 +33,8 @@ jobs:
         run: node node_modules/electron/install.js
       - name: Build portable app
         run: npm run build:windows -- --publish never
+      - name: Verify packaged application assets
+        run: node scripts/verify-windows-assets.mjs
       - name: Test source behavior
         run: npm test
       - name: Upload Windows build to the draft release
