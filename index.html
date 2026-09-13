@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#ffffff" />
+    <script>
+      // Apply the saved appearance before the first paint.
+      try {
+        const savedTheme = localStorage.getItem("pulse-theme");
+        const theme =
+          savedTheme === "light" || savedTheme === "dark"
+            ? savedTheme
+            : matchMedia("(prefers-color-scheme: dark)").matches
+              ? "dark"
+              : "light";
+        document.documentElement.dataset.theme = theme;
+        document.documentElement.style.colorScheme = theme;
+        document.querySelector('meta[name="theme-color"]').content =
+          theme === "dark" ? "#161616" : "#ffffff";
+      } catch {
+        document.documentElement.dataset.theme = "light";
+      }
+    </script>
+    <meta
+      name="description"
+      content="A clearer picture of the internet's health. Track infrastructure, AI, and developer platforms from official status sources."
+    />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>Pulse — Internet health, in view.</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

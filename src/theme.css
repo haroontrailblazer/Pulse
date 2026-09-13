@@ -1,0 +1,609 @@
+/* Pulse: OpenCode Data-inspired neutral surfaces and monochrome controls. */
+:root {
+  color-scheme: light;
+  --canvas: #ffffff;
+  --surface: #ffffff;
+  --surface-soft: #fafafa;
+  --surface-hover: #eeeeee;
+  --chrome: #fafafa;
+  --text: #161616;
+  --secondary: #5c5c5c;
+  --muted: #707070;
+  --line: #e5e5e5;
+  --accent: #161616;
+  --accent-hover: #3a3a3a;
+  --accent-soft: #eeeeee;
+  --accent-ink: #161616;
+  --on-accent: #ffffff;
+  --green: #257455;
+  --lime: var(--accent);
+  --positive: #247154;
+  --positive-bg: #eaf5ee;
+  --positive-line: #cee6d7;
+  --warning: #875a14;
+  --warning-bg: #fff4de;
+  --warning-line: #eedebc;
+  --negative: #ac3b4a;
+  --negative-bg: #fcecef;
+  --negative-line: #efcfd6;
+  --info: #3e60a5;
+  --info-bg: #ecf1fc;
+  --info-line: #d5dff4;
+  --neutral: #5c5c5c;
+  --neutral-bg: #eeeeee;
+  --neutral-line: #dedede;
+  --shadow: 0 2px 4px #00000003, 0 10px 28px #00000004;
+  --map-ocean: #fafafa;
+  --map-land: #d6d6d6;
+  --map-coast: #adadad;
+  --map-border: #f5f5f5;
+  --map-grid: #e8e8e8;
+  color: var(--text);
+  background: var(--canvas);
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --canvas: #161616;
+  --surface: #1c1c1c;
+  --surface-soft: #242424;
+  --surface-hover: #303030;
+  --chrome: #161616;
+  --text: #ffffff;
+  --secondary: #d4d4d4;
+  --muted: #a3a3a3;
+  --line: #303030;
+  --accent: #fafafa;
+  --accent-hover: #d4d4d4;
+  --accent-soft: #303030;
+  --accent-ink: #ffffff;
+  --on-accent: #161616;
+  --green: #8bd5ad;
+  --positive: #91dbb4;
+  --positive-bg: #1c352b;
+  --positive-line: #315344;
+  --warning: #e7bf7e;
+  --warning-bg: #373020;
+  --warning-line: #55482f;
+  --negative: #f0a4b0;
+  --negative-bg: #3d272f;
+  --negative-line: #603c47;
+  --info: #a8bdf1;
+  --info-bg: #283148;
+  --info-line: #3f4d6d;
+  --neutral: #d4d4d4;
+  --neutral-bg: #303030;
+  --neutral-line: #404040;
+  --shadow: 0 6px 24px #00000014, inset 0 1px 0 #ffffff03;
+  --map-ocean: #161616;
+  --map-land: #363636;
+  --map-coast: #5c5c5c;
+  --map-border: #242424;
+  --map-grid: #242424;
+}
+
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-width: 76px;
+  min-height: 36px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 600;
+}
+:root[data-theme] :is(.sidebar, .topbar) {
+  background: var(--chrome);
+  border-color: var(--line);
+}
+:root[data-theme]
+  :is(
+    .panel,
+    .summary-card,
+    .insight-card,
+    .modal,
+    .button.secondary,
+    .search-input,
+    select,
+    .dependency-providers > button,
+    .panel-footer-button
+  ) {
+  background: var(--surface);
+  border-color: var(--line);
+}
+:root[data-theme] :is(.panel, .summary-card, .insight-card, .live-console) {
+  box-shadow: var(--shadow);
+  border-radius: 12px;
+}
+:root[data-theme]
+  :is(
+    .workspace,
+    .workspace-symbol,
+    .tabs,
+    .category-label,
+    .count-label,
+    .service-table th,
+    .source-description,
+    .methodology-note,
+    .industry-node,
+    .workspace-large,
+    .insight-icon,
+    .insight-icon.color-1,
+    .insight-icon.color-2,
+    .avatar,
+    .small-avatar,
+    .theme-toggle
+  ) {
+  background: var(--surface-soft);
+  border-color: var(--line);
+  color: var(--secondary);
+}
+:root[data-theme]
+  :is(.brand-mark, .button.primary, .checkbox.checked, .toggle.on) {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
+}
+:root[data-theme] .button.primary:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+:root[data-theme] .brand-period {
+  color: var(--accent);
+}
+:root[data-theme] .nav-item.active {
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+}
+:root[data-theme] .tabs button.selected {
+  background: var(--surface);
+  color: var(--accent-ink);
+  box-shadow: 0 1px 4px #0000000a;
+}
+:root[data-theme]
+  :is(
+    .nav-item:hover,
+    .sidebar-watches > button:hover,
+    .icon-button:hover,
+    .theme-toggle:hover,
+    .incident-item:hover,
+    .panel-footer-button:hover,
+    .service-table tbody tr:hover,
+    .live-component-list > button:hover,
+    .change-list > button:hover
+  ) {
+  background: var(--surface-hover);
+  color: var(--text);
+}
+:root[data-theme]
+  :is(
+    .workspace small,
+    .profile small,
+    .nav-label,
+    .nav-item > small,
+    .following-label button,
+    .download-card p,
+    .breadcrumb,
+    .source-label,
+    .eyebrow,
+    h1 > span,
+    .page-heading p,
+    .panel-heading p,
+    .summary-card > small,
+    .summary-card > div > svg,
+    .incident-meta > span:last-child,
+    .incident-bottom > span:last-child,
+    .quiet-state p,
+    .refresh-button,
+    .service-name small,
+    .category-label,
+    .component-cell > span,
+    .table-footer,
+    .insight-card > p,
+    .insight-card-bottom > span:last-child,
+    .page-footer,
+    .page-footer button,
+    .industry-node p,
+    .dependency-providers small,
+    .modal-description,
+    .monitor-list small,
+    .provider-detail-header p,
+    .detail-meta > span,
+    .detail-incidents small,
+    .methodology-note,
+    .setting-row small,
+    .muted,
+    .search-input kbd,
+    .search-input input::placeholder
+  ) {
+  color: var(--muted);
+}
+:root[data-theme]
+  :is(
+    .nav-item,
+    .sidebar-watches > button,
+    .download-card-icon,
+    .breadcrumb strong,
+    .icon-button,
+    .summary-card > div,
+    .button.secondary,
+    .incident-item h3,
+    .panel-footer-button,
+    .quiet-state,
+    .text-button,
+    .tabs button,
+    .search-input,
+    .service-table th,
+    .expanded-incident > p,
+    .source-description,
+    .detail-meta strong,
+    .detail-incidents p,
+    .components-list > div,
+    .prose,
+    .insight-arrow,
+    .dependency-providers > button > svg
+  ) {
+  color: var(--secondary);
+}
+:root[data-theme]
+  :is(
+    h1,
+    h2,
+    .brand,
+    .service-name strong,
+    .quiet-state h3,
+    .section-title h2,
+    .insight-card h3,
+    .industry-node h3,
+    .empty-state h3,
+    .prose h3,
+    .app-option strong,
+    .search-input input,
+    .monitor-list strong,
+    .provider-detail-header h2
+  ) {
+  color: var(--text);
+}
+:root[data-theme] h1 > span {
+  color: var(--muted);
+}
+:root[data-theme]
+  :is(
+    .profile,
+    .topbar-divider,
+    .download-card:after,
+    .incidents-panel .panel-heading,
+    .incident-item,
+    .incident-stream > .incident-item,
+    .service-table th,
+    .service-table td,
+    .table-footer,
+    .insight-card-bottom,
+    .page-footer,
+    .monitor-list > button,
+    .components-list > div,
+    .modal-actions,
+    .setting-row,
+    .app-option,
+    .search-input kbd,
+    .checkbox,
+    .dependency-providers:before,
+    .dependency-providers > button:before,
+    .industry-node:after
+  ) {
+  border-color: var(--line);
+}
+:root[data-theme]
+  :is(
+    .summary-card:not(:disabled):hover,
+    .insight-card:hover,
+    .search-input:focus-within
+  ) {
+  border-color: var(--accent);
+}
+:root[data-theme] .search-input:focus-within {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 12%, transparent);
+}
+:root[data-theme] :is(button, a):focus-visible {
+  outline-color: var(--accent);
+}
+:root[data-theme] :is(.avatar, .small-avatar) {
+  outline-color: var(--line);
+  border-color: var(--surface);
+}
+:root[data-theme] .download-card {
+  background: linear-gradient(140deg, var(--surface-soft), var(--accent-soft));
+  border-color: var(--line);
+}
+:root[data-theme]
+  :is(
+    .download-card-icon,
+    .insight-icon,
+    .workspace-symbol,
+    .workspace-large,
+    .lab-icon
+  ) {
+  background: var(--accent-soft);
+  border-color: var(--line);
+  color: var(--accent-ink);
+}
+:root[data-theme] :is(.star-button, .toggle) {
+  color: var(--muted);
+}
+:root[data-theme] .star-button.watched {
+  color: var(--accent);
+}
+:root[data-theme] .toggle:not(.on) {
+  background: var(--neutral-line);
+}
+:root[data-theme] .toast {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+  box-shadow: var(--shadow);
+}
+:root[data-theme] .modal {
+  box-shadow: 0 24px 90px #00000040;
+}
+:root[data-theme] :is(.modal-backdrop, .nav-scrim) {
+  background: #16161680;
+}
+:root[data-theme="dark"] :is(.modal-backdrop, .nav-scrim) {
+  background: #080808c7;
+}
+:root[data-theme] ::selection {
+  background: var(--accent-soft);
+  color: var(--text);
+}
+:root[data-theme] .incident-stream {
+  scrollbar-color: var(--line) transparent;
+}
+
+/* Live monitoring and tools consume the same semantic palette. */
+:root[data-theme] .live-console {
+  --live-bg: var(--surface);
+  --live-soft: var(--surface-soft);
+  --live-border: var(--line);
+  --live-text: var(--text);
+  --live-muted: var(--muted);
+}
+:root[data-theme] .live-console-heading {
+  background: var(--surface);
+}
+:root[data-theme] .live-metrics {
+  background: var(--chrome);
+}
+:root[data-theme] .live-tabs button[aria-selected="true"] {
+  color: var(--accent-ink);
+  border-color: var(--accent);
+}
+:root[data-theme] .stack-provider {
+  background: var(--surface);
+  border-color: var(--line);
+  box-shadow: 0 2px 4px #00000003;
+}
+:root[data-theme] .stack-provider:hover {
+  background: var(--surface-hover);
+  border-color: var(--accent);
+}
+:root[data-theme] .stack-provider.degraded {
+  border-color: var(--warning-line);
+  box-shadow: inset 0 2px 0 var(--warning);
+}
+:root[data-theme] .stack-provider.outage {
+  border-color: var(--negative-line);
+  box-shadow: inset 0 2px 0 var(--negative);
+}
+:root[data-theme] .security-lab :is(input, textarea, select):focus-visible {
+  outline-color: var(--accent);
+}
+:root[data-theme] .issues-filter input {
+  accent-color: var(--accent);
+}
+:root[data-theme] :is(.connection-state i, .change-dot) {
+  background: var(--green);
+}
+:root[data-theme]
+  :is(
+    .connection-state.paused i,
+    .connection-state.connecting i,
+    .connection-state.polling i
+  ) {
+  background: var(--warning);
+}
+:root[data-theme] .jwt-notes {
+  border-color: var(--warning);
+}
+:root[data-theme] .live-console .lab-error {
+  color: var(--negative);
+  background: var(--negative-bg);
+}
+:root[data-theme] .live-console .hash-match {
+  color: var(--positive);
+}
+
+/* State colors are independent of the product accent. */
+:root[data-theme] .status-pill {
+  font-weight: 550;
+}
+:root[data-theme] .status-pill.operational {
+  color: var(--positive);
+  background: var(--positive-bg);
+  border-color: var(--positive-line);
+}
+:root[data-theme]
+  :is(.status-pill.degraded, .incident-phase, .nav-count, .tabs button > span) {
+  color: var(--warning);
+  background: var(--warning-bg);
+  border-color: var(--warning-line);
+}
+:root[data-theme] :is(.status-pill.outage, .incident-phase.critical) {
+  color: var(--negative);
+  background: var(--negative-bg);
+  border-color: var(--negative-line);
+}
+:root[data-theme] .status-pill.maintenance {
+  color: var(--info);
+  background: var(--info-bg);
+  border-color: var(--info-line);
+}
+:root[data-theme] .status-pill.unknown {
+  color: var(--neutral);
+  background: var(--neutral-bg);
+  border-color: var(--neutral-line);
+}
+:root[data-theme]
+  :is(
+    .status-pill.operational i,
+    .state-dot.operational,
+    .health-bars i.operational
+  ) {
+  background: var(--green);
+}
+:root[data-theme]
+  :is(
+    .status-pill.degraded i,
+    .state-dot.degraded,
+    .health-bars i.degraded_performance,
+    .health-bars i.partial_outage
+  ) {
+  background: var(--warning);
+}
+:root[data-theme]
+  :is(.status-pill.outage i, .state-dot.outage, .health-bars i.major_outage) {
+  background: var(--negative);
+}
+:root[data-theme]
+  :is(
+    .status-pill.maintenance i,
+    .state-dot.maintenance,
+    .health-bars i.under_maintenance
+  ) {
+  background: var(--info);
+}
+:root[data-theme]
+  :is(.status-pill.unknown i, .state-dot.unknown, .health-bars i.unknown) {
+  background: var(--neutral);
+}
+:root[data-theme] .component-state {
+  color: var(--muted);
+}
+:root[data-theme] .component-state.operational {
+  color: var(--positive);
+}
+:root[data-theme]
+  :is(.component-state.degraded_performance, .component-state.partial_outage) {
+  color: var(--warning);
+}
+:root[data-theme] .component-state.major_outage {
+  color: var(--negative);
+}
+:root[data-theme] .component-state.under_maintenance {
+  color: var(--info);
+}
+:root[data-theme] :is(.detail-incidents article, .error-banner) {
+  background: var(--warning-bg);
+  color: var(--warning);
+  border-color: var(--warning-line);
+}
+:root[data-theme] .summary-card.green > div > svg {
+  color: var(--green);
+}
+:root[data-theme] .summary-card.amber > div > svg {
+  color: var(--warning);
+}
+:root[data-theme] .summary-card.purple > div > svg {
+  color: var(--accent);
+}
+:root[data-theme] .summary-decoration {
+  color: var(--warning);
+  opacity: 0.65;
+}
+:root[data-theme] .summary-decoration i {
+  background: var(--green);
+}
+
+/* Quiet, legible brand tiles; the product accent belongs to Pulse controls. */
+:root[data-theme] .provider-logo {
+  background: var(--surface-soft);
+  border-color: var(--line);
+}
+:root[data-theme="dark"] .provider-logo {
+  color: #d4d4d4 !important;
+}
+:root[data-theme="dark"] .logo-cloudflare {
+  color: #edb37d !important;
+}
+:root[data-theme="dark"] .logo-anthropic {
+  color: #d9ac98 !important;
+}
+:root[data-theme="dark"] .logo-supabase {
+  color: #93cfb0 !important;
+}
+.logo-openai { color: #161616 !important; background: #fafafa !important; }
+:root[data-theme="dark"] .logo-openai { color: #fafafa !important; background: #242424 !important; }
+:root[data-theme="dark"]
+  :is(.logo-googlecloud, .logo-azure, .logo-digitalocean, .logo-pypi) {
+  color: #a5bce4 !important;
+}
+:root[data-theme="dark"]
+  :is(.sidebar-watches .provider-logo, .incident-meta .provider-logo) {
+  background: var(--surface-soft) !important;
+  border-radius: 4px;
+  padding: 2px;
+}
+:root[data-theme] .mini-logos .provider-logo {
+  border-color: var(--surface);
+}
+
+/* The atlas shares the neutral surfaces and monochrome location accent. */
+:root[data-theme] .app-shell .nav-item.active,
+:root[data-theme] .tabs button.selected {
+  color: var(--accent-ink);
+}
+:root[data-theme] .advisory-list a:hover {
+  border-color: var(--accent);
+}
+:root[data-theme] .atlas {
+  --atlas-ocean: var(--map-ocean);
+  --atlas-land: var(--map-land);
+  --atlas-coast: var(--map-coast);
+  --atlas-border: var(--map-border);
+  --atlas-grid: var(--map-grid);
+  --atlas-ink: var(--text);
+  --atlas-muted: var(--muted);
+  --atlas-accent: var(--accent);
+  --atlas-surface: var(--surface);
+  --atlas-line: var(--line);
+  --atlas-chip: var(--accent-soft);
+}
+
+@media (max-width: 600px) {
+  .source-label {
+    display: none;
+  }
+  .topbar-actions {
+    flex-shrink: 0;
+  }
+  .breadcrumb {
+    min-width: 0;
+  }
+  .breadcrumb > span {
+    display: none;
+  }
+  .breadcrumb strong {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .theme-toggle {
+    min-width: 44px;
+    min-height: 44px;
+    padding: 8px;
+  }
+  .theme-toggle > span {
+    display: none;
+  }
+}

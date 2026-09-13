@@ -1,0 +1,67 @@
+{
+  "name": "pulse-status",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Pulse — a clearer picture of the internet's health",
+  "author": "Pulse",
+  "main": "desktop/main.cjs",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "vite build",
+    "preview": "vite preview --host 0.0.0.0",
+    "start": "node server/index.js",
+    "test": "node --test tests/*.test.js",
+    "desktop": "npm run build && electron .",
+    "build:windows": "npm run build && electron-builder --win portable",
+    "android:sync": "node scripts/generate-native-catalog.mjs && npm run build && cap sync android",
+    "build:android": "npm run android:sync && node scripts/build-android.mjs",
+    "android:open": "cap open android"
+  },
+  "build": {
+    "appId": "app.pulse.status",
+    "productName": "Pulse",
+    "directories": {
+      "output": "releases"
+    },
+    "files": [
+      "dist/**/*",
+      "desktop/**/*",
+      "server/**/*",
+      "shared/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": "portable",
+      "signExecutable": false,
+      "icon": "desktop/icon.ico"
+    },
+    "portable": {
+      "artifactName": "Pulse-${version}-Windows.exe"
+    },
+    "electronDist": "node_modules/electron/dist"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.5.2",
+    "@capacitor/core": "^8.5.2",
+    "@capacitor/share": "^8.0.1",
+    "@phosphor-icons/react": "^2.1.10",
+    "d3-geo": "^3.1.1",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "topojson-client": "^3.1.0",
+    "world-atlas": "^2.0.2"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.5.2",
+    "@fontsource-variable/dm-sans": "^5.3.0",
+    "@fontsource-variable/manrope": "^5.3.0",
+    "@resvg/resvg-js": "^2.6.2",
+    "@vitejs/plugin-react": "^6.1.1",
+    "electron": "^44.3.0",
+    "electron-builder": "^26.15.3",
+    "prettier": "^3.9.6",
+    "simple-icons": "^16.31.0",
+    "vite": "^8.3.0"
+  }
+}

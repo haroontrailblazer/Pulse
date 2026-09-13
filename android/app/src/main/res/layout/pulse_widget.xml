@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:background="@drawable/widget_background" android:padding="18dp">
+    <LinearLayout android:id="@+id/widget_open" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:orientation="vertical" android:contentDescription="Open Pulse watchlist">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
+            <ImageView android:layout_width="23dp" android:layout_height="23dp" android:src="@drawable/ic_pulse_notification" android:contentDescription="Pulse" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="PULSE  /  MY STACK" android:textColor="#A3A3A3" android:textSize="10sp" android:letterSpacing="0.1" android:layout_marginStart="8dp" />
+        </LinearLayout>
+        <TextView android:id="@+id/widget_summary" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="10dp" android:text="Your stack starts here" android:textSize="17sp" android:textStyle="bold" android:textColor="#FAFAFA" android:maxLines="1" android:ellipsize="end" />
+        <TextView android:id="@+id/widget_subtitle" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Add services in Pulse to start monitoring" android:textSize="10sp" android:textColor="#A3A3A3" android:maxLines="1" android:ellipsize="end" android:layout_marginTop="3dp" android:layout_marginBottom="8dp" />
+        <LinearLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:gravity="center_vertical"><TextView android:id="@+id/widget_name_1" style="@style/WidgetName" android:text="Open Pulse →"/><TextView android:id="@+id/widget_state_1" style="@style/WidgetState"/></LinearLayout>
+        <LinearLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:gravity="center_vertical"><TextView android:id="@+id/widget_name_2" style="@style/WidgetName"/><TextView android:id="@+id/widget_state_2" style="@style/WidgetState"/></LinearLayout>
+        <LinearLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:gravity="center_vertical"><TextView android:id="@+id/widget_name_3" style="@style/WidgetName"/><TextView android:id="@+id/widget_state_3" style="@style/WidgetState"/></LinearLayout>
+    </LinearLayout>
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:layout_marginTop="8dp">
+        <TextView android:id="@+id/widget_time" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:text="Awaiting official readings" android:textSize="9sp" android:textColor="#A3A3A3" android:maxLines="1" android:ellipsize="end"/>
+        <TextView android:id="@+id/widget_refresh" android:layout_width="48dp" android:layout_height="32dp" android:text="↻" android:gravity="center" android:textColor="#FAFAFA" android:textSize="24sp" android:contentDescription="Refresh watched services when network and battery allow"/>
+    </LinearLayout>
+</LinearLayout>

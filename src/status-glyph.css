@@ -1,0 +1,17 @@
+.status-glyph {
+  flex-shrink: 0;
+  vertical-align: middle;
+  color: var(--neutral);
+}
+.status-glyph.outage {
+  color: var(--negative);
+}
+.status-glyph.degraded {
+  color: var(--warning);
+}
+.status-glyph.maintenance {
+  color: var(--info);
+}
+.status-glyph.operational {
+  color: var(--positive);
+}

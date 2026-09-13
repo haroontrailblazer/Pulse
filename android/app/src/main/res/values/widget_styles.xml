@@ -1,0 +1,4 @@
+<resources>
+    <style name="WidgetName"><item name="android:layout_width">0dp</item><item name="android:layout_weight">1</item><item name="android:layout_height">wrap_content</item><item name="android:textSize">12sp</item><item name="android:textColor">#FAFAFA</item><item name="android:maxLines">1</item><item name="android:ellipsize">end</item></style>
+    <style name="WidgetState"><item name="android:layout_width">wrap_content</item><item name="android:layout_height">wrap_content</item><item name="android:textSize">10sp</item><item name="android:textColor">#A3A3A3</item><item name="android:layout_marginStart">10dp</item></style>
+</resources>
