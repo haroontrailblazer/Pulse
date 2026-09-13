@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useLayoutEffect, useRef, useState } from "react";
 import {
   ArrowRight,
   ArrowUpRight,
@@ -17,6 +17,7 @@ import {
 import PulseMark from "../PulseMark";
 import brandIcons from "../brand-icons.json";
 import { downloads } from "../../shared/downloads";
+import { gsap, hoverMotionEnabled, motionEnabled } from "../motion";
 
 const tour = [
   {
@@ -134,20 +135,15 @@ function PlatformArt({ type }) {
 function TiltCard({ children, className = "" }) {
   const ref = useRef();
   const move = (e) => {
-    if (
-      !matchMedia("(hover: hover) and (prefers-reduced-motion: no-preference)")
-        .matches
-    )
-      return;
+    if (!hoverMotionEnabled()) return;
     const r = ref.current.getBoundingClientRect();
-    ref.current.style.setProperty(
-      "--rx",
-      `${-(e.clientY - r.top - r.height / 2) / 90}deg`,
-    );
-    ref.current.style.setProperty(
-      "--ry",
-      `${(e.clientX - r.left - r.width / 2) / 70}deg`,
-    );
+    gsap.to(ref.current, {
+      "--rx": `${-(e.clientY - r.top - r.height / 2) / 90}deg`,
+      "--ry": `${(e.clientX - r.left - r.width / 2) / 70}deg`,
+      duration: 0.32,
+      ease: "power2.out",
+      overwrite: true,
+    });
   };
   return (
     <article
@@ -155,8 +151,13 @@ function TiltCard({ children, className = "" }) {
       className={`platform-card ${className}`}
       onPointerMove={move}
       onPointerLeave={() => {
-        ref.current.style.setProperty("--rx", "0deg");
-        ref.current.style.setProperty("--ry", "0deg");
+        gsap.to(ref.current, {
+          "--rx": "0deg",
+          "--ry": "0deg",
+          duration: 0.5,
+          ease: "power3.out",
+          overwrite: true,
+        });
       }}
     >
       {children}
@@ -168,14 +169,120 @@ export default function Landing() {
     [dark, setDark] = useState(false),
     [zoom, setZoom] = useState(null);
   const dialog = useRef();
+  const root = useRef();
+  const tourPanel = useRef();
+  const screenshotFrame = useRef();
+  const initialTheme = useRef(true);
   const active = tour[selected];
   const openImage = (src, alt) => {
     setZoom({ src, alt });
     dialog.current.showModal();
   };
   const closeImage = () => dialog.current.close();
+  useLayoutEffect(() => {
+    if (!motionEnabled()) return;
+    const context = gsap.context(() => {
+      gsap
+        .timeline({ defaults: { ease: "power3.out" } })
+        .from(".m-header", { autoAlpha: 0, y: -12, duration: 0.46 })
+        .from(".m-hero > h1", { autoAlpha: 0, y: 24, duration: 0.58 }, "-=0.18")
+        .from(
+          ".hero-description",
+          { autoAlpha: 0, y: 16, duration: 0.42 },
+          "-=0.3",
+        )
+        .from(
+          ".hero-actions, .hero-note",
+          { autoAlpha: 0, y: 12, duration: 0.34, stagger: 0.07 },
+          "-=0.2",
+        )
+        .from(
+          ".hero-product",
+          { autoAlpha: 0, y: 24, scale: 0.985, duration: 0.58 },
+          "-=0.18",
+        );
+
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (!entry.isIntersecting) return;
+            gsap.fromTo(
+              entry.target,
+              { autoAlpha: 0, y: 28 },
+              {
+                autoAlpha: 1,
+                y: 0,
+                duration: 0.55,
+                ease: "power3.out",
+                clearProps: "opacity,transform,visibility",
+              },
+            );
+            observer.unobserve(entry.target);
+          });
+        },
+        { threshold: 0.12 },
+      );
+      root.current
+        ?.querySelectorAll("[data-reveal]")
+        .forEach((section) => observer.observe(section));
+      return () => observer.disconnect();
+    }, root);
+    return () => context.revert();
+  }, []);
+  useLayoutEffect(() => {
+    if (!motionEnabled()) return;
+    const context = gsap.context(() => {
+      gsap.fromTo(
+        tourPanel.current?.querySelectorAll(".tour-copy > *, .tour-screen"),
+        { autoAlpha: 0, y: 14 },
+        {
+          autoAlpha: 1,
+          y: 0,
+          duration: 0.38,
+          stagger: 0.045,
+          ease: "power3.out",
+          clearProps: "opacity,transform,visibility",
+        },
+      );
+    }, tourPanel);
+    return () => context.revert();
+  }, [selected]);
+  useLayoutEffect(() => {
+    if (initialTheme.current) {
+      initialTheme.current = false;
+      return;
+    }
+    if (!motionEnabled()) return;
+    const image = screenshotFrame.current?.querySelector("img");
+    if (!image) return;
+    const context = gsap.context(() => {
+      gsap.fromTo(
+        image,
+        { autoAlpha: 0, scale: 1.015 },
+        {
+          autoAlpha: 1,
+          scale: 1,
+          duration: 0.34,
+          ease: "power2.out",
+          clearProps: "opacity,transform,visibility",
+        },
+      );
+    }, screenshotFrame);
+    return () => context.revert();
+  }, [dark]);
+  useLayoutEffect(() => {
+    if (!zoom || !motionEnabled()) return;
+    const context = gsap.context(() => {
+      gsap.fromTo(
+        dialog.current,
+        { autoAlpha: 0, y: 12, scale: 0.985 },
+        { autoAlpha: 1, y: 0, scale: 1, duration: 0.28, ease: "power3.out" },
+      );
+    }, dialog);
+    return () => context.revert();
+  }, [zoom]);
   return (
-    <div className="marketing-page">
+    <div ref={root} className="marketing-page">
       <a className="m-skip" href="#main">
         Skip to content
       </a>
@@ -248,7 +355,7 @@ export default function Landing() {
                 </button>
               </div>
             </div>
-            <div className="browser-frame">
+            <div ref={screenshotFrame} className="browser-frame">
               <div className="browser-bar">
                 <div className="browser-dots">
                   <i />
@@ -303,6 +410,7 @@ export default function Landing() {
           </div>
         </section>
         <section
+          data-reveal
           className="provider-strip m-container"
           aria-label="Supported providers"
         >
@@ -321,7 +429,7 @@ export default function Landing() {
           </div>
           <small>AI, cloud, code hosting, package registries, and more.</small>
         </section>
-        <section id="tour" className="m-tour m-section m-container">
+        <section data-reveal id="tour" className="m-tour m-section m-container">
           <div className="section-heading">
             <div>
               <p className="eyebrow">LESS NOISE. A CLEARER PICTURE.</p>
@@ -370,6 +478,7 @@ export default function Landing() {
             ))}
           </div>
           <div
+            ref={tourPanel}
             className="tour-panel"
             id="tour-panel"
             role="tabpanel"
@@ -416,7 +525,7 @@ export default function Landing() {
             </button>
           </div>
         </section>
-        <section id="how-it-works" className="how-section">
+        <section data-reveal id="how-it-works" className="how-section">
           <div className="m-container m-section">
             <div className="section-heading">
               <div>
@@ -477,6 +586,7 @@ export default function Landing() {
           </div>
         </section>
         <section
+          data-reveal
           id="download"
           className="m-section m-container download-section"
         >
@@ -581,7 +691,7 @@ export default function Landing() {
             </a>
           </p>
         </section>
-        <section className="faq-section m-container m-section">
+        <section data-reveal className="faq-section m-container m-section">
           <div>
             <p className="eyebrow">A FEW USEFUL DETAILS</p>
             <h2>
@@ -628,7 +738,7 @@ export default function Landing() {
             ))}
           </div>
         </section>
-        <section className="final-cta m-container">
+        <section data-reveal className="final-cta m-container">
           <div className="cta-mark">
             <PulseMark size={43} />
           </div>
@@ -671,6 +781,10 @@ export default function Landing() {
         className="screenshot-dialog"
         aria-label="Pulse product screenshot"
         ref={dialog}
+        onCancel={(event) => {
+          event.preventDefault();
+          closeImage();
+        }}
         onClick={(e) => {
           if (e.target === dialog.current) closeImage();
         }}

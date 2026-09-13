@@ -1,4 +1,10 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   Plus,
   Minus,
@@ -23,6 +29,7 @@ import ProviderLogo from "./ProviderLogo";
 import StatusGlyph, { StatusShape } from "./StatusGlyph";
 import mapData from "./map-data.json";
 import { arrangeMapPins } from "../shared/map-layout";
+import { gsap, motionEnabled } from "./motion";
 import "./map.css";
 
 const views = {
@@ -43,7 +50,8 @@ export default function WorldMap({
   const frame = useRef(null),
     closeRef = useRef(null),
     triggerRef = useRef(null),
-    bodyRef = useRef(null);
+    bodyRef = useRef(null),
+    inspectorRef = useRef(null);
   const [size, setSize] = useState({ width: 870, height: 600 });
   const [region, setRegion] = useState("Global"),
     [zoom, setZoom] = useState(1);
@@ -122,6 +130,18 @@ export default function WorldMap({
     triggerRef.current?.focus({ preventScroll: true });
   };
   const chooseHub = (index, event) => {
+    if (motionEnabled() && event?.currentTarget)
+      gsap.fromTo(
+        event.currentTarget,
+        { scale: 1, transformOrigin: "50% 50%" },
+        {
+          scale: 1.14,
+          duration: 0.13,
+          yoyo: true,
+          repeat: 1,
+          ease: "power2.out",
+        },
+      );
     setSelected(index);
     setSeverity("all");
     openPanel("region", event);
@@ -176,6 +196,44 @@ export default function WorldMap({
       bottom: Math.max(top + 50, size.height - cardHeight - 50),
     },
   );
+  useLayoutEffect(() => {
+    if (!motionEnabled()) return;
+    const hubs = frame.current?.querySelectorAll(".atlas-hub:not(.filtered)");
+    if (!hubs?.length) return;
+    const context = gsap.context(() => {
+      gsap.fromTo(
+        hubs,
+        { autoAlpha: 0, scale: 0.45, transformOrigin: "50% 50%" },
+        {
+          autoAlpha: 1,
+          scale: 1,
+          duration: 0.34,
+          stagger: 0.025,
+          ease: "back.out(1.7)",
+          clearProps: "opacity,transform,visibility",
+        },
+      );
+    }, frame);
+    return () => context.revert();
+  }, [expanded, pins.length, region, severity, stackOnly]);
+  useLayoutEffect(() => {
+    if (!panel || !motionEnabled()) return;
+    const context = gsap.context(() => {
+      gsap.fromTo(
+        inspectorRef.current,
+        { autoAlpha: 0, y: 12, scale: 0.985 },
+        {
+          autoAlpha: 1,
+          y: 0,
+          scale: 1,
+          duration: 0.3,
+          ease: "power3.out",
+          clearProps: "opacity,transform,visibility",
+        },
+      );
+    }, frame);
+    return () => context.revert();
+  }, [panel, service]);
   const Heading = expanded ? "h1" : "h2";
   const panelTitle =
     focused?.provider.name ||
@@ -405,6 +463,7 @@ export default function WorldMap({
 
       {panel && (
         <section
+          ref={inspectorRef}
           className="atlas-inspector"
           aria-labelledby="atlas-inspector-title"
         >
@@ -449,7 +508,7 @@ export default function WorldMap({
                   Markers describe components that explicitly name a location.
                   They do not mean an entire city is down.
                 </p>
-        <div className="atlas-map-legend">
+                <div className="atlas-map-legend">
                   {[...issueStates, "operational", "unknown"].map((state) => (
                     <span key={state}>
                       <StatusGlyph status={state} />
@@ -488,7 +547,11 @@ export default function WorldMap({
                     >
                       <Star
                         size={15}
-                        weight={watchlist.includes(focused.provider.id) ? "fill" : "regular"}
+                        weight={
+                          watchlist.includes(focused.provider.id)
+                            ? "fill"
+                            : "regular"
+                        }
                         className={`watchlist-star ${watchlist.includes(focused.provider.id) ? "watched" : ""}`}
                       />
                       {watchlist.includes(focused.provider.id)

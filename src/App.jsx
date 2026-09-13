@@ -1,6 +1,7 @@
 import React, {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -61,6 +62,7 @@ import WorldMap from "./WorldMap";
 import PulseMark from "./PulseMark";
 import ProviderLogo from "./ProviderLogo";
 import { downloads } from "../shared/downloads";
+import { gsap, hoverMotionEnabled, motionEnabled } from "./motion";
 
 const navigation = [
   { name: "Overview", icon: LayoutDashboard },
@@ -99,6 +101,26 @@ function Status({ status }) {
 }
 function Modal({ title, children, onClose, wide = false }) {
   const ref = useRef();
+  const backdropRef = useRef();
+  useLayoutEffect(() => {
+    if (!motionEnabled()) return;
+    const context = gsap.context(() => {
+      gsap
+        .timeline({ defaults: { ease: "power3.out" } })
+        .fromTo(
+          backdropRef.current,
+          { autoAlpha: 0 },
+          { autoAlpha: 1, duration: 0.18 },
+        )
+        .fromTo(
+          ref.current,
+          { autoAlpha: 0, y: 18, scale: 0.985 },
+          { autoAlpha: 1, y: 0, scale: 1, duration: 0.32 },
+          0,
+        );
+    }, backdropRef);
+    return () => context.revert();
+  }, []);
   useEffect(() => {
     const previous = document.activeElement;
     ref.current?.focus();
@@ -130,6 +152,7 @@ function Modal({ title, children, onClose, wide = false }) {
   }, [onClose]);
   return (
     <div
+      ref={backdropRef}
       className="modal-backdrop"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose();
@@ -155,6 +178,33 @@ function Modal({ title, children, onClose, wide = false }) {
         </div>
         {children}
       </section>
+    </div>
+  );
+}
+
+function Toast({ children }) {
+  const ref = useRef();
+  useLayoutEffect(() => {
+    if (!motionEnabled()) return;
+    const context = gsap.context(() => {
+      gsap.fromTo(
+        ref.current,
+        { autoAlpha: 0, y: 14, scale: 0.985 },
+        {
+          autoAlpha: 1,
+          y: 0,
+          scale: 1,
+          duration: 0.28,
+          ease: "power3.out",
+        },
+      );
+    }, ref);
+    return () => context.revert();
+  }, []);
+  return (
+    <div ref={ref} className="toast" role="status">
+      <Check size={17} />
+      {children}
     </div>
   );
 }
@@ -235,6 +285,8 @@ export default function App() {
   const searchRef = useRef();
   const sidebarRef = useRef();
   const menuRef = useRef();
+  const pageStageRef = useRef();
+  const scrimRef = useRef();
   const closeNavigation = () => {
     setMobileNav(false);
     menuRef.current?.focus();
@@ -326,6 +378,63 @@ export default function App() {
     () => collectIncidents(items, now),
     [items, now],
   );
+  useLayoutEffect(() => {
+    if (!motionEnabled()) return;
+    const stage = pageStageRef.current;
+    if (!stage) return;
+    const heading = stage.querySelector(".page-heading");
+    const content = [...stage.children].filter(
+      (child) => child !== heading && !child.matches(".error-banner"),
+    );
+    const context = gsap.context(() => {
+      const timeline = gsap.timeline({ defaults: { ease: "power3.out" } });
+      if (heading)
+        timeline.fromTo(
+          heading,
+          { autoAlpha: 0 },
+          { autoAlpha: 1, duration: 0.24 },
+        );
+      if (content.length)
+        timeline.fromTo(
+          content,
+          { autoAlpha: 0, y: 14 },
+          {
+            autoAlpha: 1,
+            y: 0,
+            duration: 0.42,
+            stagger: 0.055,
+            clearProps: "opacity,transform,visibility",
+          },
+          heading ? "-=0.16" : 0,
+        );
+    }, stage);
+    return () => context.revert();
+  }, [page]);
+  useLayoutEffect(() => {
+    if (!mobileNav || !motionEnabled()) return;
+    const context = gsap.context(() => {
+      gsap
+        .timeline({ defaults: { ease: "power3.out" } })
+        .fromTo(
+          scrimRef.current,
+          { autoAlpha: 0 },
+          { autoAlpha: 1, duration: 0.18 },
+        )
+        .fromTo(
+          sidebarRef.current?.querySelector(".sidebar-scroll"),
+          { autoAlpha: 0.72 },
+          { autoAlpha: 1, duration: 0.22 },
+          0,
+        )
+        .fromTo(
+          sidebarRef.current?.querySelectorAll(".nav-item"),
+          { autoAlpha: 0, x: -8 },
+          { autoAlpha: 1, x: 0, duration: 0.24, stagger: 0.025 },
+          0.09,
+        );
+    }, sidebarRef);
+    return () => context.revert();
+  }, [mobileNav]);
   const unreadIncidents = allIncidents.filter(
     (i) => readIncidents[i.key] !== incidentRevision(i),
   ).length;
@@ -350,6 +459,35 @@ export default function App() {
       (filter !== "Disruptions" || ["degraded", "outage"].includes(p.status)) &&
       (filter !== "Watching" || watchlist.includes(p.id)),
   );
+  useLayoutEffect(() => {
+    if (!hoverMotionEnabled()) return;
+    const cards = pageStageRef.current?.querySelectorAll("[data-motion-card]");
+    if (!cards?.length) return;
+    const cleanup = [...cards].map((card) => {
+      const enter = () =>
+        gsap.to(card, {
+          y: -3,
+          duration: 0.22,
+          ease: "power2.out",
+          overwrite: true,
+        });
+      const leave = () =>
+        gsap.to(card, {
+          y: 0,
+          duration: 0.3,
+          ease: "power2.out",
+          overwrite: true,
+        });
+      card.addEventListener("pointerenter", enter);
+      card.addEventListener("pointerleave", leave);
+      return () => {
+        card.removeEventListener("pointerenter", enter);
+        card.removeEventListener("pointerleave", leave);
+        gsap.killTweensOf(card);
+      };
+    });
+    return () => cleanup.forEach((remove) => remove());
+  }, [page, allIncidents.length, visible.length]);
   const closeModal = useCallback(() => {
     setModal(null);
     setSelected(null);
@@ -394,7 +532,9 @@ export default function App() {
   );
   return (
     <div className="app-shell">
-      {mobileNav && <div className="nav-scrim" onClick={closeNavigation} />}
+      {mobileNav && (
+        <div ref={scrimRef} className="nav-scrim" onClick={closeNavigation} />
+      )}
       <aside
         id="workspace-navigation"
         ref={sidebarRef}
@@ -554,52 +694,49 @@ export default function App() {
       </aside>
       <div className="main-shell">
         <main
-          className={
-            page === "Global map"
-              ? "map-main"
-              : ""
-          }
+          ref={pageStageRef}
+          className={page === "Global map" ? "map-main" : ""}
         >
           <div className="page-heading">
-              <div>
-                <div className="eyebrow">
-                  <span /> A CLEARER PICTURE OF THE INTERNET
-                </div>
-                <div className="page-title-row">
-                  {navigationButton}
-                  <h1>
-                    {page === "Overview" ? (
-                      <>
-                        Internet health, <span>in view.</span>
-                      </>
-                    ) : page === "Global map" ? (
-                      "A connected world."
-                    ) : page === "Incidents" ? (
-                      "Every signal. Less noise."
-                    ) : page === "Watchlist" ? (
-                      "Your stack, at a glance."
-                    ) : page === "Developer tools" ? (
-                      "Built for your next deploy."
-                    ) : (
-                      "See the bigger picture."
-                    )}
-                  </h1>
-                  {notificationButton}
-                </div>
-                <p>
-                  {page === "Overview"
-                    ? "Know what’s down. Understand what it means. Stay one step ahead."
-                    : page === "Global map"
-                      ? "Explore the infrastructure hubs behind a connected digital economy."
-                      : page === "Incidents"
-                        ? "Active incidents, straight from the services you rely on."
-                        : page === "Watchlist"
-                          ? "A focused view of the services that matter most to you."
-                          : page === "Developer tools"
-                            ? "Registry health, component signals, and security utilities in one place."
-                            : "Major issues and degradation across services, with practical next checks."}
-                </p>
+            <div>
+              <div className="eyebrow">
+                <span /> A CLEARER PICTURE OF THE INTERNET
               </div>
+              <div className="page-title-row">
+                {navigationButton}
+                <h1>
+                  {page === "Overview" ? (
+                    <>
+                      Internet health, <span>in view.</span>
+                    </>
+                  ) : page === "Global map" ? (
+                    "A connected world."
+                  ) : page === "Incidents" ? (
+                    "Every signal. Less noise."
+                  ) : page === "Watchlist" ? (
+                    "Your stack, at a glance."
+                  ) : page === "Developer tools" ? (
+                    "Built for your next deploy."
+                  ) : (
+                    "See the bigger picture."
+                  )}
+                </h1>
+                {notificationButton}
+              </div>
+              <p>
+                {page === "Overview"
+                  ? "Know what’s down. Understand what it means. Stay one step ahead."
+                  : page === "Global map"
+                    ? "Explore the infrastructure hubs behind a connected digital economy."
+                    : page === "Incidents"
+                      ? "Active incidents, straight from the services you rely on."
+                      : page === "Watchlist"
+                        ? "A focused view of the services that matter most to you."
+                        : page === "Developer tools"
+                          ? "Registry health, component signals, and security utilities in one place."
+                          : "Major issues and degradation across services, with practical next checks."}
+              </p>
+            </div>
           </div>
           {error && page !== "Global map" && (
             <div className="error-banner" role="alert">
@@ -667,8 +804,7 @@ export default function App() {
               />
             </div>
           )}
-          {(page === "Overview" ||
-            page === "Global map") && (
+          {(page === "Overview" || page === "Global map") && (
             <div
               className={`overview-grid ${page === "Global map" ? "map-only" : ""}`}
             >
@@ -732,8 +868,7 @@ export default function App() {
               )}
             </div>
           )}
-          {(page === "Overview" ||
-            page === "Watchlist") && (
+          {(page === "Overview" || page === "Watchlist") && (
             <section className="panel services-panel">
               <div className="panel-heading services-heading">
                 <div>
@@ -835,73 +970,73 @@ export default function App() {
                     <tbody>
                       {visible.map((p) => (
                         <tr key={p.id}>
-                        <td>
-                          <button
-                            className="service-name"
-                            onClick={() => openProvider(p)}
-                          >
-                            <ProviderLogo provider={p} />
-                            <span>
-                              <strong>{p.name}</strong>
-                              <small>{p.product}</small>
-                            </span>
-                          </button>
-                        </td>
-                        <td>
-                          <Status status={p.status} />
-                        </td>
-                        <td>
-                          <span className="category-label">{p.category}</span>
-                        </td>
-                        <td>
-                          <button
-                            className="component-cell"
-                            onClick={() => openProvider(p)}
-                            aria-label={`View ${p.name} component health`}
-                          >
-                            <div className="health-bars">
-                              {(p.components.length && !p.stale
-                                ? p.components.slice(0, 38)
-                                : Array.from({ length: 30 }, () => ({
-                                    status: "unknown",
-                                  }))
-                              ).map((component, i) => (
-                                <i
-                                  key={i}
-                                  title={
-                                    component.name
-                                      ? `${component.name}: ${component.status.replaceAll("_", " ")}`
-                                      : "No component data"
-                                  }
-                                  className={component.status}
-                                />
-                              ))}
-                            </div>
-                            <span>
-                              {p.stale
-                                ? "Stale component reading"
-                                : p.components.length
-                                  ? `${p.components.filter((component) => component.status === "operational").length} / ${p.components.length} healthy`
-                                  : "No component data"}
-                            </span>
-                          </button>
-                        </td>
-                        <td>
-                          <button
-                            className={`star-button ${watchlist.includes(p.id) ? "watched" : ""}`}
-                            aria-label={`${watchlist.includes(p.id) ? "Remove" : "Add"} ${p.name} ${watchlist.includes(p.id) ? "from" : "to"} watchlist`}
-                            aria-pressed={watchlist.includes(p.id)}
-                            onClick={() => toggleWatch(p.id)}
-                          >
-                            <Star
-                              size={16}
-                              weight={
-                                watchlist.includes(p.id) ? "fill" : "regular"
-                              }
-                              className={`watchlist-star ${watchlist.includes(p.id) ? "watched" : ""}`}
-                            />
-                          </button>
-                        </td>
+                          <td>
+                            <button
+                              className="service-name"
+                              onClick={() => openProvider(p)}
+                            >
+                              <ProviderLogo provider={p} />
+                              <span>
+                                <strong>{p.name}</strong>
+                                <small>{p.product}</small>
+                              </span>
+                            </button>
+                          </td>
+                          <td>
+                            <Status status={p.status} />
+                          </td>
+                          <td>
+                            <span className="category-label">{p.category}</span>
+                          </td>
+                          <td>
+                            <button
+                              className="component-cell"
+                              onClick={() => openProvider(p)}
+                              aria-label={`View ${p.name} component health`}
+                            >
+                              <div className="health-bars">
+                                {(p.components.length && !p.stale
+                                  ? p.components.slice(0, 38)
+                                  : Array.from({ length: 30 }, () => ({
+                                      status: "unknown",
+                                    }))
+                                ).map((component, i) => (
+                                  <i
+                                    key={i}
+                                    title={
+                                      component.name
+                                        ? `${component.name}: ${component.status.replaceAll("_", " ")}`
+                                        : "No component data"
+                                    }
+                                    className={component.status}
+                                  />
+                                ))}
+                              </div>
+                              <span>
+                                {p.stale
+                                  ? "Stale component reading"
+                                  : p.components.length
+                                    ? `${p.components.filter((component) => component.status === "operational").length} / ${p.components.length} healthy`
+                                    : "No component data"}
+                              </span>
+                            </button>
+                          </td>
+                          <td>
+                            <button
+                              className={`star-button ${watchlist.includes(p.id) ? "watched" : ""}`}
+                              aria-label={`${watchlist.includes(p.id) ? "Remove" : "Add"} ${p.name} ${watchlist.includes(p.id) ? "from" : "to"} watchlist`}
+                              aria-pressed={watchlist.includes(p.id)}
+                              onClick={() => toggleWatch(p.id)}
+                            >
+                              <Star
+                                size={16}
+                                weight={
+                                  watchlist.includes(p.id) ? "fill" : "regular"
+                                }
+                                className={`watchlist-star ${watchlist.includes(p.id) ? "watched" : ""}`}
+                              />
+                            </button>
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -910,7 +1045,9 @@ export default function App() {
                   <div className="empty-state">
                     <Search size={26} />
                     <h3>No services in this view</h3>
-                    <p>Try another search or add a service to your watchlist.</p>
+                    <p>
+                      Try another search or add a service to your watchlist.
+                    </p>
                     <button
                       className="button secondary"
                       onClick={() => {
@@ -980,8 +1117,7 @@ export default function App() {
               )}
             </section>
           )}
-          {(page === "Overview" ||
-            page === "Dependency insights") && (
+          {(page === "Overview" || page === "Dependency insights") && (
             <section className="insights-section">
               {page === "Overview" && (
                 <>
@@ -1082,12 +1218,7 @@ export default function App() {
           )}
         </main>
       </div>
-      {toast && (
-        <div className="toast" role="status">
-          <Check size={17} />
-          {toast}
-        </div>
-      )}
+      {toast && <Toast key={toast}>{toast}</Toast>}
       {modal && (
         <Modal
           title={
@@ -1451,6 +1582,7 @@ function Summary({ label, number, icon: Icon, note, color, onClick }) {
   return (
     <button
       className={`summary-card ${color}`}
+      data-motion-card
       onClick={onClick}
       disabled={!onClick}
     >
@@ -1490,6 +1622,7 @@ function Incident({ incident: i, onClick, expanded }) {
   return (
     <button
       className={`incident-item ${expanded ? "expanded-incident" : ""}`}
+      data-motion-card
       onClick={onClick}
     >
       <div className="incident-meta">

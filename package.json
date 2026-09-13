@@ -1,6 +1,6 @@
 {
   "name": "pulse-status",
-  "version": "1.0.10",
+  "version": "1.0.11",
   "private": true,
   "type": "module",
   "description": "Pulse â€” a clearer picture of the internet's health",
@@ -57,6 +57,7 @@
     "@phosphor-icons/react": "^2.1.10",
     "d3-geo": "^3.1.1",
     "fast-xml-parser": "^5.11.1",
+    "gsap": "3.15.0",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "topojson-client": "^3.1.0",
