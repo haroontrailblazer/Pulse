@@ -409,7 +409,7 @@ export default function App() {
             }}
           >
             <span className="brand-mark">
-              <PulseMark size={34} />
+              <PulseMark size={28} />
             </span>
             pulse<span className="brand-period">.</span>
           </a>
