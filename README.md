@@ -77,7 +77,7 @@ npm.cmd run desktop
 npm.cmd run build:windows
 ```
 
-Expected portable artifact: `releases/Pulse-1.0.4-Windows.exe`. Packaging is unsigned; code-signing certificates and public distribution are not configured. The app uses a sandboxed renderer with Node integration disabled and a local status server bound to `127.0.0.1:47823`. Its fixed origin keeps the local watchlist stable across restarts. Port 47823 must be available. External HTTPS links open in the system browser.
+Expected portable artifact: `releases/Pulse-1.0.5-Windows.exe`. Packaging is unsigned; code-signing certificates and public distribution are not configured. The app uses a sandboxed renderer with Node integration disabled and a local status server bound to `127.0.0.1:47823`. Its fixed origin keeps the local watchlist stable across restarts. Port 47823 must be available. External HTTPS links open in the system browser.
 
 ## Android app
 
@@ -91,7 +91,7 @@ npm.cmd run build:android
 npm.cmd run android:open
 ```
 
-APK output: `releases/Pulse-1.0.4-Android.apk` (also in `android/app/build/outputs/apk/debug/app-debug.apk`). This is a debug-signed APK for installation and testing. A production release APK/AAB requires your signing key. Do not commit signing secrets or keystores. The Android app fetches the allowlisted public status feeds through native HTTP, including BOM-aware decoding for AWS and XML support for Azure, so it does not depend on a localhost server or browser CORS.
+APK output: `releases/Pulse-1.0.5-Android.apk` (also in `android/app/build/outputs/apk/debug/app-debug.apk`). This is a debug-signed APK for installation and testing. A production release APK/AAB requires your signing key. Do not commit signing secrets or keystores. The Android app fetches the allowlisted public status feeds through native HTTP, including BOM-aware decoding for AWS and XML support for Azure, so it does not depend on a localhost server or browser CORS.
 
 ## Verification
 
@@ -150,7 +150,7 @@ The inbox uses provider logos, incident-specific impact badges, unread indicator
 
 ## Mobile overview
 
-Overview uses the same responsive component on the website, Android and Windows: Find a service followed by Your services. Rows are 54 px high with touch targets retained; search opens the full directory in batches of six. The map and dependency insights live on their own pages. Status summaries include component and incident evidence, separate maintenance from disruption, and keep unavailable readings neutral. Page navigation returns to the top.
+Overview uses one desktop component on the website, Android and Windows. Phone and APK layouts retain its summaries, map, incidents, service directory and insights in a compact portrait-monitor arrangement. Page titles scale to one line at phone widths. Status summaries include component and incident evidence, separate maintenance from disruption, and keep unavailable readings neutral. Page navigation returns to the top.
 
 ## Contained map workspace
 
@@ -164,13 +164,13 @@ The public entry point is a marketing page explaining Pulse, with actual app scr
 
 Vercel serves /api/status as a bounded Node function. The hosted dashboard polls every 30 seconds while visible and pauses when hidden. Responses can be shared by the CDN for 30 seconds; freshness checks still exclude outdated readings. Native builds retain their existing local server or direct Android transport. No database or cross-device account system is introduced.
 
-Download links in both the landing page and dashboard point to versioned static files under https://pulse-status-zeta.vercel.app/downloads/v1.0.4, defined in shared/downloads.js. The deployment command `npm run build:deploy` fetches the published release once, verifies byte counts and SHA-256 against shared/release-assets.json, and stages the installers on the website CDN. Users download directly from that CDN; no runtime GitHub proxy or serverless function handles the file transfer. The APK and portable EXE include the compact sidebar and smaller wordmark, removed Watchlist card, simplified Dependency insights, search-first mobile Overview, alerts control beside Refresh, title-aligned notifications without a top bar, and appearance controls in Settings. See design/marketing-assets.md for artwork provenance and screenshot details.
+Download links in both the landing page and dashboard point to versioned static files under https://pulse-status-zeta.vercel.app/downloads/v1.0.5, defined in shared/downloads.js. The deployment command `npm run build:deploy` fetches the published release once, verifies byte counts and SHA-256 against shared/release-assets.json, and stages the installers on the website CDN. Users download directly from that CDN; no runtime GitHub proxy or serverless function handles the file transfer. The APK and portable EXE include the compact sidebar and smaller wordmark, the desktop Overview in a portrait-monitor arrangement, alerts control beside Refresh, title-aligned notifications without a top bar, and appearance controls in Settings. See design/marketing-assets.md for artwork provenance and screenshot details.
 
 Public website: https://pulse-status-zeta.vercel.app
 
 Open the dashboard: https://pulse-status-zeta.vercel.app/app
 
-Public installers and checksums: https://github.com/haroontrailblazer/Pulse/releases/tag/v1.0.4
+Public installers and checksums: https://github.com/haroontrailblazer/Pulse/releases/tag/v1.0.5
 
 The manual Build Windows release GitHub Actions workflow can build and upload a Windows EXE directly to an existing draft release. It installs the Electron runtime explicitly, runs the tests, checks the existing Android checksum, and uploads a matching combined checksum manifest. The release stays a draft until final review and publication.
 

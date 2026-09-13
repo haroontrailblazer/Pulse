@@ -58,7 +58,6 @@ import BackgroundSettings, { useBackgroundSync } from "./BackgroundSettings";
 import { isFresh, SIGNAL_WINDOW_MS, signalWindow } from "../shared/monitor";
 import { providers, categories, statusLabels } from "../shared/providers";
 import WorldMap from "./WorldMap";
-import MobileOverview from "./MobileOverview";
 import PulseMark from "./PulseMark";
 import ProviderLogo from "./ProviderLogo";
 import { downloads } from "../shared/downloads";
@@ -188,7 +187,6 @@ export default function App() {
     update();
     return () => media.removeEventListener("change", update);
   }, []);
-  const mobileOverview = page === "Overview";
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [page]);
@@ -559,12 +557,10 @@ export default function App() {
           className={
             page === "Global map"
               ? "map-main"
-              : mobileOverview
-                ? "mobile-overview-main"
-                : ""
+              : ""
           }
         >
-          {!mobileOverview && page !== "Global map" && (
+          {page !== "Global map" && (
             <div className="page-heading">
               <div>
                 <div className="eyebrow">
@@ -614,22 +610,6 @@ export default function App() {
               <button onClick={refresh}>Retry</button>
             </div>
           )}
-          {mobileOverview && (
-            <MobileOverview
-              items={items}
-              watchlist={watchlist}
-              now={now}
-              loading={loading}
-              onRefresh={refresh}
-              onAlerts={() => setModal("settings")}
-              onProvider={openProvider}
-              onNavigate={go}
-              onAdd={() => setModal("monitor")}
-              searchRef={searchRef}
-              navigationButton={navigationButton}
-              notificationButton={notificationButton}
-            />
-          )}
           {page === "Developer tools" && (
             <LiveConsole
               items={items}
@@ -642,7 +622,7 @@ export default function App() {
               onProvider={openProvider}
             />
           )}
-          {page === "Overview" && !mobileOverview && (
+          {page === "Overview" && (
             <div className="summary-grid">
               <Summary
                 label="Services tracked"
@@ -689,7 +669,7 @@ export default function App() {
               />
             </div>
           )}
-          {((page === "Overview" && !mobileOverview) ||
+          {(page === "Overview" ||
             page === "Global map") && (
             <div
               className={`overview-grid ${page === "Global map" ? "map-only" : ""}`}
@@ -759,7 +739,7 @@ export default function App() {
               )}
             </div>
           )}
-          {((page === "Overview" && !mobileOverview) ||
+          {(page === "Overview" ||
             page === "Watchlist") && (
             <section className="panel services-panel">
               <div className="panel-heading services-heading">
@@ -999,7 +979,7 @@ export default function App() {
               )}
             </section>
           )}
-          {((page === "Overview" && !mobileOverview) ||
+          {(page === "Overview" ||
             page === "Dependency insights") && (
             <section className="insights-section">
               {page === "Overview" && (

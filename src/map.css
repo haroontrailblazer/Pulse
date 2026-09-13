@@ -552,6 +552,11 @@ main.map-main {
   height: 100%;
 }
 @media (max-width: 760px) {
+  .atlas-map-title :is(h1, h2) {
+    font-size: clamp(14px, 4.2vw, 16px);
+    line-height: 1.2;
+    white-space: nowrap;
+  }
   main.map-main {
     height: 100dvh;
     padding: 8px;

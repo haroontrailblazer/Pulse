@@ -2382,9 +2382,13 @@ h1 > span {
     letter-spacing: 1.5px;
   }
   h1 {
-    font-size: 30px;
-    letter-spacing: -1px;
-    margin-top: 9px;
+    font-size: clamp(15px, 5vw, 19px);
+    letter-spacing: -0.65px;
+    line-height: 1.2;
+    margin-top: 8px;
+  }
+  .page-title-row h1 {
+    white-space: nowrap;
   }
   .page-heading p {
     font-size: 10px;

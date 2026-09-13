@@ -265,31 +265,9 @@
   margin-bottom: 16px;
 }
 :root[data-platform="android"] .page-heading h1 {
-  font-size: 25px;
-  line-height: 1.15;
-}
-:root[data-platform="android"] .mobile-overview {
-  gap: 14px;
-  max-width: 640px;
-}
-:root[data-platform="android"] .mobile-overview-heading {
-  gap: 8px;
-}
-:root[data-platform="android"] .mobile-overview-heading h1 {
-  font-size: 23px;
-}
-:root[data-platform="android"] .mobile-section-heading {
-  margin-bottom: 9px;
-}
-:root[data-platform="android"] .mobile-section-heading h2 {
-  font-size: 15px;
-}
-:root[data-platform="android"] .mobile-service-list {
-  border-radius: 10px;
-}
-:root[data-platform="android"] .mobile-service {
-  min-height: 48px;
-  padding-block: 7px;
+  font-size: clamp(15px, 5vw, 19px);
+  line-height: 1.2;
+  white-space: nowrap;
 }
 :root[data-platform="android"] .panel,
 :root[data-platform="android"] .summary-card,
