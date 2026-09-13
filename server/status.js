@@ -16,7 +16,7 @@ export async function fetchProvider(provider) {
       try {
         response = await fetch(feedUrl(provider), {
           signal: AbortSignal.timeout(
-            Math.min(8000, Math.max(1, 15000 - (Date.now() - started))),
+            Math.max(1, 15000 - (Date.now() - started)),
           ),
           cache: "no-store",
           headers: {
@@ -35,7 +35,7 @@ export async function fetchProvider(provider) {
         if (response.status < 500 || attempt === 1) break;
         await response.body?.cancel();
       } catch (error) {
-        if (attempt === 1) throw error;
+        if (attempt === 1 || Date.now() - started >= 15000) throw error;
       }
     }
     if (!response.ok)
