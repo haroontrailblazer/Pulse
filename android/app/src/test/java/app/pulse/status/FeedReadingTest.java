@@ -55,7 +55,12 @@ public class FeedReadingTest {
         assertEquals("operational",FeedReading.parse(provider("google"),"[]").getString("status"));
         JSONObject active=FeedReading.parse(provider("google"),"[{\"id\":\"i\",\"begin\":\"2026-09-13T00:00:00Z\",\"end\":null,\"updates\":[],\"severity\":\"high\"}]");
         assertEquals("degraded",active.getString("status"));assertTrue(FeedReading.signature(active).contains("incident:i:major"));
-        assertEquals(4,FeedReading.severity(active));
+        assertEquals(3,FeedReading.severity(active));
+    }
+    @Test public void currentStatusOutranksOlderIncidentImpact() throws Exception {
+        JSONObject reading=FeedReading.parse(provider("statuspage"),"{\"status\":{\"indicator\":\"minor\"},\"components\":[{\"id\":\"cowork\",\"name\":\"Claude Cowork\",\"status\":\"degraded_performance\"}],\"incidents\":[{\"id\":\"incident\",\"status\":\"identified\",\"impact\":\"major\"}]}");
+        assertEquals("degraded",reading.getString("status"));
+        assertEquals(3,FeedReading.severity(reading));
     }
     @Test public void betterStack() throws Exception {
         JSONObject reading=FeedReading.parse(provider("betterstack"),"{\"data\":{\"attributes\":{\"aggregate_state\":\"downtime\"}},\"included\":[]}");

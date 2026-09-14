@@ -102,6 +102,14 @@ test("fixed signal windows are even for cloud feeds without component data", () 
     }),
     "major_outage",
   );
+  assert.equal(
+    signalState({
+      ...cloud,
+      status: "degraded",
+      incidents: [{ id: "i", status: "identified", impact: "major" }],
+    }),
+    "degraded_performance",
+  );
 });
 test("fixed signal windows keep unmeasured slots visibly unavailable", () => {
   const time = Date.parse(at);

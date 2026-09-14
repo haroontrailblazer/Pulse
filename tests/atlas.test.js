@@ -82,7 +82,7 @@ test("official incident details add outage and degraded pins when they name a hu
   assert.equal(result.locations[0].status, "degraded");
   assert.equal(result.locations[2].signals[0].kind, "Active incident");
 });
-test("AWS Middle East regions and unscoped major incidents remain visible on the map", () => {
+test("live provider and component state outrank stale incident impact on the map", () => {
   const result = buildAtlas(
     [
       provider({
@@ -104,6 +104,7 @@ test("AWS Middle East regions and unscoped major incidents remain visible on the
       provider({
         id: "anthropic",
         status: "degraded",
+        components: [component("Claude Cowork", "degraded_performance")],
         incidents: [
           {
             name: "Degraded functionality for Claude Cowork on Windows",
@@ -125,8 +126,9 @@ test("AWS Middle East regions and unscoped major incidents remain visible on the
   const worldwide = result.locations.find((location) => location.global);
   assert.equal(abuDhabi.status, "outage");
   assert.equal(manama.status, "outage");
-  assert.equal(worldwide.status, "outage");
+  assert.equal(worldwide.status, "degraded");
   assert.equal(worldwide.signals[0].provider.id, "anthropic");
+  assert.equal(worldwide.signals[0].status, "degraded");
 });
 test("stale or failed feeds cannot keep regional outage pins or count as healthy", () => {
   const bad = provider({

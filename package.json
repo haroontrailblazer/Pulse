@@ -1,6 +1,6 @@
 {
   "name": "pulse-status",
-  "version": "1.0.14",
+  "version": "1.0.15",
   "private": true,
   "type": "module",
   "description": "Pulse â€” a clearer picture of the internet's health",

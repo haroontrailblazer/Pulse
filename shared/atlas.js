@@ -126,6 +126,22 @@ const normalize = (name) =>
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase();
+const incidentState = (provider, incident) => {
+  const affected = new Set(incident.components || []);
+  const componentState = worst(
+    (provider.components || [])
+      .filter((component) =>
+        affected.has(component.id) || affected.has(component.name),
+      )
+      .map((component) => componentStates[component.status] || "unknown"),
+  );
+  // Statuspage incident impact is set when the incident is opened and can
+  // outlive the live component recovery state. Prefer the current affected
+  // component, then the live provider state, before using that fallback.
+  if (active(componentState)) return componentState;
+  if (active(provider.status)) return provider.status;
+  return impactStates[incident.impact] || null;
+};
 const matchers = hubs.map((h) =>
   h.names.map(
     (name) =>
@@ -182,7 +198,7 @@ export function buildAtlas(
       )
         continue;
       const status =
-        impactStates[incident.impact] ||
+        incidentState(provider, incident) ||
         (includeMaintenance && incident.impact === "maintenance"
           ? "maintenance"
           : null);

@@ -142,9 +142,25 @@ final class FeedReading {
         for(String part:next.split("\\|")) if(!old.contains(part)) return true;
         return false;
     }
+    static int currentSeverity(JSONObject reading) {
+        String status=reading.optString("status");
+        int rank=status.equals("outage")?4:status.equals("degraded")?3:0;
+        JSONArray components=reading.optJSONArray("components");
+        if(components!=null) for(int n=0;n<components.length();n++) {
+            JSONObject component=components.optJSONObject(n); if(component==null) continue;
+            String state=component.optString("status");
+            if(state.equals("major_outage")) rank=Math.max(rank,4);
+            else if(state.equals("degraded_performance")||state.equals("partial_outage")) rank=Math.max(rank,3);
+        }
+        return rank;
+    }
     static int severity(JSONObject reading) {
         String signature=signature(reading);
         if(signature==null) return 1;
+        int current=currentSeverity(reading);
+        // An incident impact can remain major after the live provider or its
+        // affected component has moved to degraded. Keep the widget current.
+        if(current>=3) return current;
         int rank=signature.isEmpty()?0:2;
         for(String part:signature.split("\\|")) {
             String value=part.substring(part.lastIndexOf(':')+1);

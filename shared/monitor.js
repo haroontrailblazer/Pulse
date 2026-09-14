@@ -39,6 +39,10 @@ export function signalState(provider) {
     if ((signalRanks[candidate] || 0) > (signalRanks[state] || 0))
       state = candidate;
   }
+  // Current provider and component states are more reliable than an incident
+  // impact chosen when the incident was first opened.
+  if ((signalRanks[state] || 0) >= signalRanks.degraded_performance)
+    return state;
   for (const incident of provider.incidents || []) {
     if (
       ["resolved", "postmortem", "completed", "scheduled"].includes(
