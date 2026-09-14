@@ -30,7 +30,7 @@ final class PulseStore {
         }
     }
     static Set<String> watchlist(Context c) { return new HashSet<>(prefs(c).getStringSet("watchlist",Collections.emptySet())); }
-    static boolean widgets(Context c) { return AppWidgetManager.getInstance(c).getAppWidgetIds(new ComponentName(c,PulseWidget.class)).length>0; }
+    static boolean widgets(Context c) { return PulseWidgets.placed(c)>0; }
     static boolean needed(Context c) { return prefs(c).getBoolean("enabled",false)||widgets(c); }
     static boolean continuous(Context c) { return prefs(c).getBoolean("enabled",false)&&!watchlist(c).isEmpty(); }
     static void channel(Context c) {
@@ -104,7 +104,7 @@ final class PulseStore {
                 catch(ExecutionException error) { /* One feed cannot stop the other watched checks. */ }
             }
             prefs(c).edit().putLong("lastSweep",System.currentTimeMillis()).apply();
-            PulseWidget.updateAll(c);
+            PulseWidgets.updateAll(c);
         } finally { if(workers!=null) workers.shutdownNow();SWEEP_RUNNING.set(false); }
     }
     static synchronized void record(Context c,JSONObject reading) throws JSONException {

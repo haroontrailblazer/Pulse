@@ -1,1 +1,19 @@
-<resources><string name="widget_description">Your watched services, reported issues, and last-check time.</string></resources>
+<resources>
+    <string name="widget_description">Your watched services, reported issues, and last-check time.</string>
+    <string name="widget_icons_description">Watched service icons, coloured by their current official status.</string>
+    <string name="widget_brand">Pulse</string>
+    <string name="widget_eyebrow">PULSE  /  MY STACK</string>
+    <string name="widget_open_action">Open Pulse watchlist</string>
+    <string name="widget_refresh_action">Refresh watched services when network and battery allow</string>
+    <string name="widget_empty_summary">Your stack starts here</string>
+    <string name="widget_empty_subtitle">Add services in Pulse to start monitoring</string>
+    <string name="widget_empty_list">Open Pulse and watch the services you depend on.</string>
+    <string name="widget_icons_empty">Watch services in Pulse to fill this widget</string>
+    <string name="widget_awaiting">Awaiting official readings</string>
+    <string name="widget_preview_summary">1 watched services reported issues</string>
+    <string name="widget_preview_subtitle">6 watched · 0 unavailable · tap to explore</string>
+    <string name="widget_preview_stamp">Snapshot · today</string>
+    <string name="widget_preview_major">Major issue</string>
+    <string name="widget_preview_degraded">Degraded</string>
+    <string name="widget_preview_operational">Operational</string>
+</resources>

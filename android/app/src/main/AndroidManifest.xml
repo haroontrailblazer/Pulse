@@ -37,6 +37,12 @@
             <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
             <meta-data android:name="android.appwidget.provider" android:resource="@xml/pulse_widget_info" />
         </receiver>
+        <receiver android:name=".PulseIconWidget" android:exported="false" android:label="Pulse · Service icons">
+            <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/pulse_icon_widget_info" />
+        </receiver>
+        <service android:name=".PulseListService" android:permission="android.permission.BIND_REMOTEVIEWS" android:exported="false" />
+        <service android:name=".PulseIconService" android:permission="android.permission.BIND_REMOTEVIEWS" android:exported="false" />
         <receiver android:name=".PulseBoot" android:exported="false">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />

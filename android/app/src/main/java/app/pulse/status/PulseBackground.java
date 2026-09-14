@@ -51,20 +51,21 @@ public class PulseBackground extends Plugin {
                 Boolean enabled=call.getBoolean("enabled"); if(enabled!=null) { if(enabled&&!p.getBoolean("enabled",false)) edit.remove("lastRequested"); edit.putBoolean("enabled",enabled); }
                 edit.apply();
             }
-            PulseStore.schedule(getContext());PulseStore.refresh(getContext());if(PulseStore.continuous(getContext())) PulseStore.startContinuousMonitor(getContext()); else PulseStore.stopContinuousMonitor(getContext());PulseWidget.updateAll(getContext());call.resolve(state());
+            PulseStore.schedule(getContext());PulseStore.refresh(getContext());if(PulseStore.continuous(getContext())) PulseStore.startContinuousMonitor(getContext()); else PulseStore.stopContinuousMonitor(getContext());PulseWidgets.updateAll(getContext());call.resolve(state());
         } catch(Exception error) { call.reject("Could not save monitoring preferences",error); }
     }
     @PluginMethod public void record(PluginCall call) {
         try {
             JSArray readings=call.getArray("providers");
             if(readings!=null) for(int n=0;n<readings.length();n++) PulseStore.record(getContext(),readings.getJSONObject(n));
-            PulseWidget.updateAll(getContext());call.resolve();
+            PulseWidgets.updateAll(getContext());call.resolve();
         } catch(Exception error) { call.reject("Could not update widget readings",error); }
     }
     @PluginMethod public void pinWidget(PluginCall call) {
         AppWidgetManager manager=AppWidgetManager.getInstance(getContext());
         boolean supported=Build.VERSION.SDK_INT>=26 && manager.isRequestPinAppWidgetSupported();
-        if(supported) manager.requestPinAppWidget(new ComponentName(getContext(),PulseWidget.class),null,null);
+        Class<?> widget="icons".equals(call.getString("widget"))?PulseIconWidget.class:PulseWidget.class;
+        if(supported) manager.requestPinAppWidget(new ComponentName(getContext(),widget),null,null);
         call.resolve(new JSObject().put("supported",supported));
     }
     @Override protected void handleOnResume() {

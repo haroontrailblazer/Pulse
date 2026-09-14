@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Capacitor, registerPlugin } from "@capacitor/core";
-import { Bell, Layers3, ShieldCheck } from "./icons";
+import { Bell, Layers3, LayoutDashboard, ShieldCheck } from "./icons";
 import { providers } from "../shared/providers";
 import { requestBudget } from "../shared/alerts";
 import "./background.css";
@@ -97,10 +97,10 @@ export default function BackgroundSettings({
       setBusy(false);
     }
   }
-  async function pin() {
+  async function pin(widget) {
     setBusy(true);
     try {
-      const result = await native.pinWidget();
+      const result = await native.pinWidget({ widget });
       setMessage(
         result.supported
           ? "Confirm placement in your launcher. You can also find Pulse in your home screen’s Widgets menu."
@@ -212,12 +212,38 @@ export default function BackgroundSettings({
               <Layers3 size={17} /> Pulse home-screen widget
             </strong>
             <p>
-              Issue count, watched services, last-check time, and a refresh
-              button. Works without keeping the app open.
+              Issue count, last-check time, and a refresh button above your
+              watched services. Resize it taller to read more of the list. Works
+              without keeping the app open.
             </p>
           </div>
-          <button className="button secondary" disabled={busy} onClick={pin}>
+          <button
+            className="button secondary"
+            disabled={busy}
+            onClick={() => pin("stack")}
+          >
             Add widget
+          </button>
+        </div>
+      )}
+      {android && (
+        <div className="background-actions widget-action">
+          <div>
+            <strong>
+              <LayoutDashboard size={17} /> Service icons widget
+            </strong>
+            <p>
+              Just your watched services, each in its own brand colour. An icon
+              turns amber when its official feed reports a degradation and red
+              during an outage. Resize it to fit more icons.
+            </p>
+          </div>
+          <button
+            className="button secondary"
+            disabled={busy}
+            onClick={() => pin("icons")}
+          >
+            Add icons widget
           </button>
         </div>
       )}
