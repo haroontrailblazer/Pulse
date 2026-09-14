@@ -136,6 +136,15 @@ final class FeedReading {
         if(is!=null) for(int n=0;n<is.length();n++) { JSONObject i=is.optJSONObject(n); if(i!=null && !Arrays.asList("resolved","postmortem","completed","scheduled").contains(i.optString("status"))) parts.add("incident:"+i.optString("id")+":"+i.optString("impact","minor")); }
         Collections.sort(parts); return String.join("|",parts);
     }
+    /**
+     * True when a service that was reporting something has gone fully clear.
+     * Deliberately narrow: a feed that merely drops from outage to degraded is
+     * still a problem, and an unreachable feed has a null signature, so neither
+     * is announced as resolved.
+     */
+    static boolean resolved(String previous, String next) {
+        return previous != null && !previous.isEmpty() && next != null && next.isEmpty();
+    }
     static boolean shouldNotify(String previous, String next) {
         if(next==null || next.isEmpty()) return false;
         Set<String> old=new HashSet<>(Arrays.asList(previous.split("\\|")));

@@ -37,12 +37,18 @@
             <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
             <meta-data android:name="android.appwidget.provider" android:resource="@xml/pulse_widget_info" />
         </receiver>
+        <activity android:name=".PulseIconConfigActivity" android:exported="true"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
+            android:excludeFromRecents="true" android:label="@string/widget_icons_background_title">
+            <intent-filter><action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" /></intent-filter>
+        </activity>
         <receiver android:name=".PulseIconWidget" android:exported="false" android:label="Pulse · Service icons">
             <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
             <meta-data android:name="android.appwidget.provider" android:resource="@xml/pulse_icon_widget_info" />
         </receiver>
         <service android:name=".PulseListService" android:permission="android.permission.BIND_REMOTEVIEWS" android:exported="false" />
         <service android:name=".PulseIconService" android:permission="android.permission.BIND_REMOTEVIEWS" android:exported="false" />
+        <receiver android:name=".PulseAlarm" android:exported="false" />
         <receiver android:name=".PulseBoot" android:exported="false">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
@@ -57,6 +63,7 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
 </manifest>

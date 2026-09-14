@@ -48,7 +48,16 @@ public class PulseBackground extends Plugin {
                     if(!PulseStore.watchlist(getContext()).containsAll(ids)) edit.remove("lastRequested");
                     edit.putStringSet("watchlist",ids);
                 }
-                Boolean enabled=call.getBoolean("enabled"); if(enabled!=null) { if(enabled&&!p.getBoolean("enabled",false)) edit.remove("lastRequested"); edit.putBoolean("enabled",enabled); }
+                Boolean enabled=call.getBoolean("enabled");
+                if(enabled!=null) {
+                    if(enabled&&!p.getBoolean("enabled",false)) {
+                        edit.remove("lastRequested");
+                        // Signatures only advance while alerts are on, so a stale
+                        // one would read as a recovery that never happened.
+                        for(String key:p.getAll().keySet()) if(key.startsWith("signature.")) edit.remove(key);
+                    }
+                    edit.putBoolean("enabled",enabled);
+                }
                 edit.apply();
             }
             PulseStore.schedule(getContext());PulseStore.refresh(getContext());if(PulseStore.continuous(getContext())) PulseStore.startContinuousMonitor(getContext()); else PulseStore.stopContinuousMonitor(getContext());PulseWidgets.updateAll(getContext());call.resolve(state());

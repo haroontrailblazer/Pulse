@@ -343,3 +343,82 @@ test("no tap on either widget is dead, and the collection previews are not empty
     assert.doesNotMatch(layout(preview), /<ListView|<GridView/);
   }
 });
+
+test("the icon widget can be configured per instance and starts transparent", () => {
+  const manifest = read("android/app/src/main/AndroidManifest.xml");
+  const info = read("android/app/src/main/res/xml/pulse_icon_widget_info.xml");
+  const layout = read("android/app/src/main/res/layout/pulse_icon_widget.xml");
+
+  // The chooser must be declared, exported for the host, and pointed at.
+  const activity = manifest
+    .split("<")
+    .find(
+      (n) => n.startsWith("activity") && n.includes(".PulseIconConfigActivity"),
+    );
+  assert.ok(activity, "PulseIconConfigActivity is not declared");
+  assert.match(activity, /android:exported="true"/);
+  assert.match(manifest, /android\.appwidget\.action\.APPWIDGET_CONFIGURE/);
+  assert.match(
+    info,
+    /android:configure="app\.pulse\.status\.PulseIconConfigActivity"/,
+  );
+  // reconfigurable is honoured from API 28, letting an instance be changed later.
+  assert.match(info, /android:widgetFeatures="reconfigurable"/);
+
+  // Transparent is the default, so the layout must declare no background at
+  // all — otherwise every widget flashes a dark card before it is repainted.
+  assert.doesNotMatch(
+    layout.split("\n")[1],
+    /android:background/,
+    "icon_root must not declare a background",
+  );
+  assert.match(
+    read("android/app/src/main/java/app/pulse/status/PulseIconWidget.java"),
+    /setBackgroundResource/,
+    "the provider must state the background on every repaint",
+  );
+});
+
+test("monitoring survives the screen going off", () => {
+  const manifest = read("android/app/src/main/AndroidManifest.xml");
+  const alarm = read(
+    "android/app/src/main/java/app/pulse/status/PulseAlarm.java",
+  );
+  const service = read(
+    "android/app/src/main/java/app/pulse/status/PulseMonitorService.java",
+  );
+
+  // A Handler delay is measured on uptimeMillis and never fires while the CPU
+  // is suspended, so an allow-while-idle alarm has to carry the schedule.
+  assert.match(alarm, /setAndAllowWhileIdle/);
+  assert.match(alarm, /ELAPSED_REALTIME_WAKEUP/);
+  assert.match(alarm, /PARTIAL_WAKE_LOCK/);
+  assert.match(manifest, /android:name="android\.permission\.WAKE_LOCK"/);
+  assert.ok(
+    manifest.includes('<receiver android:name=".PulseAlarm"'),
+    "PulseAlarm receiver is not declared",
+  );
+  // Exact alarms are Play-restricted and throttled identically while idle.
+  assert.doesNotMatch(manifest, /SCHEDULE_EXACT_ALARM|USE_EXACT_ALARM/);
+
+  // Android 15 ends a dataSync foreground service after ~6h/day.
+  assert.match(
+    service,
+    /onTimeout/,
+    "the foreground service ignores its timeout",
+  );
+  assert.match(service, /PulseAlarm\.schedule/);
+});
+
+test("a resolved issue is announced as well as a new one", () => {
+  const feed = read(
+    "android/app/src/main/java/app/pulse/status/FeedReading.java",
+  );
+  const store = read(
+    "android/app/src/main/java/app/pulse/status/PulseStore.java",
+  );
+  assert.match(feed, /static boolean resolved\(/);
+  assert.match(store, /FeedReading\.resolved/);
+  // Same notification id, so the all-clear replaces the issue it resolves.
+  assert.match(store, /alert\(c,id,/);
+});

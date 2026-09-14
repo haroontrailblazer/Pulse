@@ -49,6 +49,9 @@ final class PulseStore {
     static Constraints immediateConstraints() { return new Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build(); }
     static synchronized void schedule(Context c) {
         WorkManager manager=WorkManager.getInstance(c);
+        // The alarm is what survives the screen going off; WorkManager is the
+        // floor that survives process death.
+        PulseAlarm.schedule(c);
         if(!needed(c)||watchlist(c).isEmpty()) { manager.cancelUniqueWork(PERIODIC); manager.cancelUniqueWork(ONCE); return; }
         manager.enqueueUniquePeriodicWork(PERIODIC,ExistingPeriodicWorkPolicy.UPDATE,new PeriodicWorkRequest.Builder(PulseWorker.class,15,TimeUnit.MINUTES).setConstraints(periodicConstraints()).build());
     }
@@ -107,6 +110,11 @@ final class PulseStore {
             PulseWidgets.updateAll(c);
         } finally { if(workers!=null) workers.shutdownNow();SWEEP_RUNNING.set(false); }
     }
+    private static void alert(Context c,String id,String title,String body) {
+        channel(c);
+        NotificationCompat.Builder alert=new NotificationCompat.Builder(c,CHANNEL).setSmallIcon(R.drawable.ic_pulse_notification_logo).setLargeIcon(notificationLogo(c)).setContentTitle(title).setContentText(body).setStyle(new NotificationCompat.BigTextStyle().bigText(body)).setContentIntent(open(c)).setAutoCancel(true);
+        NotificationManagerCompat.from(c).notify(id.hashCode(),alert.build());
+    }
     static synchronized void record(Context c,JSONObject reading) throws JSONException {
         String id=reading.getString("id");
         if(!watchlist(c).contains(id)) return;
@@ -122,10 +130,12 @@ final class PulseStore {
             if(FeedReading.shouldNotify(previous,signature)) {
                 JSONArray incidents=reading.optJSONArray("incidents");
                 String body=incidents!=null&&incidents.length()>0?incidents.optJSONObject(0).optString("name","Service disruption"):"A watched service reports an issue. Open Pulse for current details.";
-                channel(c);
-                NotificationCompat.Builder alert=new NotificationCompat.Builder(c,CHANNEL).setSmallIcon(R.drawable.ic_pulse_notification_logo).setLargeIcon(notificationLogo(c)).setContentTitle(reading.optString("name",id)+" · service issue").setContentText(body).setStyle(new NotificationCompat.BigTextStyle().bigText(body)).setContentIntent(open(c)).setAutoCancel(true);
-                NotificationManagerCompat.from(c).notify(id.hashCode(),alert.build());
+                alert(c,id,reading.optString("name",id)+" · service issue",body);
             }
+            // The same notification id, so the all-clear replaces the issue it
+            // resolves instead of stacking a second entry beside it.
+            else if(FeedReading.resolved(previous,signature))
+                alert(c,id,reading.optString("name",id)+" · back to normal","The reported issue is resolved. Its official feed is clear again.");
             p.edit().putString("signature."+id,signature).apply();
         }
         p.edit().putString("reading."+id,reading.toString()).apply();

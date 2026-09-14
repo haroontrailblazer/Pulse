@@ -13,6 +13,7 @@ public final class PulseBoot extends BroadcastReceiver {
         // readings before anything else is arranged.
         PulseWidgets.updateAll(context);
         PulseStore.schedule(context);
+        PulseAlarm.schedule(context);
         PulseStore.startContinuousMonitor(context);
         PulseStore.refresh(context);
     }

@@ -7,4 +7,6 @@
     android:initialLayout="@layout/pulse_icon_widget"
     android:previewLayout="@layout/pulse_icon_widget_preview" android:resizeMode="horizontal|vertical"
     android:updatePeriodMillis="0" android:widgetCategory="home_screen"
+    android:configure="app.pulse.status.PulseIconConfigActivity"
+    android:widgetFeatures="reconfigurable"
     android:description="@string/widget_icons_description" />

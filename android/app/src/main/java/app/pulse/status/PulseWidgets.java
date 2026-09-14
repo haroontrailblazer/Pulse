@@ -53,6 +53,19 @@ final class PulseWidgets {
      * setRemoteAdapter compares intents with filterEquals, so each widget needs
      * its own data URI or a second copy would share the first one's rows.
      */
+    /**
+     * Portrait bounds of a placed widget, in dp. MIN_WIDTH is the portrait width
+     * and MAX_HEIGHT the portrait height; the other pair describes landscape.
+     */
+    static int widthDp(Context c, int widgetId) { return option(c, widgetId, AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 250); }
+    static int heightDp(Context c, int widgetId) { return option(c, widgetId, AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, 110); }
+    private static int option(Context c, int widgetId, String key, int fallback) {
+        try {
+            int value = AppWidgetManager.getInstance(c).getAppWidgetOptions(widgetId).getInt(key, 0);
+            return value > 0 ? value : fallback;
+        } catch (Exception error) { return fallback; }
+    }
+
     static Intent adapter(Context c, Class<?> service, int widgetId) {
         Intent intent = new Intent(c, service).putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, widgetId);
         return intent.setData(Uri.parse(intent.toUri(Intent.URI_INTENT_SCHEME)));

@@ -29,6 +29,38 @@ public class FeedReadingTest {
         assertEquals("outage",FeedReading.parse(p,json.replace("operational","major_outage")).getString("status"));
         try { FeedReading.parse(p,json.replace("replicate","missing"));fail("Missing component accepted"); }catch(JSONException expected){}
     }
+    @Test public void anAllClearIsAnnouncedOnlyAfterSomethingWasWrong() throws Exception {
+        String issue="status:degraded";
+        // The transition that matters: something was reported, now nothing is.
+        assertTrue(FeedReading.resolved(issue,""));
+        // Nothing was wrong, so there is nothing to resolve.
+        assertFalse(FeedReading.resolved("",""));
+        assertFalse(FeedReading.resolved(null,""));
+        // Still reporting something, even if different or less severe.
+        assertFalse(FeedReading.resolved(issue,"status:outage"));
+        assertFalse(FeedReading.resolved("status:outage","status:degraded"));
+        // An unreachable feed has a null signature and must stay silent, or a
+        // network blip would read as good news.
+        assertFalse(FeedReading.resolved(issue,null));
+        // Resolution and a new issue are mutually exclusive for the same pair.
+        assertFalse(FeedReading.shouldNotify(issue,"")&&FeedReading.resolved(issue,""));
+    }
+    @Test public void aRealRecoveryRoundTripFiresExactlyOnce() throws Exception {
+        JSONObject healthy=FeedReading.parse(provider("statuspage"),"{\"status\":{\"indicator\":\"none\"},\"components\":[],\"incidents\":[]}");
+        JSONObject broken=FeedReading.parse(provider("statuspage"),"{\"status\":{\"indicator\":\"major\"},\"components\":[],\"incidents\":[]}");
+        String clear=FeedReading.signature(healthy), down=FeedReading.signature(broken);
+        assertEquals("",clear);
+        assertFalse(down.isEmpty());
+        // healthy -> broken notifies as an issue, not a recovery
+        assertTrue(FeedReading.shouldNotify(clear,down));
+        assertFalse(FeedReading.resolved(clear,down));
+        // broken -> healthy notifies as a recovery, not an issue
+        assertFalse(FeedReading.shouldNotify(down,clear));
+        assertTrue(FeedReading.resolved(down,clear));
+        // and staying healthy says nothing at all
+        assertFalse(FeedReading.shouldNotify(clear,clear));
+        assertFalse(FeedReading.resolved(clear,clear));
+    }
     JSONObject provider(String format) throws Exception { return new JSONObject().put("id","test").put("name","Test").put("format",format); }
     @Test public void statuspageAndDedup() throws Exception {
         JSONObject reading=FeedReading.parse(provider("statuspage"),"{\"status\":{\"indicator\":\"major\"},\"components\":[],\"incidents\":[]}");

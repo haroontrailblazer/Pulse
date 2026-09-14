@@ -16,4 +16,8 @@
     <string name="widget_preview_major">Major issue</string>
     <string name="widget_preview_degraded">Degraded</string>
     <string name="widget_preview_operational">Operational</string>
+    <string name="widget_icons_background_title">Icon widget background</string>
+    <string name="widget_icons_background_transparent">Transparent</string>
+    <string name="widget_icons_background_card">Dark card</string>
+    <string name="widget_icons_background_save">Save</string>
 </resources>

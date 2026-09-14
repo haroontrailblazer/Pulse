@@ -26,6 +26,9 @@ public final class PulseMonitorService extends Service {
         startForeground(4102,notification);
     }
     @Override public int onStartCommand(Intent intent,int flags,int startId) { handler.removeCallbacks(sweep);handler.post(sweep);return START_STICKY; }
+    // Android 15 caps a dataSync foreground service at roughly six hours a day.
+    // Shutting down cleanly and leaning on the alarm beats being killed.
+    @Override public void onTimeout(int startId,int fgsType) { PulseAlarm.schedule(getApplicationContext());stopped=true;stopSelf(); }
     @Override public void onDestroy() { stopped=true;handler.removeCallbacksAndMessages(null);worker.shutdownNow();super.onDestroy(); }
     @Override public IBinder onBind(Intent intent) { return null; }
 }

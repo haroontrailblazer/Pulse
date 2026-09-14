@@ -154,7 +154,7 @@ export default function BackgroundSettings({
           <p>
             {android
               ? state.enabled
-                ? `Pulse keeps a visible background-monitor notification and checks your ${automated} watched feeds about every ${state.intervalSeconds || 30} seconds. The interval grows with your watchlist to limit requests; Android can still stop monitoring after force-stop or under system restrictions.`
+                ? `Pulse keeps a visible background-monitor notification and checks your ${automated} watched feeds about every ${state.intervalSeconds || 30} seconds while the screen is on. With the screen off Android spaces checks out to roughly every 10 minutes, and you are alerted both when a watched service reports a new issue and when it recovers. Android can still stop monitoring after force-stop or under battery restrictions.`
                 : "Enable alerts to keep Pulse monitoring after you close the app. The widget also has a 15-minute Android-scheduled fallback when alerts are off."
               : native
                 ? "Pulse stays in the Windows tray after closing the window. Your watched feeds are checked every 30 seconds; Quit stops monitoring."
@@ -235,7 +235,8 @@ export default function BackgroundSettings({
             <p>
               Just your watched services, each in its own brand colour. An icon
               turns amber when its official feed reports a degradation and red
-              during an outage. Resize it to fit more icons.
+              during an outage. Choose a transparent or dark background as you
+              add it, and resize it — the marks grow to fill the space.
             </p>
           </div>
           <button
