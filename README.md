@@ -100,6 +100,32 @@ npm.cmd run build
 npm.cmd test
 ```
 
+## Three-surface release harness
+
+Every public product change is built and checked as the hosted website, Android
+APK, and Windows EXE. The release harness makes that requirement repeatable for
+people and coding agents:
+
+```powershell
+# Builds web, APK, and EXE; runs tests and parity checks.
+node scripts/release-harness.mjs prepare
+
+# Required for a public native release. Launches the EXE and one connected ADB
+# device/emulator after building, then records the launch proof.
+node scripts/release-harness.mjs prepare --launch-native
+
+# Run only after the GitHub assets are published and the commit is pushed.
+node scripts/release-harness.mjs verify-live --wait-seconds 900
+```
+
+The local report is `test-results/release-harness-prepare.json`; the production
+report is `test-results/release-harness-live.json`. The production command waits
+for Vercel's versioned checksum manifest, hashes both public downloads, checks
+range support, validates the marketing download links and dashboard, and checks
+the status API. See [AGENTS.md](AGENTS.md) for the required release order,
+Android-device requirement, GitHub asset verification, and Vercel recovery
+procedure.
+
 Tests cover malformed upstream data, closed-incident filtering, outages, network and HTTP failures, unsupported providers, Google Cloud and Better Stack interpretation, progressive refresh timing, request sharing, stale readings, observed changes, SSE deltas and cleanup, and production static-file serving/path traversal protection. Manual browser checks cover component search and filtering, feed diagnostics, provider details, watchlist edits and persistence, light/dark appearance, and a 390 px mobile viewport.
 
 Security tests additionally cover scoped package names, version-range rejection, advisory pagination and upstream failures, JWT malformed inputs and time claims, SHA-256 reference vectors, and component group labels. Browser checks include real npm/PyPI advisory queries and local utility interactions.
