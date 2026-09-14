@@ -16,6 +16,11 @@ import { pathToFileURL } from "node:url";
 import { releaseVersion } from "../shared/downloads.js";
 import { buildIdentity } from "./build-identity.mjs";
 
+// GitHub's large-asset response can be slow to start or stream during a
+// deployment. Keep the guard, but allow the verified Windows installer time
+// to finish instead of aborting an otherwise healthy transfer at five minutes.
+const DOWNLOAD_TIMEOUT_MS = 900_000;
+
 async function verifiedFile(path, asset) {
   try {
     if ((await stat(path)).size !== asset.bytes) return false;
@@ -47,7 +52,7 @@ export async function stageAsset(
     const partial = `${cached}.partial`;
     try {
       const response = await fetcher(`${source}/${asset.name}`, {
-        signal: AbortSignal.timeout(300000),
+        signal: AbortSignal.timeout(DOWNLOAD_TIMEOUT_MS),
       });
       if (!response.ok || !response.body)
         throw new Error(
