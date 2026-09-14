@@ -287,7 +287,7 @@ export default function WorldMap({
                 tabIndex={0}
                 aria-label={`Explore ${h.name}: ${issueLabels[state]}`}
                 aria-pressed={selected === h.index && panel === "region"}
-                className={`atlas-hub ${state} ${matching ? "" : "filtered"}`}
+                className={`atlas-hub ${state} ${h.global ? "global" : ""} ${matching ? "" : "filtered"}`}
                 onClick={(event) => chooseHub(h.index, event)}
                 onKeyDown={(event) => {
                   if (event.key === "Enter" || event.key === " ") {
@@ -298,7 +298,7 @@ export default function WorldMap({
               >
                 <title>
                   {h.name}: {issueLabels[state]} · {h.signals.length} matching
-                  components
+                  {h.global ? " service-wide reports" : " components"}
                 </title>
                 <circle
                   className="atlas-hit"
@@ -486,7 +486,9 @@ export default function WorldMap({
                 {focused
                   ? labelsFor(focused.status)
                   : panel === "region"
-                    ? "Only components naming this location"
+                    ? hub?.global
+                      ? "Official service-wide reports with no regional scope"
+                      : "Only components naming this location"
                     : panel === "about"
                       ? "Official feeds. Clear boundaries."
                       : "Provider signals, not inferred city outages"}

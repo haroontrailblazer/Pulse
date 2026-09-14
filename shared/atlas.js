@@ -64,6 +64,34 @@ export const hubs = [
     coordinates: "23.5° S / 46.6° W",
     names: ["sao paulo"],
   },
+  {
+    name: "Abu Dhabi",
+    region: "Asia Pacific",
+    label: "Middle East cloud infrastructure",
+    coordinates: "24.5° N / 54.4° E",
+    names: [
+      "abu dhabi",
+      "uae",
+      "united arab emirates",
+      "middle east (uae)",
+      "me-central-1",
+    ],
+  },
+  {
+    name: "Manama",
+    region: "Asia Pacific",
+    label: "Middle East cloud infrastructure",
+    coordinates: "26.2° N / 50.6° E",
+    names: ["manama", "bahrain", "middle east (bahrain)", "me-south-1"],
+  },
+  {
+    name: "Worldwide",
+    region: "Global",
+    label: "Service-wide official reports",
+    coordinates: "No regional scope stated",
+    names: [],
+    global: true,
+  },
 ];
 export const severityRank = {
   unknown: 0,
@@ -126,6 +154,7 @@ export function buildAtlas(
     signals: [],
     status: "unknown",
   }));
+  const worldwide = locations.find((location) => location.global);
   const issues = [];
   let fresh = 0;
   for (const provider of providers) {
@@ -158,14 +187,20 @@ export function buildAtlas(
           ? "maintenance"
           : null);
       if (status) {
-        // A provider-wide incident stays in the service list, but an official
-        // component or incident title that names a map hub is useful regional
-        // evidence. Update text can mention an unaffected city, so it never
-        // assigns an incident to a map location by itself.
-        const matchedLocations = [
+        // Official component and incident names can name a map hub. Update
+        // text can mention an unaffected city, so it never assigns an
+        // incident to a map location by itself. When no regional scope is
+        // published, show a clearly labelled worldwide signal instead of
+        // inventing a city location.
+        const regionalLocations = [
           ...(incident.components || []),
           incident.name,
         ].flatMap(componentLocations);
+        const matchedLocations = regionalLocations.length
+          ? regionalLocations
+          : worldwide
+            ? [worldwide.index]
+            : [];
         const signal = {
           provider,
           name: incident.name,
@@ -174,7 +209,8 @@ export function buildAtlas(
           incident,
           locations: [...new Set(matchedLocations)],
         };
-        for (const index of signal.locations) locations[index].signals.push(signal);
+        for (const index of signal.locations)
+          locations[index].signals.push(signal);
         evidence.push(signal);
       }
     }

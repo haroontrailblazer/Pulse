@@ -28,7 +28,7 @@ writeFileSync(
 );
 writeFileSync("desktop/icon.png", png(icon, 256));
 writeFileSync(
-  "android/app/src/main/res/drawable/ic_pulse_notification.xml",
+  "android/app/src/main/res/drawable/ic_pulse_notification_logo.xml",
   `<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="24dp" android:height="24dp" android:viewportWidth="64" android:viewportHeight="64"><path android:fillColor="#FFFFFF" android:pathData="${pulsePath}"/></vector>\n`,
 );
 writeFileSync(

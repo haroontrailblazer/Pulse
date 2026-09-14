@@ -78,7 +78,10 @@ final class PulseStore {
         Intent intent=new Intent(c,MainActivity.class).putExtra("pulseWatchlist",true).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_CLEAR_TOP);
         return PendingIntent.getActivity(c,100,intent,PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);
     }
-    static Bitmap notificationLogo(Context c) { return BitmapFactory.decodeResource(c.getResources(),R.mipmap.ic_launcher); }
+    // Use the same circular launcher artwork in expanded notifications. Android
+    // tints the required status-bar glyph, while this preserves the full Pulse
+    // application icon in the notification content.
+    static Bitmap notificationLogo(Context c) { return BitmapFactory.decodeResource(c.getResources(),R.mipmap.ic_launcher_round); }
     private static JSONObject reading(Context c,JSONObject provider) throws Exception {
         String id=provider.getString("id");
         try { JSONObject saved=new JSONObject(prefs(c).getString("reading."+id,"{}"));
@@ -121,7 +124,7 @@ final class PulseStore {
                 JSONArray incidents=reading.optJSONArray("incidents");
                 String body=incidents!=null&&incidents.length()>0?incidents.optJSONObject(0).optString("name","Service disruption"):"A watched service reports an issue. Open Pulse for current details.";
                 channel(c);
-                NotificationCompat.Builder alert=new NotificationCompat.Builder(c,CHANNEL).setSmallIcon(R.drawable.ic_pulse_notification).setLargeIcon(notificationLogo(c)).setContentTitle(reading.optString("name",id)+" · service issue").setContentText(body).setStyle(new NotificationCompat.BigTextStyle().bigText(body)).setContentIntent(open(c)).setAutoCancel(true);
+                NotificationCompat.Builder alert=new NotificationCompat.Builder(c,CHANNEL).setSmallIcon(R.drawable.ic_pulse_notification_logo).setLargeIcon(notificationLogo(c)).setContentTitle(reading.optString("name",id)+" · service issue").setContentText(body).setStyle(new NotificationCompat.BigTextStyle().bigText(body)).setContentIntent(open(c)).setAutoCancel(true);
                 NotificationManagerCompat.from(c).notify(id.hashCode(),alert.build());
             }
             p.edit().putString("signature."+id,signature).apply();

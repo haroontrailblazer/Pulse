@@ -27,6 +27,9 @@ const coords = [
   [139.7, 35.7],
   [151.2, -33.9],
   [-46.6, -23.5],
+  [54.4, 24.5],
+  [50.6, 26.2],
+  [0, 0],
 ];
 const path = geoPath(projection).digits(1);
 writeFileSync(

@@ -33,7 +33,7 @@ test("map colors follow the worst matching regional component, not provider head
   assert.equal(result.locations[0].status, "unknown");
   assert.equal(result.issues[0].status, "outage");
 });
-test("provider-wide incidents stay visible without inventing geographic pins", () => {
+test("provider-wide incidents use the dedicated worldwide marker", () => {
   const result = buildAtlas(
     [
       provider({
@@ -50,7 +50,9 @@ test("provider-wide incidents stay visible without inventing geographic pins", (
     now,
   );
   assert.equal(result.issues[0].status, "outage");
-  assert.ok(result.locations.every((h) => h.status === "unknown"));
+  const worldwide = result.locations.find((location) => location.global);
+  assert.equal(worldwide.status, "outage");
+  assert.equal(worldwide.signals[0].name, "API errors");
   assert.equal(result.issues[0].evidence[0].kind, "Active incident");
 });
 test("official incident details add outage and degraded pins when they name a hub", () => {
@@ -79,6 +81,52 @@ test("official incident details add outage and degraded pins when they name a hu
   assert.equal(result.locations[2].status, "outage");
   assert.equal(result.locations[0].status, "degraded");
   assert.equal(result.locations[2].signals[0].kind, "Active incident");
+});
+test("AWS Middle East regions and unscoped major incidents remain visible on the map", () => {
+  const result = buildAtlas(
+    [
+      provider({
+        id: "aws",
+        status: "outage",
+        components: [
+          component("Multiple services / UAE", "major_outage"),
+          component("Multiple services / Bahrain", "major_outage"),
+        ],
+        incidents: [
+          {
+            name: "Multiple services (UAE): Increased Error Rates",
+            impact: "major",
+            status: "investigating",
+            components: ["Multiple services / UAE"],
+          },
+        ],
+      }),
+      provider({
+        id: "anthropic",
+        status: "degraded",
+        incidents: [
+          {
+            name: "Degraded functionality for Claude Cowork on Windows",
+            impact: "major",
+            status: "identified",
+            components: ["Claude Cowork"],
+          },
+        ],
+      }),
+    ],
+    now,
+  );
+  const abuDhabi = result.locations.find(
+    (location) => location.name === "Abu Dhabi",
+  );
+  const manama = result.locations.find(
+    (location) => location.name === "Manama",
+  );
+  const worldwide = result.locations.find((location) => location.global);
+  assert.equal(abuDhabi.status, "outage");
+  assert.equal(manama.status, "outage");
+  assert.equal(worldwide.status, "outage");
+  assert.equal(worldwide.signals[0].provider.id, "anthropic");
 });
 test("stale or failed feeds cannot keep regional outage pins or count as healthy", () => {
   const bad = provider({

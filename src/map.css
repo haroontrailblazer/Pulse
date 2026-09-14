@@ -50,6 +50,10 @@
 .atlas-hub.filtered {
   opacity: 0.22;
 }
+.atlas-hub.global .atlas-ring {
+  stroke: currentColor;
+  stroke-dasharray: 3 2;
+}
 .atlas-hit {
   fill: transparent;
 }
