@@ -27,6 +27,13 @@ writeFileSync(
   png(pulseSvg({ color: "#ffffff" }), 1024),
 );
 writeFileSync("desktop/icon.png", png(icon, 256));
+mkdirSync("android/app/src/main/res/drawable-nodpi", { recursive: true });
+// Notifications need a bitmap. Decoding an adaptive launcher resource can
+// fall back to a device-cached legacy icon instead of the current Pulse mark.
+writeFileSync(
+  "android/app/src/main/res/drawable-nodpi/ic_pulse_notification_large.png",
+  png(round, 192),
+);
 writeFileSync(
   "android/app/src/main/res/drawable/ic_pulse_notification_logo.xml",
   `<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="24dp" android:height="24dp" android:viewportWidth="64" android:viewportHeight="64"><path android:fillColor="#FFFFFF" android:pathData="${pulsePath}"/></vector>\n`,

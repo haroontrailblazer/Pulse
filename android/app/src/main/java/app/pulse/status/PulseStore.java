@@ -78,10 +78,9 @@ final class PulseStore {
         Intent intent=new Intent(c,MainActivity.class).putExtra("pulseWatchlist",true).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_CLEAR_TOP);
         return PendingIntent.getActivity(c,100,intent,PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);
     }
-    // Use the same circular launcher artwork in expanded notifications. Android
-    // tints the required status-bar glyph, while this preserves the full Pulse
-    // application icon in the notification content.
-    static Bitmap notificationLogo(Context c) { return BitmapFactory.decodeResource(c.getResources(),R.mipmap.ic_launcher_round); }
+    // Notifications require a bitmap. Do not decode the adaptive launcher
+    // resource here: some devices resolve it to a cached legacy app icon.
+    static Bitmap notificationLogo(Context c) { return BitmapFactory.decodeResource(c.getResources(),R.drawable.ic_pulse_notification_large); }
     private static JSONObject reading(Context c,JSONObject provider) throws Exception {
         String id=provider.getString("id");
         try { JSONObject saved=new JSONObject(prefs(c).getString("reading."+id,"{}"));

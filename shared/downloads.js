@@ -1,4 +1,4 @@
-export const releaseVersion = "1.0.12";
+export const releaseVersion = "1.0.13";
 const releaseBase = `https://pulse-status-zeta.vercel.app/downloads/v${releaseVersion}`;
 export const downloads = {
   windows: `${releaseBase}/Pulse-${releaseVersion}-Windows.exe`,
