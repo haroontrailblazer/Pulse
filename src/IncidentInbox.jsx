@@ -184,16 +184,21 @@ export default function IncidentInbox({
                   <ArrowUpRight size={16} />
                 </span>
               </button>
-              {/* A sibling, not a child: a button inside a button is invalid
-                  markup and the inner one never receives the click. */}
-              <button
-                className="inbox-dismiss"
-                aria-label={`Dismiss the ${i.provider.name} update`}
-                title="Dismiss"
-                onClick={() => onDismiss?.(i)}
-              >
-                <X size={16} />
-              </button>
+              {/* Only once it has been read: an unread update is the one thing
+                  the inbox exists to show, so it cannot be swiped away before
+                  it has been seen. Opening it marks it read and the control
+                  appears. A sibling, not a child — a button inside a button is
+                  invalid markup and the inner one never receives the click. */}
+              {!unread && (
+                <button
+                  className="inbox-dismiss"
+                  aria-label={`Dismiss the ${i.provider.name} update`}
+                  title="Dismiss"
+                  onClick={() => onDismiss?.(i)}
+                >
+                  <X size={16} />
+                </button>
+              )}
               </div>
             </React.Fragment>
           );
