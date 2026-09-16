@@ -115,6 +115,12 @@ small {
 .page-title-row h1 > span,
 .section-title h2 > span {
   font-family: var(--font-serif);
+  /* Optically matched, not nominally matched. Measured at 100px, Manrope's
+     x-height is 54 and Instrument Serif's is 51, so the serif reads ~6% small
+     beside it at an identical font-size. These clauses are lowercase, so the
+     x-height is what the eye judges; 54/51 = 1.06. Cap-heights already agree
+     (72 vs 73), and `em` keeps the correction true at every title size. */
+  font-size: 1.06em;
   font-weight: var(--fw-medium);
   font-style: normal;
   letter-spacing: 0;
@@ -1392,6 +1398,16 @@ select {
 .atlas-map.is-preview,
 .atlas-map.is-preview :is(button, select, .atlas-hub) {
   cursor: pointer;
+}
+/* The reset in styles.css lists button/a/input/select, and this card is none of
+   them — it is a <section> that was given a click handler, so Android painted
+   its highlight across the whole card on every tap. The property inherits, so
+   setting it here covers the map and everything drawn on it. Tapping must not
+   start a text selection either: the card behaves as one link, not as prose. */
+.atlas-map.is-preview {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 /* A marker is an SVG group, so the tap-highlight reset that covers buttons and
