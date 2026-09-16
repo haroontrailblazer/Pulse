@@ -115,11 +115,11 @@ small {
 .page-title-row h1 > span,
 .section-title h2 > span {
   font-family: var(--font-serif);
-  font-weight: var(--fw-semibold);
+  font-weight: var(--fw-medium);
   font-style: normal;
   letter-spacing: 0;
   color: var(--text-muted);
-  -webkit-text-stroke: 0.7px currentColor;
+  -webkit-text-stroke: 0.45px currentColor;
   paint-order: stroke fill;
 }
 .page-title-row .notification-button {
