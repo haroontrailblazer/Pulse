@@ -43,6 +43,7 @@ import {
   Zap,
   Sun,
   Moon,
+  Funnel,
 } from "./icons";
 import { Capacitor } from "@capacitor/core";
 import useLiveStatus from "./useLiveStatus";
@@ -120,7 +121,86 @@ function Status({ status }) {
     </span>
   );
 }
-function Modal({ title, children, onClose, wide = false }) {
+// A bottom sheet is dismissed the way a bottom sheet should be: drag the handle
+// down past a quarter of its height, or flick it. The handle is a real button,
+// so tapping it and Escape both still close — the gesture is the addition, not
+// the only way out. Desktop keeps its centred dialog and its close button.
+const PHONE_SHEET = "(max-width: 760px)";
+function useSheetDismiss(ref, onClose) {
+  const drag = useRef(null);
+  const moved = useRef(false);
+  const settle = (el, transform, ease, ms, after) => {
+    el.style.transition = `transform ${ms}ms ${ease}`;
+    el.style.transform = transform;
+    window.setTimeout(() => after?.(el), ms);
+  };
+  const down = (e) => {
+    const el = ref.current;
+    if (!el || !window.matchMedia(PHONE_SHEET).matches) return;
+    e.currentTarget.setPointerCapture?.(e.pointerId);
+    moved.current = false;
+    drag.current = {
+      from: e.clientY,
+      at: performance.now(),
+      dy: 0,
+      height: el.getBoundingClientRect().height,
+    };
+    el.style.transition = "none";
+  };
+  const move = (e) => {
+    const state = drag.current;
+    if (!state) return;
+    // Downward only: dragging up must not stretch the sheet off its anchor.
+    state.dy = Math.max(0, e.clientY - state.from);
+    if (state.dy > 4) moved.current = true;
+    ref.current.style.transform = `translateY(${state.dy}px)`;
+  };
+  const up = (e) => {
+    const state = drag.current;
+    if (!state) return;
+    drag.current = null;
+    const el = ref.current;
+    e.currentTarget.releasePointerCapture?.(e.pointerId);
+    const velocity = state.dy / Math.max(1, performance.now() - state.at);
+    const clear = (node) => {
+      node.style.transition = "";
+      node.style.transform = "";
+    };
+    if (state.dy > state.height * 0.25 || velocity > 0.55) {
+      settle(el, `translateY(${state.height}px)`, "cubic-bezier(.4,0,1,1)", 170, (node) => {
+        onClose();
+        clear(node);
+      });
+    } else {
+      settle(el, "translateY(0px)", "cubic-bezier(.2,.8,.2,1)", 220, clear);
+    }
+  };
+  return {
+    onPointerDown: down,
+    onPointerMove: move,
+    onPointerUp: up,
+    onPointerCancel: up,
+    onClick: () => {
+      if (!moved.current) onClose();
+    },
+  };
+}
+
+function SheetGrabber({ sheetRef, onClose, label }) {
+  const handlers = useSheetDismiss(sheetRef, onClose);
+  return (
+    <button
+      type="button"
+      className="sheet-grabber"
+      aria-label={label}
+      {...handlers}
+    >
+      <i />
+    </button>
+  );
+}
+
+function Modal({ title, children, onClose, wide = false, actions = null }) {
   const ref = useRef();
   const backdropRef = useRef();
   useLayoutEffect(() => {
@@ -152,10 +232,12 @@ function Modal({ title, children, onClose, wide = false }) {
     const handler = (e) => {
       if (e.key === "Escape") onClose();
       if (e.key === "Tab") {
-        const nodes = ref.current?.querySelectorAll(
-          'button:not(:disabled), a[href], input:not(:disabled), select:not(:disabled), textarea:not(:disabled), summary, [tabindex="0"]',
-        );
-        if (!nodes?.length) return;
+        const nodes = [
+          ...(ref.current?.querySelectorAll(
+            'button:not(:disabled), a[href], input:not(:disabled), select:not(:disabled), textarea:not(:disabled), summary, [tabindex="0"]',
+          ) ?? []),
+        ].filter((node) => node.getClientRects().length);
+        if (!nodes.length) return;
         const first = nodes[0],
           last = nodes[nodes.length - 1];
         if (!ref.current.contains(document.activeElement)) {
@@ -196,6 +278,7 @@ function Modal({ title, children, onClose, wide = false }) {
         aria-modal="true"
         aria-label={title}
       >
+        <SheetGrabber sheetRef={ref} onClose={onClose} label="Close sheet" />
         <div className="modal-heading">
           <h2>{title}</h2>
           <button
@@ -206,7 +289,8 @@ function Modal({ title, children, onClose, wide = false }) {
             <X size={20} />
           </button>
         </div>
-        {children}
+        <div className="modal-body">{children}</div>
+        {actions ? <div className="modal-actions">{actions}</div> : null}
       </section>
     </div>
   );
@@ -296,13 +380,38 @@ export default function App() {
   const [mobileNav, setMobileNav] = useState(false);
   const [toast, setToast] = useState("");
   const [monitorSearch, setMonitorSearch] = useState("");
-  const [showAllServices, setShowAllServices] = useState(false);
   const [readIncidents, setReadIncidents] = useState(() => {
     const value = saved("pulse-inbox-read", {});
     return value && typeof value === "object" && !Array.isArray(value)
       ? value
       : {};
   });
+  const [dismissedIncidents, setDismissedIncidents] = useState(() => {
+    const value = saved("pulse-inbox-dismissed", {});
+    return value && typeof value === "object" && !Array.isArray(value)
+      ? value
+      : {};
+  });
+  function dismissIncident(incident) {
+    setDismissedIncidents((previous) => {
+      const next = Object.fromEntries(
+        [
+          ...Object.entries(previous),
+          [incident.key, incidentRevision(incident)],
+        ].slice(-200),
+      );
+      try {
+        localStorage.setItem("pulse-inbox-dismissed", JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+  }
+  function restoreDismissedIncidents() {
+    setDismissedIncidents({});
+    try {
+      localStorage.removeItem("pulse-inbox-dismissed");
+    } catch {}
+  }
   function markIncidentsRead(incidents) {
     setReadIncidents((previous) => {
       const next = Object.fromEntries(
@@ -405,7 +514,6 @@ export default function App() {
     setSearch("");
     setFilter("All services");
     setCategory("All categories");
-    setShowAllServices(false);
   };
   // Nothing has been confirmed yet: the page is loading, not reporting a
   // service-wide failure. Screens show skeletons rather than 28 "unavailable"
@@ -503,10 +611,7 @@ export default function App() {
   );
   // The Overview previews the directory; the Watchlist destination is the full
   // list of what you chose to watch, so it is never truncated.
-  const previewing =
-    page === "Overview" &&
-    !showAllServices &&
-    visible.length > OVERVIEW_SERVICES;
+  const previewing = page === "Overview" && visible.length > OVERVIEW_SERVICES;
   const shown = previewing ? visible.slice(0, OVERVIEW_SERVICES) : visible;
   useLayoutEffect(() => {
     if (!hoverMotionEnabled()) return;
@@ -640,6 +745,11 @@ export default function App() {
           }
         }}
       >
+        <SheetGrabber
+          sheetRef={sidebarRef}
+          onClose={closeNavigation}
+          label="Close navigation"
+        />
         <div className="sidebar-header">
           <a
             className="brand"
@@ -668,16 +778,18 @@ export default function App() {
           aria-label="Navigation and watched services"
           tabIndex={0}
         >
-          <button className="workspace" onClick={() => go("Watchlist")}>
-            <span className="workspace-symbol">
-              <Globe2 size={16} />
-            </span>
-            <span>
-              Your saved services
-              <small>{watchlist.length} on your watchlist</small>
-            </span>
-            <ChevronDown size={16} />
-          </button>
+          {!compact && (
+            <button className="workspace" onClick={() => go("Watchlist")}>
+              <span className="workspace-symbol">
+                <Globe2 size={16} />
+              </span>
+              <span>
+                Your saved services
+                <small>{watchlist.length} on your watchlist</small>
+              </span>
+              <ChevronDown size={16} />
+            </button>
+          )}
           <div className="nav-label">{compact ? "MORE" : "EXPLORE"}</div>
           <nav aria-label={compact ? "More destinations" : "Main navigation"}>
             {/* The phone's bottom bar already holds the four primary
@@ -701,16 +813,18 @@ export default function App() {
               ),
             )}
           </nav>
-          <div className="nav-label following-label">
-            YOUR WATCHLIST{" "}
-            <button
-              aria-label="Edit watchlist"
-              onClick={() => setModal("monitor")}
-            >
-              <Plus size={16} />
-            </button>
-          </div>
-          <div className="sidebar-watches">
+          {!compact && (
+            <>
+              <div className="nav-label following-label">
+                YOUR WATCHLIST{" "}
+                <button
+                  aria-label="Edit watchlist"
+                  onClick={() => setModal("monitor")}
+                >
+                  <Plus size={16} />
+                </button>
+              </div>
+              <div className="sidebar-watches">
             {items
               .filter((p) => watchlist.includes(p.id))
               .slice(0, 5)
@@ -725,35 +839,37 @@ export default function App() {
                   <i aria-hidden="true" className={`state-dot ${p.status}`} />
                 </button>
               ))}
-            {!watchlist.length && (
-              <p className="muted sidebar-empty">
-                Keep your critical services close.
-              </p>
-            )}
-          </div>
-          {watchlist.length > 5 && (
-            <button
-              className="sidebar-view-all"
-              onClick={() => go("Watchlist")}
-            >
-              View all {watchlist.length} watched services{" "}
-              <ArrowRight size={16} />
-            </button>
+                {!watchlist.length && (
+                  <p className="muted sidebar-empty">
+                    Keep your critical services close.
+                  </p>
+                )}
+              </div>
+              {watchlist.length > 5 && (
+                <button
+                  className="sidebar-view-all"
+                  onClick={() => go("Watchlist")}
+                >
+                  View all {watchlist.length} watched services{" "}
+                  <ArrowRight size={16} />
+                </button>
+              )}
+              <div className="download-card">
+                <span className="download-card-icon">
+                  <Layers3 size={20} />
+                </span>
+                <h3>A little peace of mind.</h3>
+                <p>
+                  Your infrastructure, in view.
+                  <br />
+                  Wherever you work.
+                </p>
+                <button onClick={() => setModal("apps")}>
+                  Get Pulse for your device <ArrowUpRight size={16} />
+                </button>
+              </div>
+            </>
           )}
-          <div className="download-card">
-            <span className="download-card-icon">
-              <Layers3 size={20} />
-            </span>
-            <h3>A little peace of mind.</h3>
-            <p>
-              Your infrastructure, in view.
-              <br />
-              Wherever you work.
-            </p>
-            <button onClick={() => setModal("apps")}>
-              Get Pulse for your device <ArrowUpRight size={16} />
-            </button>
-          </div>
         </div>
         <div className="sidebar-bottom">
           {compact && import.meta.env.VITE_STATUS_TRANSPORT === "poll" && (
@@ -795,11 +911,17 @@ export default function App() {
                       Internet health, <span>in view.</span>
                     </>
                   ) : page === "Global map" ? (
-                    "A connected world."
+                    <>
+                      A connected <span>world.</span>
+                    </>
                   ) : page === "Incidents" ? (
-                    "Every signal. Less noise."
+                    <>
+                      Every signal. <span>Less noise.</span>
+                    </>
                   ) : page === "Watchlist" ? (
-                    "Your stack, at a glance."
+                    <>
+                      Your stack, <span>at a glance.</span>
+                    </>
                   ) : page === "Developer tools" ? (
                     "Built for your next deploy."
                   ) : (
@@ -808,19 +930,17 @@ export default function App() {
                 </h1>
                 {notificationButton}
               </div>
-              <p>
-                {page === "Overview"
-                  ? "Know what’s down. Understand what it means. Stay one step ahead."
-                  : page === "Global map"
-                    ? "Explore the infrastructure hubs behind a connected digital economy."
-                    : page === "Incidents"
-                      ? "Active incidents, straight from the services you rely on."
-                      : page === "Watchlist"
-                        ? "A focused view of the services that matter most to you."
-                        : page === "Developer tools"
-                          ? "Registry health, component signals, and security utilities in one place."
-                          : "Major issues and degradation across services, with practical next checks."}
-              </p>
+              {page !== "Overview" &&
+                page !== "Incidents" &&
+                page !== "Global map" && (
+                  <p>
+                    {page === "Watchlist"
+                      ? "A focused view of the services that matter most to you."
+                      : page === "Developer tools"
+                        ? "Registry health, component signals, and security utilities in one place."
+                        : "Major issues and degradation across services, with practical next checks."}
+                  </p>
+                )}
             </div>
           </div>
           {error && page !== "Global map" && (
@@ -903,6 +1023,9 @@ export default function App() {
                 now={now}
                 onToggleWatch={toggleWatch}
                 feedError={error}
+                onOpen={
+                  page === "Overview" ? () => go("Global map") : undefined
+                }
               />
               {page === "Overview" && (
                 <section className="panel incidents-panel">
@@ -914,10 +1037,14 @@ export default function App() {
                       Live incidents{" "}
                       <span className="count-label">{allIncidents.length}</span>
                     </h2>
-                    <span className="live-label">
-                      <i />
-                      {loading ? "SYNCING" : "FEED"}
-                    </span>
+                    {/* A permanent "FEED" badge with a green dot reported
+                        nothing: the card is the feed. The label now appears
+                        only when there is a state worth naming. */}
+                    {loading ? (
+                      <span className="live-label">SYNCING</span>
+                    ) : error ? (
+                      <span className="live-label is-down">UNAVAILABLE</span>
+                    ) : null}
                   </div>
                   {/* The Overview shows the three most recent updates and
                       hands the rest to the Incidents destination. A scroller
@@ -977,11 +1104,9 @@ export default function App() {
                       {page === "Watchlist" ? watchlist.length : items.length}
                     </span>
                   </h2>
-                  <p>
-                    {page === "Watchlist"
-                      ? "The services you chose to keep in view."
-                      : "The building blocks of your digital world."}
-                  </p>
+                  {page === "Watchlist" && (
+                    <p>The services you chose to keep in view.</p>
+                  )}
                 </div>
                 <div className="overview-heading-actions">
                   {page === "Overview" && (
@@ -992,16 +1117,25 @@ export default function App() {
                     />
                   )}
                   <button
-                    className={`text-button refresh-button ${loading ? "loading" : ""}`}
+                    className={`icon-button refresh-button ${loading ? "loading" : ""}`}
                     disabled={loading}
                     onClick={refresh}
+                    aria-label={
+                      loading
+                        ? "Refreshing…"
+                        : fetchedAt
+                          ? `Refresh. Updated ${age(fetchedAt).toLowerCase()}`
+                          : "Refresh. Not checked yet"
+                    }
+                    title={
+                      loading
+                        ? "Refreshing…"
+                        : fetchedAt
+                          ? `Updated ${age(fetchedAt).toLowerCase()}`
+                          : "Not checked yet"
+                    }
                   >
-                    <RefreshCw size={16} />
-                    {loading
-                      ? "Refreshing…"
-                      : fetchedAt
-                        ? `Updated ${age(fetchedAt).toLowerCase()}`
-                        : "Not checked yet"}
+                    <RefreshCw size={20} />
                   </button>
                 </div>
               </div>
@@ -1038,16 +1172,21 @@ export default function App() {
                     />
                     <kbd>/</kbd>
                   </div>
-                  <select
-                    aria-label="Filter service category"
-                    value={category}
-                    onChange={(e) => setCategory(e.target.value)}
+                  <div
+                    className={`category-filter ${category !== "All categories" ? "is-active" : ""}`}
                   >
-                    <option>All categories</option>
-                    {categories.map((c) => (
-                      <option key={c}>{c}</option>
-                    ))}
-                  </select>
+                    <Funnel size={16} />
+                    <select
+                      aria-label="Filter service category"
+                      value={category}
+                      onChange={(e) => setCategory(e.target.value)}
+                    >
+                      <option>All categories</option>
+                      {categories.map((c) => (
+                        <option key={c}>{c}</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
               </div>
               <div className="visually-hidden" role="status" aria-live="polite">
@@ -1257,21 +1396,21 @@ export default function App() {
                   </div>
                 )}
               </div>
-              {(previewing || showAllServices) && (
-                <button
-                  className="panel-footer-button"
-                  onClick={() => setShowAllServices(!showAllServices)}
-                >
-                  {previewing
-                    ? `View all ${visible.length} services`
-                    : "Show fewer services"}
-                  <ArrowRight size={16} />
-                </button>
-              )}
+              {/* One control, not two: the footer line that used to report
+                  "Showing 3 of 28" is the control that opens the rest. */}
               <div className="table-footer">
-                <span>
-                  Showing {shown.length} of {directoryItems.length} services
-                </span>
+                {previewing ? (
+                  <button
+                    className="table-footer-toggle"
+                    onClick={() => setModal("monitor")}
+                    aria-haspopup="dialog"
+                  >
+                    View all {visible.length} services
+                    <ArrowRight size={16} />
+                  </button>
+                ) : (
+                  <span />
+                )}
                 <span>
                   <ShieldCheck size={16} />
                   {directoryVerified} fresh ·{" "}
@@ -1288,18 +1427,15 @@ export default function App() {
                     Active incident feed{" "}
                     <span className="count-label">{allIncidents.length}</span>
                   </h2>
-                  <p>
-                    Provider updates are checked every 30 seconds while
-                    automatic refresh is enabled.
-                  </p>
                 </div>
                 <button
-                  className="button secondary"
+                  className={`icon-button refresh-button ${loading ? "loading" : ""}`}
                   onClick={refresh}
                   disabled={loading}
+                  aria-label={loading ? "Refreshing…" : "Refresh the feed"}
+                  title={loading ? "Refreshing…" : "Refresh the feed"}
                 >
-                  <RefreshCw size={16} />
-                  Refresh
+                  <RefreshCw size={20} />
                 </button>
               </div>
               {allIncidents.length ? (
@@ -1329,7 +1465,9 @@ export default function App() {
                 <>
                   <div className="section-title">
                     <div>
-                      <h2>Small disruptions. Wider ripples.</h2>
+                      <h2>
+                        Small disruptions. <span>Wider ripples.</span>
+                      </h2>
                     </div>
                     {page === "Overview" && (
                       <button
@@ -1440,6 +1578,33 @@ export default function App() {
           }
           onClose={closeModal}
           wide={modal === "provider" || modal === "notifications"}
+          actions={
+            modal === "provider" && detail ? (
+              <>
+                <button
+                  className="button secondary"
+                  onClick={() => toggleWatch(detail.id)}
+                >
+                  <Star
+                    size={16}
+                    weight={watchlist.includes(detail.id) ? "fill" : "regular"}
+                    className={`watchlist-star ${watchlist.includes(detail.id) ? "watched" : ""}`}
+                  />
+                  {watchlist.includes(detail.id)
+                    ? "Remove from watchlist"
+                    : "Add to watchlist"}
+                </button>
+                <a
+                  className="button primary"
+                  href={detail.url}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Official status page <ExternalLink size={16} />
+                </a>
+              </>
+            ) : null
+          }
         >
           {modal === "monitor" && (
             <>
@@ -1597,29 +1762,6 @@ export default function App() {
                   </p>
                 )}
               </div>
-              <div className="modal-actions">
-                <button
-                  className="button secondary"
-                  onClick={() => toggleWatch(detail.id)}
-                >
-                  <Star
-                    size={16}
-                    weight={watchlist.includes(detail.id) ? "fill" : "regular"}
-                    className={`watchlist-star ${watchlist.includes(detail.id) ? "watched" : ""}`}
-                  />
-                  {watchlist.includes(detail.id)
-                    ? "Remove from watchlist"
-                    : "Add to watchlist"}
-                </button>
-                <a
-                  className="button primary"
-                  href={detail.url}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  Official status page <ExternalLink size={16} />
-                </a>
-              </div>
             </>
           )}
           {modal === "notifications" && (
@@ -1627,6 +1769,9 @@ export default function App() {
               incidents={allIncidents}
               items={items}
               watchlist={watchlist}
+              dismissed={dismissedIncidents}
+              onDismiss={dismissIncident}
+              onRestore={restoreDismissedIncidents}
               read={readIncidents}
               onRead={markIncidentsRead}
               onProvider={openProvider}

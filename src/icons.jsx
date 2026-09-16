@@ -54,4 +54,5 @@ export {
   CrosshairIcon as LocateFixed,
   MapPinIcon as MapPin,
   CompassIcon as Compass,
+  FunnelIcon as Funnel,
 } from "@phosphor-icons/react";

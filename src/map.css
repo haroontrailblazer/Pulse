@@ -186,15 +186,6 @@ h2) {
   accent-color: var(--accent);
   margin: 0;
 }
-.atlas-map-prompt {
-  position: absolute;
-  bottom: 90px;
-  left: 16px;
-  color: var(--secondary);
-  background: var(--map-ocean);
-  border-radius: var(--radius-xs);
-  pointer-events: none;
-}
 .atlas-map-tools {
   position: absolute;
   z-index: 3;
@@ -455,16 +446,34 @@ h2) {
 .atlas-map button:hover:not(:disabled) {
   background-color: var(--surface-soft);
 }
+/* While the panel is open the card is split between a map and a reading pane,
+   and a 170px header would leave the map a sliver. The region picker and the
+   severity chips fold away for as long as the panel is up — they are the
+   controls you use to *find* something, not to read it, and they come straight
+   back when it closes. */
+.atlas-map.narrow.has-inspector .atlas-map-controls,
+.atlas-map.narrow.has-inspector .atlas-map-title select {
+  display: none;
+}
+
+/* NARROW_PANEL: 260px, mirrored by `cardHeight` in WorldMap.jsx. */
 .atlas-map.narrow .atlas-inspector {
   top: auto;
   left: 12px;
   right: 12px;
   bottom: 12px;
-  height: min(350px, 44%);
+  height: 260px;
   width: auto;
 }
+/* The card splits: map above, panel below, both inside the same frame. This
+   bottom has to match `panelBelow` in WorldMap.jsx, which sizes the viewBox to
+   the same surface — otherwise the globe is drawn for a box it does not fill. */
+.atlas-map.narrow.has-inspector .atlas-world {
+  bottom: 272px;
+  height: auto;
+}
 .atlas-map.narrow.has-inspector .atlas-map-tools {
-  bottom: calc(min(350px, 44%) + 22px);
+  bottom: 284px;
 }
 .atlas-map.narrow .atlas-service-dock {
   right: 16px;
@@ -474,9 +483,6 @@ h2) {
 }
 .atlas-map.narrow:not(.has-inspector) .atlas-map-tools {
   bottom: 95px;
-}
-.atlas-map.narrow .atlas-map-prompt {
-  bottom: 149px;
 }
 .atlas-map.narrow .atlas-map-title select {
   max-width: 120px;
@@ -543,9 +549,6 @@ h2) {
     right: auto;
     left: 12px;
     bottom: 12px;
-  }
-.atlas-map-prompt {
-    display: none;
   }
 }
 .atlas-pin-leader {

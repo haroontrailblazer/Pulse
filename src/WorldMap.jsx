@@ -46,6 +46,7 @@ export default function WorldMap({
   now = Date.now(),
   onToggleWatch,
   feedError,
+  onOpen,
 }) {
   const frame = useRef(null),
     closeRef = useRef(null),
@@ -162,18 +163,24 @@ export default function WorldMap({
   };
   const wide = size.width > 700 || (size.width > 570 && size.height < 430);
   const side = panel && wide ? Math.min(350, size.width * 0.43) : 0;
-  const cardHeight = panel && !wide ? Math.min(350, size.height * 0.44) : 0;
-  const top = Math.max(size.height < 430 ? 105 : 140, headerBottom + 16);
-  // A narrow map keeps more of its lower edge clear: the tap prompt and the
-  // service dock sit there, and a marker hidden behind them reads as a bug.
+  // Fixed, and mirrored by NARROW_PANEL in map.css: the card grows to fit the
+  // panel, so there is nothing for a percentage to adapt to.
+  const cardHeight = panel && !wide ? 260 : 0;
+  // Opening the panel on a narrow card does not park it on top of the map: the
+  // drawing surface gives up the space instead, so the map moves up and shrinks
+  // into what is left. Everything below measures that surface, not the card, or
+  // the globe would be laid out for a height it no longer has.
+  const panelBelow = cardHeight ? cardHeight + 12 : 0;
+  const board = Math.max(200, size.height - panelBelow);
+  const top = Math.max(board < 430 ? 105 : 140, headerBottom + 16);
   // What sits along the bottom edge of a narrow map: the service dock always,
-  // and on the Map destination the zoom controls and the tap prompt above it.
-  // Markers have to clear all of it — on a short screen the difference between
-  // 130 and 200 is the difference between a readable map and a pile-up.
-  const narrowFooter = expanded ? 200 : 130;
-  const footer = cardHeight || (wide ? 85 : narrowFooter);
-  const bottomReserve = cardHeight ? cardHeight + 50 : wide ? 50 : narrowFooter;
-  const spaceHeight = Math.max(80, size.height - top - footer);
+  // and on the Map destination the zoom controls above it. Markers have to
+  // clear all of it — on a short screen the difference between 130 and 200 is
+  // the difference between a readable map and a pile-up.
+  const narrowFooter = cardHeight ? 56 : expanded ? 170 : 130;
+  const footer = wide ? 85 : narrowFooter;
+  const bottomReserve = wide ? 50 : narrowFooter;
+  const spaceHeight = Math.max(80, board - top - footer);
   const spaceWidth = Math.max(160, size.width - side - 30);
   const base = Math.min(spaceWidth / 870, spaceHeight / 420) * 0.95;
   const [rx, ry, rs] = views[region];
@@ -187,7 +194,7 @@ export default function WorldMap({
   const visibleHubs = atlas.locations.filter(
     (h) =>
       (region === "Global" || h.region === region) &&
-      (!(panel && (size.height < 430 || (!wide && size.height < 600))) ||
+      (!(panel && (board < 430 || (!wide && board < 600))) ||
         (panel === "region"
           ? h.index === selected
           : panel === "about"
@@ -210,13 +217,13 @@ export default function WorldMap({
           h.x >= 18 &&
           h.x <= size.width - side - 18 &&
           h.y >= top - 15 &&
-          h.y <= size.height - bottomReserve + 15,
+          h.y <= board - bottomReserve + 15,
       ),
     {
       left: 25,
       right: size.width - side - 25,
       top: top + 25,
-      bottom: Math.max(top + 50, size.height - bottomReserve),
+      bottom: Math.max(top + 50, board - bottomReserve),
     },
   );
   useLayoutEffect(() => {
@@ -266,11 +273,31 @@ export default function WorldMap({
         : severity === "all"
           ? "Service conditions"
           : issueLabels[severity]);
+  // On the Overview the map is a preview, not a workspace. Anything touched
+  // inside it opens the Map destination instead of an inspector that would sit
+  // on top of the page you are already reading. Captured on the way down, so
+  // markers, chips and the region picker all resolve to the same destination —
+  // and because a keyboard Enter on any of them still dispatches a click, this
+  // needs no extra keyboard path and no nested interactive wrapper.
+  const preview = !expanded && typeof onOpen === "function";
   return (
     <section
       ref={frame}
-      className={`atlas atlas-map ${expanded ? "expanded" : ""} ${panel ? "has-inspector" : ""} ${wide ? "wide" : "narrow"}`}
-      aria-label="Interactive infrastructure map"
+      className={`atlas atlas-map ${expanded ? "expanded" : ""} ${panel ? "has-inspector" : ""} ${wide ? "wide" : "narrow"} ${preview ? "is-preview" : ""}`}
+      aria-label={
+        preview
+          ? "Infrastructure map preview. Opens the full map."
+          : "Interactive infrastructure map"
+      }
+      onClickCapture={
+        preview
+          ? (event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              onOpen();
+            }
+          : undefined
+      }
       onKeyDown={(event) => {
         if (event.key === "Escape" && panel) {
           event.stopPropagation();
@@ -280,7 +307,7 @@ export default function WorldMap({
     >
       <svg
         className="atlas-world"
-        viewBox={`0 0 ${size.width} ${size.height}`}
+        viewBox={`0 0 ${size.width} ${board}`}
         aria-label="Regional provider signals"
         role="group"
       >
@@ -435,11 +462,6 @@ export default function WorldMap({
         </div>
       </div>
 
-      {!panel && (
-        <div className="atlas-map-prompt">
-          Tap a marker to see what’s happening
-        </div>
-      )}
       <div className="atlas-map-tools" aria-label="Map controls">
         <button
           title="Reset map"

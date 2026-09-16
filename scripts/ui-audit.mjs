@@ -165,26 +165,30 @@ const PROBE = `(() => {
   for (const el of document.querySelectorAll(interactive)) {
     if (!visible(el)) continue;
     if (el.disabled) continue;
-    let r = el.getBoundingClientRect();
     // A control may keep a small visual size and carry its touch target on an
     // absolutely positioned ::after with negative insets. Measure the real
-    // reachable area, not just the painted box.
-    const after = getComputedStyle(el, "::after");
-    if (after && after.content !== "none" && after.position === "absolute") {
+    // reachable area, not just the painted box — for the control itself and
+    // for any label or wrapper it delegates its target to.
+    const reach = (node) => {
+      const box = node.getBoundingClientRect();
+      const after = getComputedStyle(node, "::after");
+      if (!after || after.content === "none" || after.position !== "absolute")
+        return box;
       const grow = (v) => {
         const n = parseFloat(v);
         return Number.isFinite(n) && n < 0 ? -n : 0;
       };
       const top = grow(after.top), right = grow(after.right);
       const bottom = grow(after.bottom), left = grow(after.left);
-      if (top || right || bottom || left)
-        r = {
-          width: r.width + left + right,
-          height: r.height + top + bottom,
-          left: r.left - left,
-          top: r.top - top,
-        };
-    }
+      if (!(top || right || bottom || left)) return box;
+      return {
+        width: box.width + left + right,
+        height: box.height + top + bottom,
+        left: box.left - left,
+        top: box.top - top,
+      };
+    };
+    let r = reach(el);
     // An inline link inside a paragraph is exempt; standalone controls are not.
     const inline = el.tagName === "A" && getComputedStyle(el).display.startsWith("inline") && el.closest("p, li, small");
     if (inline) continue;
@@ -192,13 +196,13 @@ const PROBE = `(() => {
     // is the real target, so judge the label instead.
     if (el.tagName === "INPUT" && ["checkbox", "radio"].includes(el.type)) {
       const label = el.closest("label");
-      const box = label ? label.getBoundingClientRect() : null;
+      const box = label ? reach(label) : null;
       if (box && box.width >= MIN_TARGET - 0.5 && box.height >= MIN_TARGET - 0.5) continue;
     }
     // A field that fills a control-sized wrapper is targeted through it.
     if (["INPUT", "TEXTAREA", "SELECT"].includes(el.tagName)) {
       const wrapper = el.closest(".search-input, .field, label");
-      const box = wrapper && wrapper !== el ? wrapper.getBoundingClientRect() : null;
+      const box = wrapper && wrapper !== el ? reach(wrapper) : null;
       if (box && box.height >= MIN_TARGET - 0.5) continue;
     }
     if (r.width < MIN_TARGET - 0.5 || r.height < MIN_TARGET - 0.5) {

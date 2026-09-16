@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Bell, CheckCheck, RefreshCw, Search, ArrowUpRight } from "./icons";
+import { Bell, CheckCheck, RefreshCw, Search, ArrowUpRight, X } from "./icons";
 import { incidentRevision } from "../shared/incidents";
 import { isFresh } from "../shared/monitor";
 import ProviderLogo from "./ProviderLogo";
@@ -22,11 +22,18 @@ export default function IncidentInbox({
   now,
   error,
   fetchedAt,
+  dismissed = {},
+  onDismiss,
+  onRestore,
 }) {
   const [scope, setScope] = useState("All services"),
     [unreadOnly, setUnreadOnly] = useState(false),
     [query, setQuery] = useState("");
-  const scoped = incidents.filter(
+  const kept = incidents.filter(
+    (i) => dismissed[i.key] !== incidentRevision(i),
+  );
+  const dismissedCount = incidents.length - kept.length;
+  const scoped = kept.filter(
     (i) => scope === "All services" || watchlist.includes(i.provider.id),
   );
   const matches = scoped.filter(
@@ -45,26 +52,6 @@ export default function IncidentInbox({
   ).length;
   return (
     <div className="inbox-content">
-      <div className="inbox-hero">
-        <span className="inbox-hero-icon">
-          <Bell size={24} />
-        </span>
-        <div>
-          <span className="inbox-eyebrow">YOUR SIGNAL, WITHOUT THE NOISE</span>
-          <h3>
-            {unreadCount
-              ? `${unreadCount} unread ${unreadCount === 1 ? "update" : "updates"}`
-              : loading
-                ? "Checking for updates…"
-                : !fresh.length
-                  ? "Waiting for current feeds"
-                  : "No unread updates"}
-          </h3>
-          <p>
-            Official incident updates. Background alerts follow your watchlist.
-          </p>
-        </div>
-      </div>
       <div className="inbox-toolbar">
         <div className="tabs">
           {["All services", "My watchlist"].map((name) => (
@@ -79,12 +66,13 @@ export default function IncidentInbox({
           ))}
         </div>
         <button
-          className="button secondary"
+          className={`icon-button refresh-button ${loading ? "loading" : ""}`}
           onClick={onRefresh}
           disabled={loading}
+          aria-label={loading ? "Checking feeds…" : "Check for the latest"}
+          title={loading ? "Checking feeds…" : "Check for the latest"}
         >
-          <RefreshCw size={16} />
-          {loading ? "Checking feeds…" : "Check latest"}
+          <RefreshCw size={20} />
         </button>
       </div>
       <div className="inbox-search">
@@ -108,12 +96,17 @@ export default function IncidentInbox({
       </div>
       <div className="inbox-coverage">
         <span>
-          {fresh.length}/{providers.length} feeds current · {matches.length}{" "}
-          matching updates
-          <br />
           {fetchedAt
             ? `Latest check completed at ${new Date(fetchedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
             : "Waiting for the first check"}
+          {dismissedCount > 0 && (
+            <>
+              {" · "}
+              <button className="inbox-restore" onClick={onRestore}>
+                Restore {dismissedCount} dismissed
+              </button>
+            </>
+          )}
         </span>
         <button
           className="text-button"
@@ -152,6 +145,7 @@ export default function IncidentInbox({
                   <span>Latest updates first</span>
                 </h4>
               )}
+              <div className="inbox-row">
               <button
                 className={`inbox-update ${severity} ${unread ? "is-unread" : ""}`}
                 onClick={() => {
@@ -190,6 +184,17 @@ export default function IncidentInbox({
                   <ArrowUpRight size={16} />
                 </span>
               </button>
+              {/* A sibling, not a child: a button inside a button is invalid
+                  markup and the inner one never receives the click. */}
+              <button
+                className="inbox-dismiss"
+                aria-label={`Dismiss the ${i.provider.name} update`}
+                title="Dismiss"
+                onClick={() => onDismiss?.(i)}
+              >
+                <X size={16} />
+              </button>
+              </div>
             </React.Fragment>
           );
         })}

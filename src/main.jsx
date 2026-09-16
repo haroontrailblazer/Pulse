@@ -4,6 +4,7 @@ import { Capacitor } from "@capacitor/core";
 import App from "./App";
 import "@fontsource-variable/dm-sans/wght.css";
 import "@fontsource-variable/manrope/wght.css";
+import "@fontsource/instrument-serif/latin-400.css";
 import "./tokens.css";
 import "./styles.css";
 import "./theme.css";

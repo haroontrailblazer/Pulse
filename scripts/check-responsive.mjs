@@ -60,23 +60,29 @@ try {
     const phone = viewport.width <= 760;
     assert.equal(await page.locator(".service-table").count(), phone ? 0 : 1);
     assert.equal(await page.locator(".service-list").count(), phone ? 1 : 0);
-    // The Overview previews three services and expands in place, so the list is
-    // never a scroller nested inside the scrolling page.
+    // The Overview previews three services; the full list lives in the service
+    // sheet, so the card never becomes a scroller nested inside the page and
+    // "View all" has one destination wherever it is invoked from.
     const rows = phone ? ".service-list .service-row" : ".service-table tbody tr";
     assert.equal(await page.locator(rows).count(), 3, `Directory preview at ${viewport.width}`);
     const expand = page.getByRole("button", { name: /View all \d+ services/ });
     assert.equal(await expand.count(), 1, "The preview must offer the full list");
     await expand.click();
+    await page.waitForTimeout(350);
+    const sheet = page.locator(".modal[aria-label='Make it your watchlist']");
+    assert.equal(await sheet.count(), 1, `View all must open the service sheet at ${viewport.width}`);
+    assert.equal(
+      await sheet.locator(".monitor-list > button").count(),
+      providers.length,
+      `Every service must be listed in the sheet at ${viewport.width}`,
+    );
+    await page.keyboard.press("Escape");
     await page.waitForTimeout(250);
     assert.equal(
       await page.locator(rows).count(),
-      providers.length,
-      `Every service must appear once expanded at ${viewport.width}`,
+      3,
+      `The preview stays three rows after the sheet closes at ${viewport.width}`,
     );
-    await page.getByRole("button", { name: "Show fewer services" }).click();
-    await page.waitForTimeout(250);
-    // Expanding the list scrolls the page; the geometry below is measured from
-    // the top of the document.
     await page.evaluate(() => window.scrollTo(0, 0));
     await page.waitForTimeout(150);
     // The Overview previews a fixed number of incidents and links onward; the
@@ -206,13 +212,16 @@ try {
       );
     await page.evaluate(() => delete document.documentElement.dataset.platform);
     await page.screenshot({ path: `test-results/overview-${viewport.width}-light.png`, fullPage: true });
-    await page.getByRole("button", { name: /View all \d+ services/ }).click();
-    await page.waitForTimeout(250);
+    // "View all" now opens the service sheet, so reach one provider's detail
+    // through the directory's own search instead of an expanded list.
+    await page.getByLabel("Search services").fill("OpenAI");
+    await page.waitForTimeout(300);
     await page.getByRole("button", { name: "OpenAI", exact: false }).first().click();
     await page.getByRole("button", { name: "Remove from watchlist", exact: false }).waitFor();
     assert.equal(await page.locator(".watchlist-star.watched").count() > 0, true);
     assert.equal(await page.locator(".modal-actions .watchlist-star.watched").evaluate((el) => getComputedStyle(el).color), "rgb(255, 210, 74)");
     await page.keyboard.press("Escape");
+    await page.getByLabel("Search services").fill("");
     await page.evaluate(() => { localStorage.setItem("pulse-theme", "dark"); });
     await page.reload();
     await page.getByRole("heading", { name: "Service directory", exact: false }).waitFor();

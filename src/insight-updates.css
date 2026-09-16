@@ -211,21 +211,47 @@
     gap: var(--space-2);
     margin: var(--space-3) 0;
   }
-  .inbox-toolbar .tabs {
-    flex: 1;
+  /* The two insight controls are a pair, so they share the row evenly instead
+     of wrapping the moment their labels do not both fit. */
+  .impact-controls {
+    flex-wrap: nowrap;
+  }
+  .impact-controls > .button {
+    flex: 1 1 0;
     min-width: 0;
+    justify-content: center;
+    padding-inline: var(--space-3);
+    white-space: nowrap;
+  }
+  /* Same segmented control as the directory: pills sized by their labels, not
+     stretched to fill, so a two-tab row does not look like a different
+     component from a three-tab one. */
+  .inbox-toolbar .tabs {
+    flex: 0 1 auto;
+    min-width: 0;
+    width: fit-content;
+    max-width: 100%;
   }
   .inbox-toolbar .tabs button {
-    flex: 1;
+    flex: 0 0 auto;
     justify-content: center;
   }
   .inbox-toolbar .button {
     flex-shrink: 0;
     padding-inline: var(--space-3);
   }
+  /* And the same compact field, with its 44px target kept on an input that
+     overhangs the 36px frame rather than on the frame itself. */
   .inbox-search .search-input {
-    flex: 1;
+    flex: 1 1 auto;
     min-width: 150px;
+    min-height: 36px;
+    padding-inline: var(--space-3);
+  }
+  .inbox-search .search-input input {
+    font-size: var(--fs-body-sm);
+    min-height: var(--tap);
+    margin-block: calc((36px - var(--tap)) / 2);
   }
   .inbox-coverage span {
     flex: 1;
@@ -425,4 +451,56 @@
   .sidebar-header .brand {
     padding-left: 0;
   }
+}
+
+/* ---- Dismissing an inbox update --------------------------------------- */
+.inbox-row {
+  position: relative;
+}
+.inbox-dismiss {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+/* 32px control, 44px reach. */
+.inbox-dismiss::after {
+  content: "";
+  position: absolute;
+  inset: -6px;
+}
+.inbox-dismiss:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+}
+.inbox-restore {
+  border: 0;
+  padding: 0;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* The watchlist filter is a toggle, so it shows its state as a fill. */
+.impact-watch-toggle[aria-pressed="true"] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
+}
+.impact-watch-toggle[aria-pressed="true"] svg {
+  color: var(--on-accent);
 }

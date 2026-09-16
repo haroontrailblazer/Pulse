@@ -16,7 +16,6 @@ spacing and radius values live in tokens.css. This file only
   :is(.panel,
 .summary-card,
 .insight-card,
-.modal,
 .button.secondary,
 .search-input,
 select,

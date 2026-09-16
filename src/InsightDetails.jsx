@@ -43,17 +43,21 @@ Source: ${i.provider.url}`,
       aria-label="Understand service impact"
     >
       <div className="impact-controls">
-        <label>
-          <input
-            type="checkbox"
-            checked={onlyWatched}
-            onChange={(e) => setOnlyWatched(e.target.checked)}
-          />
+        {/* A pressed button rather than a checkbox-in-a-label: it sits on the
+            same row as Copy summary and is the same control, so the two read
+            as a pair instead of a form field beside a button. */}
+        <button
+          type="button"
+          className="button secondary impact-watch-toggle"
+          aria-pressed={onlyWatched}
+          onClick={() => setOnlyWatched((value) => !value)}
+        >
+          <Star size={16} weight={onlyWatched ? "fill" : "regular"} />
           Only my watchlist
-        </label>
+        </button>
         <button className="button secondary" onClick={copy}>
           <Copy size={16} />
-          Copy impact summary
+          Copy summary
         </button>
       </div>
       <div className="impact-cards">

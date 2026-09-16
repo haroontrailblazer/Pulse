@@ -26,6 +26,24 @@ function configure(options) {
     });
   return pending;
 }
+// Installed builds turn watchlist alerts on themselves the first time they run.
+// Android still has to ask for the notification permission — that prompt is the
+// user's choice and cannot be skipped — but if it is granted, monitoring starts
+// without a second trip to Settings. Declining is remembered, so the prompt is
+// asked once and never again; Settings still turns it on or off afterwards.
+const FIRST_RUN_KEY = "pulse-alerts-first-run";
+function alertsAlreadyOffered() {
+  try {
+    return localStorage.getItem(FIRST_RUN_KEY) === "done";
+  } catch {
+    return true;
+  }
+}
+function rememberAlertsOffered() {
+  try {
+    localStorage.setItem(FIRST_RUN_KEY, "done");
+  } catch {}
+}
 export function useBackgroundSync(watchlist, data) {
   const ids = JSON.stringify(watchlist);
   useEffect(() => {
@@ -34,6 +52,33 @@ export function useBackgroundSync(watchlist, data) {
       publish({ ...bridgeState, error: e.message }),
     );
   }, [ids]);
+  useEffect(() => {
+    if (!native || alertsAlreadyOffered()) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const status = await native.status();
+        if (cancelled) return;
+        publish(status);
+        if (status.enabled) return rememberAlertsOffered();
+        if (android) {
+          const permission = await native.requestAlerts();
+          if (cancelled) return;
+          publish(permission);
+          if (permission.permission !== "granted") return rememberAlertsOffered();
+        }
+        await configure({ enabled: true, watchlist: JSON.parse(ids) });
+        rememberAlertsOffered();
+      } catch {
+        // A bridge that is not ready yet gets another chance on the next run.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // Runs once per install, not per watchlist edit.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   useEffect(() => {
     if (!native) return;
     const check = () => {
@@ -113,16 +158,20 @@ export default function BackgroundSettings({
     }
   }
   if (compact) {
+    // Icon only, on the directory's title line. The label the text used to
+    // carry moves to the accessible name so nothing is lost to a screen
+    // reader or a hover.
+    const on = native && state.enabled && state.permission === "granted";
+    const label = on ? "Alerts enabled" : "Enable alerts";
     return (
       <button
-        className="overview-alerts"
+        className={`icon-button overview-alerts ${on ? "is-on" : ""}`}
         onClick={onConfigure}
         aria-haspopup="dialog"
+        aria-label={label}
+        title={label}
       >
-        <Bell size={16} />
-        {native && state.enabled && state.permission === "granted"
-          ? "Alerts enabled"
-          : "Enable alerts"}
+        <Bell size={20} weight={on ? "fill" : "regular"} />
       </button>
     );
   }
