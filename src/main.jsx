@@ -4,9 +4,11 @@ import { Capacitor } from "@capacitor/core";
 import App from "./App";
 import "@fontsource-variable/dm-sans/wght.css";
 import "@fontsource-variable/manrope/wght.css";
+import "./tokens.css";
 import "./styles.css";
-import "./refinements.css";
 import "./theme.css";
+import "./components.css";
+import "./platform.css";
 if (Capacitor.getPlatform() === "android")
   document.documentElement.dataset.platform = "android";
 createRoot(document.getElementById("root")).render(

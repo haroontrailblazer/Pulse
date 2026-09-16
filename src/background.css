@@ -12,10 +12,9 @@
   min-height: 42px;
   padding: 0 10px;
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   background: var(--surface);
   color: var(--text);
-  font-size: 11px;
   font-weight: 600;
   white-space: nowrap;
 }
@@ -29,7 +28,7 @@
 .background-panel {
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   padding: 24px;
   margin-bottom: 24px;
   color: var(--text);
@@ -46,18 +45,15 @@
   width: 48px;
   height: 48px;
   flex-shrink: 0;
-  border-radius: 14px;
+  border-radius: var(--radius-md);
   background: var(--surface-soft);
   border: 1px solid var(--line);
 }
 .background-panel h2 {
-  font-size: 18px;
   margin: 0 0 5px;
 }
 .background-panel p {
   color: var(--muted);
-  font-size: 12px;
-  line-height: 1.65;
   margin: 5px 0;
 }
 .background-actions {
@@ -70,7 +66,6 @@
   max-width: 690px;
 }
 .background-actions strong {
-  font-size: 13px;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -85,7 +80,6 @@
   border-top: 1px solid var(--line);
   padding-top: 14px;
   margin-top: 18px;
-  font-size: 11px;
   color: var(--muted);
 }
 .background-foot span {
@@ -110,19 +104,13 @@
 .modal .background-actions {
   flex-wrap: wrap;
 }
-.modal .background-heading h2 {
-  font-size: 15px;
-}
 @media (max-width: 600px) {
-  .background-panel {
+.background-panel {
     padding: 18px;
   }
   .background-actions {
     align-items: flex-start;
     flex-direction: column;
     gap: 12px;
-  }
-  .background-panel h2 {
-    font-size: 16px;
   }
 }

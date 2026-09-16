@@ -51,8 +51,13 @@ export default function WorldMap({
     closeRef = useRef(null),
     triggerRef = useRef(null),
     bodyRef = useRef(null),
+    headerRef = useRef(null),
     inspectorRef = useRef(null);
   const [size, setSize] = useState({ width: 870, height: 600 });
+  // The overlay header is four rows tall on a phone and one on a desktop, so
+  // the space reserved for it has to be measured rather than assumed — markers
+  // placed under it are unreadable and untappable.
+  const [headerBottom, setHeaderBottom] = useState(140);
   const [region, setRegion] = useState("Global"),
     [zoom, setZoom] = useState(1);
   const [selected, setSelected] = useState(null),
@@ -69,6 +74,15 @@ export default function WorldMap({
       }),
     );
     observer.observe(frame.current);
+    return () => observer.disconnect();
+  }, []);
+  useEffect(() => {
+    const node = headerRef.current;
+    if (!node) return;
+    const measure = () => setHeaderBottom(node.offsetTop + node.offsetHeight);
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(node);
     return () => observer.disconnect();
   }, []);
   useEffect(() => {
@@ -149,8 +163,17 @@ export default function WorldMap({
   const wide = size.width > 700 || (size.width > 570 && size.height < 430);
   const side = panel && wide ? Math.min(350, size.width * 0.43) : 0;
   const cardHeight = panel && !wide ? Math.min(350, size.height * 0.44) : 0;
-  const top = size.height < 430 ? 105 : 140;
-  const spaceHeight = Math.max(80, size.height - top - (cardHeight || 85));
+  const top = Math.max(size.height < 430 ? 105 : 140, headerBottom + 16);
+  // A narrow map keeps more of its lower edge clear: the tap prompt and the
+  // service dock sit there, and a marker hidden behind them reads as a bug.
+  // What sits along the bottom edge of a narrow map: the service dock always,
+  // and on the Map destination the zoom controls and the tap prompt above it.
+  // Markers have to clear all of it — on a short screen the difference between
+  // 130 and 200 is the difference between a readable map and a pile-up.
+  const narrowFooter = expanded ? 200 : 130;
+  const footer = cardHeight || (wide ? 85 : narrowFooter);
+  const bottomReserve = cardHeight ? cardHeight + 50 : wide ? 50 : narrowFooter;
+  const spaceHeight = Math.max(80, size.height - top - footer);
   const spaceWidth = Math.max(160, size.width - side - 30);
   const base = Math.min(spaceWidth / 870, spaceHeight / 420) * 0.95;
   const [rx, ry, rs] = views[region];
@@ -187,13 +210,13 @@ export default function WorldMap({
           h.x >= 18 &&
           h.x <= size.width - side - 18 &&
           h.y >= top - 15 &&
-          h.y <= size.height - cardHeight - 35,
+          h.y <= size.height - bottomReserve + 15,
       ),
     {
       left: 25,
       right: size.width - side - 25,
       top: top + 25,
-      bottom: Math.max(top + 50, size.height - cardHeight - 50),
+      bottom: Math.max(top + 50, size.height - bottomReserve),
     },
   );
   useLayoutEffect(() => {
@@ -234,7 +257,6 @@ export default function WorldMap({
     }, frame);
     return () => context.revert();
   }, [panel, service]);
-  const Heading = expanded ? "h1" : "h2";
   const panelTitle =
     focused?.provider.name ||
     (panel === "about"
@@ -338,11 +360,11 @@ export default function WorldMap({
         })}
       </svg>
 
-      <div className="atlas-map-header">
+      <div className="atlas-map-header" ref={headerRef}>
         <div className="atlas-map-title">
           <div className="map-title-with-menu">
             <div>
-              <Heading>Infrastructure map</Heading>
+              <h2>Infrastructure map</h2>
               <button
                 className="atlas-coverage"
                 onClick={(event) => openPanel("about", event)}
@@ -350,7 +372,7 @@ export default function WorldMap({
                 {feedError
                   ? "Connection needs attention"
                   : `${atlas.fresh}/${stackOnly ? providers.filter((p) => watchlist.includes(p.id)).length : providers.length} feeds current`}
-                <CircleHelp size={13} />
+                <CircleHelp size={16} />
               </button>
             </div>
           </div>
@@ -369,43 +391,48 @@ export default function WorldMap({
             ))}
           </select>
         </div>
-        <div
-          className="atlas-map-filters"
-          aria-label="Service condition filters"
-        >
-          {issueStates.map((state) => (
-            <button
-              key={state}
-              className={`atlas-filter ${state}`}
-              aria-pressed={panel === "services" && severity === state}
-              onClick={(event) => {
-                setSeverity(state);
-                openPanel("services", event);
+        {/* Condition filters and the watchlist toggle share one row so a phone
+            keeps every control in a single scrollable strip instead of
+            stacking four bands of chrome over the map. */}
+        <div className="atlas-map-controls">
+          <div
+            className="atlas-map-filters"
+            aria-label="Service condition filters"
+          >
+            {issueStates.map((state) => (
+              <button
+                key={state}
+                className={`atlas-filter ${state}`}
+                aria-pressed={panel === "services" && severity === state}
+                onClick={(event) => {
+                  setSeverity(state);
+                  openPanel("services", event);
+                }}
+              >
+                <StatusGlyph status={state} size={16} />
+                <strong>{counts[state]}</strong>
+                <span>
+                  {state === "outage"
+                    ? "Outage"
+                    : state === "degraded"
+                      ? "Degraded"
+                      : "Maintenance"}
+                </span>
+              </button>
+            ))}
+          </div>
+          <label className="atlas-watch-filter">
+            <input
+              type="checkbox"
+              checked={stackOnly}
+              onChange={(event) => {
+                setStackOnly(event.target.checked);
+                setService(null);
               }}
-            >
-              <StatusGlyph status={state} size={17} />
-              <strong>{counts[state]}</strong>
-              <span>
-                {state === "outage"
-                  ? "Outage"
-                  : state === "degraded"
-                    ? "Degraded"
-                    : "Maintenance"}
-              </span>
-            </button>
-          ))}
+            />
+            <Star size={16} /> My watchlist
+          </label>
         </div>
-        <label className="atlas-watch-filter">
-          <input
-            type="checkbox"
-            checked={stackOnly}
-            onChange={(event) => {
-              setStackOnly(event.target.checked);
-              setService(null);
-            }}
-          />
-          <Star size={13} /> My watchlist
-        </label>
       </div>
 
       {!panel && (
@@ -425,21 +452,21 @@ export default function WorldMap({
             setPanel(null);
           }}
         >
-          <LocateFixed size={18} />
+          <LocateFixed size={20} />
         </button>
         <button
           aria-label="Zoom in"
           disabled={zoom >= 3}
           onClick={() => setZoom((value) => Math.min(3, value + 0.5))}
         >
-          <Plus size={18} />
+          <Plus size={20} />
         </button>
         <button
           aria-label="Zoom out"
           disabled={zoom <= 1}
           onClick={() => setZoom((value) => Math.max(1, value - 0.5))}
         >
-          <Minus size={18} />
+          <Minus size={20} />
         </button>
       </div>
       {!panel && (
@@ -457,7 +484,7 @@ export default function WorldMap({
             </strong>
             <small>Service-wide issues & maintenance</small>
           </span>
-          <ChevronRight size={17} />
+          <ChevronRight size={16} />
         </button>
       )}
 
@@ -477,7 +504,7 @@ export default function WorldMap({
                     setEvidenceLimit(6);
                   }}
                 >
-                  <ArrowLeft size={13} />
+                  <ArrowLeft size={16} />
                   {panel === "region" ? hub?.name : "All matching services"}
                 </button>
               )}
@@ -500,7 +527,7 @@ export default function WorldMap({
               aria-label="Close map insights"
               onClick={closePanel}
             >
-              <X size={19} />
+              <X size={20} />
             </button>
           </header>
           <div ref={bodyRef} className="atlas-inspector-body">
@@ -548,7 +575,7 @@ export default function WorldMap({
                       onClick={() => onToggleWatch(focused.provider.id)}
                     >
                       <Star
-                        size={15}
+                        size={16}
                         weight={
                           watchlist.includes(focused.provider.id)
                             ? "fill"
@@ -572,7 +599,7 @@ export default function WorldMap({
                       key={`${e.kind}-${index}`}
                     >
                       <span>
-                        <StatusGlyph status={e.status} size={14} />
+                        <StatusGlyph status={e.status} size={16} />
                         {e.kind} · {labelsFor(e.status)}
                       </span>
                       <h3>{e.name || "Provider status update"}</h3>
@@ -596,7 +623,7 @@ export default function WorldMap({
                     onClick={() => setEvidenceLimit((value) => value + 6)}
                   >
                     Show more signals ({focused.evidence.length - evidenceLimit}
-                    )<Plus size={14} />
+                    )<Plus size={16} />
                   </button>
                 )}
                 {["outage", "degraded"].includes(focused.status) && (
@@ -624,7 +651,7 @@ export default function WorldMap({
                     rel="noreferrer"
                   >
                     Official source
-                    <ArrowRight size={13} />
+                    <ArrowRight size={16} />
                   </a>
                 </div>
               </>
@@ -644,7 +671,7 @@ export default function WorldMap({
                       <span>
                         <strong>{row.provider.name}</strong>
                         <small>
-                          <StatusGlyph status={row.status} size={13} />
+                          <StatusGlyph status={row.status} size={16} />
                           {labelsFor(row.status)}
                           {watchlist.includes(row.provider.id)
                             ? " · Watching"
@@ -656,7 +683,7 @@ export default function WorldMap({
                   ))
                 ) : (
                   <div className="atlas-no-signals">
-                    <Globe2 size={28} />
+                    <Globe2 size={24} />
                     <h3>
                       {stackOnly && !watchlist.length
                         ? "No watched services yet"
@@ -678,7 +705,7 @@ export default function WorldMap({
                     }}
                   >
                     All service conditions
-                    <ArrowRight size={14} />
+                    <ArrowRight size={16} />
                   </button>
                 ) : null}
               </>

@@ -107,7 +107,7 @@ export default function LiveConsole({
           onClick={onRefresh}
           disabled={loading}
         >
-          <RefreshCw size={14} className={loading ? "live-spin" : ""} />
+          <RefreshCw size={16} className={loading ? "live-spin" : ""} />
           {loading
             ? `Checking ${data.completedChecks || 0}/${items.length}`
             : "Check now"}
@@ -115,18 +115,18 @@ export default function LiveConsole({
       </div>
       <div className="live-metrics">
         <span>
-          <Radio size={14} />
+          <Radio size={16} />
           <strong>
             {fresh.length}/{items.length}
           </strong>{" "}
           fresh feeds
         </span>
         <span>
-          <Activity size={14} />
+          <Activity size={16} />
           <strong>{impacted.length}</strong> watched providers with issues
         </span>
         <span className={stale.length ? "live-warning" : ""}>
-          <Clock3 size={14} />
+          <Clock3 size={16} />
           <strong>{stale.length}</strong> stale readings
         </span>
         <span>
@@ -187,7 +187,7 @@ export default function LiveConsole({
                 >
                   <div>
                     <strong>{p.name}</strong>
-                    <ExternalLink size={13} />
+                    <ExternalLink size={16} />
                   </div>
                   <span className={`status-pill ${p.status}`}>
                     <i />
@@ -238,7 +238,7 @@ export default function LiveConsole({
                       <i />
                       {p.stale ? "Stale reading" : statusLabels[p.status]}
                     </span>
-                    <ExternalLink size={13} />
+                    <ExternalLink size={16} />
                   </button>
                 ))}
             </div>
@@ -249,7 +249,7 @@ export default function LiveConsole({
           <>
             <div className="live-filter">
               <label className="search-input">
-                <Search size={15} />
+                <Search size={16} />
                 <input
                   aria-label="Search live components"
                   placeholder="Search API, database, region, provider…"
@@ -364,7 +364,7 @@ export default function LiveConsole({
                   )
                 }
               >
-                <Copy size={14} />
+                <Copy size={16} />
                 Copy JSON snapshot
               </button>
             </div>
@@ -408,7 +408,7 @@ export default function LiveConsole({
                     rel="noreferrer"
                     aria-label={`Open ${p.name} source`}
                   >
-                    <ExternalLink size={15} />
+                    <ExternalLink size={16} />
                   </a>
                 </div>
               ))}
@@ -422,7 +422,7 @@ export default function LiveConsole({
         )}
         {copied && (
           <p className="copy-feedback" role="status">
-            <Check size={13} />
+            <Check size={16} />
             {copied}
           </p>
         )}

@@ -1,4 +1,11 @@
 // Shared Phosphor vocabulary keeps sizing consistent across the application.
+//
+// Icons are drawn at four sizes and no others:
+//   16  inline — beside body or caption text, inside chips and meta rows
+//   20  control — buttons, icon buttons, list rows, navigation
+//   24  section — panel and card headers, feature tiles
+//   32  display — empty and quiet states
+// tests/design-tokens.test.js fails the build on any other value.
 export {
   PulseIcon as Activity,
   SquaresFourIcon as LayoutDashboard,

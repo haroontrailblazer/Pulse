@@ -52,7 +52,7 @@ Source: ${i.provider.url}`,
           Only my watchlist
         </label>
         <button className="button secondary" onClick={copy}>
-          <Copy size={14} />
+          <Copy size={16} />
           Copy impact summary
         </button>
       </div>
@@ -121,7 +121,7 @@ Source: ${i.provider.url}`,
                 className="text-button"
                 onClick={() => onProvider(i.provider)}
               >
-                Open service details <ArrowUpRight size={14} />
+                Open service details <ArrowUpRight size={16} />
               </button>
               <button
                 className="text-button"
@@ -129,7 +129,7 @@ Source: ${i.provider.url}`,
                 onClick={() => onWatch(i.provider.id)}
               >
                 <Star
-                  size={14}
+                  size={16}
                   weight={i.watched ? "fill" : "regular"}
                   className={`watchlist-star ${i.watched ? "watched" : ""}`}
                 />
@@ -141,7 +141,7 @@ Source: ${i.provider.url}`,
       </div>
       {!issues.length && (
         <div className="impact-empty">
-          <ShieldCheck size={22} />
+          <ShieldCheck size={20} />
           <p>
             {onlyWatched
               ? "No major issues or degradation reported for your watched services."

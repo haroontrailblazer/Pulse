@@ -1,6 +1,6 @@
 {
   "name": "pulse-status",
-  "version": "1.0.17",
+  "version": "1.0.18",
   "private": true,
   "type": "module",
   "description": "Pulse â€” a clearer picture of the internet's health",
@@ -12,6 +12,9 @@
     "build:web": "vite build --mode web",
     "build:deploy": "npm run build:web && node scripts/prepare-downloads.mjs",
     "screenshots": "node scripts/capture-marketing.mjs",
+    "qa:responsive": "node scripts/check-responsive.mjs",
+    "qa:ui": "node scripts/ui-audit.mjs",
+    "qa:screens": "node scripts/capture-screens.mjs",
     "build:portable": "npm run build:windows && npm run build:android",
     "sync:metadata": "node scripts/update-release-assets.mjs",
     "sync:public-downloads": "node scripts/sync-public-downloads.mjs",

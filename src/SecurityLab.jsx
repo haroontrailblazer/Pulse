@@ -22,7 +22,7 @@ export default function SecurityLab() {
     <div className="security-lab">
       <div className="lab-heading">
         <span className="lab-icon">
-          <ShieldCheck size={23} />
+          <ShieldCheck size={24} />
         </span>
         <div>
           <h3>Security workbench</h3>
@@ -43,7 +43,7 @@ export default function SecurityLab() {
             aria-controls="security-tool-panel"
             onClick={() => setTool(name)}
           >
-            <Icon size={15} />
+            <Icon size={16} />
             {name}
           </button>
         ))}
@@ -133,7 +133,6 @@ function Advisories() {
         <label>
           Exact version
           <input
-            aria-label="Package version"
             autoComplete="off"
             spellCheck="false"
             placeholder="e.g. 4.17.20"
@@ -148,7 +147,7 @@ function Advisories() {
           />
         </label>
         <button className="button primary" disabled={busy}>
-          <PackageSearch size={15} />
+          <PackageSearch size={16} />
           {busy ? "Checking OSV…" : "Check advisories"}
         </button>
       </form>
@@ -188,7 +187,7 @@ function Advisories() {
                 <div>
                   <span className="advisory-id">{v.id}</span>
                   <span className="advisory-severity">{v.severity}</span>
-                  <ExternalLink size={13} />
+                  <ExternalLink size={16} />
                 </div>
                 <strong>{v.summary}</strong>
                 <small>
@@ -202,7 +201,7 @@ function Advisories() {
       )}
       <div className="lab-source">
         <a href="https://osv.dev" target="_blank" rel="noreferrer">
-          OSV vulnerability database <ExternalLink size={12} />
+          OSV vulnerability database <ExternalLink size={16} />
         </a>
         <span>For a whole project, use npm audit or OSV-Scanner.</span>
       </div>
@@ -326,7 +325,6 @@ function HashTool() {
           <input
             type="file"
             ref={fileInput}
-            aria-label="File to hash"
             disabled={busy}
             onChange={(e) => {
               setFile(e.target.files[0] || null);
@@ -350,7 +348,6 @@ function HashTool() {
         <label className="lab-field">
           Expected SHA-256 (optional)
           <input
-            aria-label="Expected SHA-256"
             value={expected}
             maxLength={64}
             onChange={(e) => setExpected(e.target.value)}
@@ -360,7 +357,7 @@ function HashTool() {
         </label>
       </div>
       <button className="button primary" onClick={compute} disabled={busy}>
-        <Fingerprint size={15} />
+        <Fingerprint size={16} />
         {busy ? "Calculating…" : "Calculate SHA-256"}
       </button>
       {error && (
@@ -384,7 +381,7 @@ function HashTool() {
               }
             }}
           >
-            <Copy size={14} />
+            <Copy size={16} />
             {copied ? "Copied" : "Copy checksum"}
           </button>
           {expected && (

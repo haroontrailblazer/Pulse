@@ -255,7 +255,10 @@ async function smokeWindows(contract, keepOpen) {
     await sleep(1500);
     if (child.exitCode !== null)
       throw new Error(`Windows executable exited during launch with code ${child.exitCode}`);
-    const response = await waitForHttp(`http://127.0.0.1:${desktopPort}/`, 15000);
+    // The portable build unpacks ~105 MB to a temp directory on every launch,
+    // which measures about 25 seconds here. Fifteen was below the floor for a
+    // healthy EXE, so the gate failed on timing rather than on the app.
+    const response = await waitForHttp(`http://127.0.0.1:${desktopPort}/`, 90000);
     const html = await response.text();
     assert.match(html, /Pulse/i, "Windows bundled server did not serve the app");
     return { executable, pid: child.pid, localServer: response.status };

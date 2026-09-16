@@ -119,7 +119,7 @@ export default function BackgroundSettings({
         onClick={onConfigure}
         aria-haspopup="dialog"
       >
-        <Bell size={15} />
+        <Bell size={16} />
         {native && state.enabled && state.permission === "granted"
           ? "Alerts enabled"
           : "Enable alerts"}
@@ -209,7 +209,7 @@ export default function BackgroundSettings({
         <div className="background-actions widget-action">
           <div>
             <strong>
-              <Layers3 size={17} /> Pulse home-screen widget
+              <Layers3 size={16} /> Pulse home-screen widget
             </strong>
             <p>
               Issue count, last-check time, and a refresh button above your
@@ -230,7 +230,7 @@ export default function BackgroundSettings({
         <div className="background-actions widget-action">
           <div>
             <strong>
-              <LayoutDashboard size={17} /> Service icons widget
+              <LayoutDashboard size={16} /> Service icons widget
             </strong>
             <p>
               Just your watched services, each in its own brand colour. An icon

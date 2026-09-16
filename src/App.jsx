@@ -64,14 +64,25 @@ import ProviderLogo from "./ProviderLogo";
 import { downloads } from "../shared/downloads";
 import { gsap, hoverMotionEnabled, motionEnabled } from "./motion";
 
+// `primary` destinations get a slot in the phone's bottom navigation bar; the
+// rest live behind "More", which opens the same list as a sheet. The sidebar
+// above 760px still shows all six.
 const navigation = [
-  { name: "Overview", icon: LayoutDashboard },
-  { name: "Incidents", icon: Radio },
-  { name: "Watchlist", icon: Star },
-  { name: "Global map", icon: Globe2 },
-  { name: "Developer tools", icon: Command },
-  { name: "Dependency insights", icon: Network },
+  { name: "Overview", short: "Overview", icon: LayoutDashboard, primary: true },
+  { name: "Incidents", short: "Incidents", icon: Radio, primary: true },
+  { name: "Watchlist", short: "Watchlist", icon: Star, primary: true },
+  { name: "Global map", short: "Map", icon: Globe2, primary: true },
+  { name: "Developer tools", short: "Tools", icon: Command },
+  { name: "Dependency insights", short: "Insights", icon: Network },
 ];
+// How many incidents the Overview previews before deferring to the Incidents
+// destination.
+const OVERVIEW_INCIDENTS = 3;
+// The Overview previews the directory too; "View all" expands it in place
+// rather than nesting a scroller inside the page.
+const OVERVIEW_SERVICES = 3;
+const primaryNavigation = navigation.filter((item) => item.primary);
+const secondaryNavigation = navigation.filter((item) => !item.primary);
 function saved(key, fallback) {
   try {
     const value = JSON.parse(localStorage.getItem(key));
@@ -91,6 +102,16 @@ function age(date) {
   if (m < 1440) return `${Math.floor(m / 60)}h ago`;
   return `${Math.floor(m / 1440)}d ago`;
 }
+// Seconds are noise in a "last checked" reading; the date and minute are what
+// tell you whether to trust it.
+function timestamp(value) {
+  return new Date(value).toLocaleString([], {
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
 function Status({ status }) {
   return (
     <span className={`status-pill ${status}`}>
@@ -107,15 +128,19 @@ function Modal({ title, children, onClose, wide = false }) {
     const context = gsap.context(() => {
       gsap
         .timeline({ defaults: { ease: "power3.out" } })
+        // `opacity`, not `autoAlpha`, on both: autoAlpha sets
+        // visibility:hidden synchronously, and neither an invisible element nor
+        // one inside an invisible parent can take focus — so the dialog used to
+        // open with focus still on the page behind it, and Tab walked that page.
         .fromTo(
           backdropRef.current,
-          { autoAlpha: 0 },
-          { autoAlpha: 1, duration: 0.18 },
+          { opacity: 0 },
+          { opacity: 1, duration: 0.18 },
         )
         .fromTo(
           ref.current,
-          { autoAlpha: 0, y: 18, scale: 0.985 },
-          { autoAlpha: 1, y: 0, scale: 1, duration: 0.32 },
+          { opacity: 0, y: 18, scale: 0.985 },
+          { opacity: 1, y: 0, scale: 1, duration: 0.32 },
           0,
         );
     }, backdropRef);
@@ -128,12 +153,17 @@ function Modal({ title, children, onClose, wide = false }) {
       if (e.key === "Escape") onClose();
       if (e.key === "Tab") {
         const nodes = ref.current?.querySelectorAll(
-          'button, a, input, select, [tabindex="0"]',
+          'button:not(:disabled), a[href], input:not(:disabled), select:not(:disabled), textarea:not(:disabled), summary, [tabindex="0"]',
         );
         if (!nodes?.length) return;
         const first = nodes[0],
           last = nodes[nodes.length - 1];
-        if (e.shiftKey && document.activeElement === first) {
+        if (!ref.current.contains(document.activeElement)) {
+          // Focus escaped the dialog; pull it back rather than letting Tab walk
+          // the page underneath.
+          e.preventDefault();
+          (e.shiftKey ? last : first).focus();
+        } else if (e.shiftKey && document.activeElement === first) {
           e.preventDefault();
           last.focus();
         } else if (!e.shiftKey && document.activeElement === last) {
@@ -203,7 +233,7 @@ function Toast({ children }) {
   }, []);
   return (
     <div ref={ref} className="toast" role="status">
-      <Check size={17} />
+      <Check size={16} />
       {children}
     </div>
   );
@@ -217,7 +247,9 @@ export default function App() {
     document.documentElement.dataset.theme = theme;
     document.documentElement.style.colorScheme = theme;
     document.querySelector('meta[name="theme-color"]').content =
-      theme === "dark" ? "#161616" : "#ffffff";
+      getComputedStyle(document.documentElement)
+        .getPropertyValue("--canvas")
+        .trim() || (theme === "dark" ? "#101113" : "#f4f5f6");
   }, [theme]);
   function toggleTheme() {
     const next = theme === "dark" ? "light" : "dark";
@@ -239,6 +271,10 @@ export default function App() {
   }, []);
   useEffect(() => {
     window.scrollTo(0, 0);
+    document.title =
+      page === "Overview"
+        ? "Pulse — Internet health, in view."
+        : `${page} · Pulse`;
   }, [page]);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("All services");
@@ -260,6 +296,7 @@ export default function App() {
   const [mobileNav, setMobileNav] = useState(false);
   const [toast, setToast] = useState("");
   const [monitorSearch, setMonitorSearch] = useState("");
+  const [showAllServices, setShowAllServices] = useState(false);
   const [readIncidents, setReadIncidents] = useState(() => {
     const value = saved("pulse-inbox-read", {});
     return value && typeof value === "object" && !Array.isArray(value)
@@ -368,7 +405,12 @@ export default function App() {
     setSearch("");
     setFilter("All services");
     setCategory("All categories");
+    setShowAllServices(false);
   };
+  // Nothing has been confirmed yet: the page is loading, not reporting a
+  // service-wide failure. Screens show skeletons rather than 28 "unavailable"
+  // rows until the first sweep completes.
+  const firstLoad = loading && !fetchedAt;
   const healthy = items.filter((p) => p.status === "operational").length;
   const disrupted = items.filter((p) =>
     ["degraded", "outage"].includes(p.status),
@@ -428,8 +470,8 @@ export default function App() {
         )
         .fromTo(
           sidebarRef.current?.querySelectorAll(".nav-item"),
-          { autoAlpha: 0, x: -8 },
-          { autoAlpha: 1, x: 0, duration: 0.24, stagger: 0.025 },
+          { autoAlpha: 0, y: 8 },
+          { autoAlpha: 1, y: 0, duration: 0.24, stagger: 0.025 },
           0.09,
         );
     }, sidebarRef);
@@ -459,6 +501,13 @@ export default function App() {
       (filter !== "Disruptions" || ["degraded", "outage"].includes(p.status)) &&
       (filter !== "Watching" || watchlist.includes(p.id)),
   );
+  // The Overview previews the directory; the Watchlist destination is the full
+  // list of what you chose to watch, so it is never truncated.
+  const previewing =
+    page === "Overview" &&
+    !showAllServices &&
+    visible.length > OVERVIEW_SERVICES;
+  const shown = previewing ? visible.slice(0, OVERVIEW_SERVICES) : visible;
   useLayoutEffect(() => {
     if (!hoverMotionEnabled()) return;
     const cards = pageStageRef.current?.querySelectorAll("[data-motion-card]");
@@ -503,37 +552,65 @@ export default function App() {
         incidents: detailProvider.incidents.map(latestIncident),
       }
     : undefined;
-  const navigationButton = compact ? (
-    <button
-      className="icon-button page-menu"
-      ref={menuRef}
-      aria-label="Open navigation"
-      aria-expanded={mobileNav}
-      aria-controls="workspace-navigation"
-      onClick={() => setMobileNav(true)}
-    >
-      <Menu size={20} />
-    </button>
+  const bottomNavigation = compact ? (
+    <nav className="bottom-nav" aria-label="Primary">
+      {primaryNavigation.map(({ name, short, icon: Icon }) => (
+        <button
+          key={name}
+          className={`bottom-nav-item ${page === name ? "active" : ""}`}
+          aria-current={page === name ? "page" : undefined}
+          onClick={() => go(name)}
+        >
+          <span className="bottom-nav-icon">
+            <Icon size={20} weight={page === name ? "fill" : "regular"} />
+            {name === "Incidents" && allIncidents.length > 0 && (
+              <i aria-hidden="true" />
+            )}
+          </span>
+          <span className="bottom-nav-label">{short}</span>
+        </button>
+      ))}
+      <button
+        ref={menuRef}
+        className={`bottom-nav-item ${secondaryNavigation.some((item) => item.name === page) ? "active" : ""}`}
+        aria-label="More destinations and settings"
+        aria-expanded={mobileNav}
+        aria-controls="workspace-navigation"
+        onClick={() => setMobileNav(true)}
+      >
+        <span className="bottom-nav-icon">
+          <Menu size={20} />
+        </span>
+        <span className="bottom-nav-label">More</span>
+      </button>
+    </nav>
   ) : null;
   const notificationButton = (
     <button
       className="icon-button notification-button"
-      aria-label="Open incident notifications"
+      aria-label={
+        unreadIncidents
+          ? `Open incident notifications, ${unreadIncidents} unread`
+          : "Open incident notifications"
+      }
       onClick={() => {
         setModal("notifications");
         void refresh();
       }}
     >
       <Bell size={20} />
-      {unreadIncidents > 0 && (
-        <i aria-label={`${unreadIncidents} unread incident updates`} />
-      )}
+      {unreadIncidents > 0 && <i aria-hidden="true" />}
     </button>
   );
   return (
     <div className="app-shell">
       {mobileNav && (
-        <div ref={scrimRef} className="nav-scrim" onClick={closeNavigation} />
+        <div
+          ref={scrimRef}
+          className="nav-scrim"
+          aria-hidden="true"
+          onClick={closeNavigation}
+        />
       )}
       <aside
         id="workspace-navigation"
@@ -573,7 +650,7 @@ export default function App() {
             }}
           >
             <span className="brand-mark">
-              <PulseMark size={28} />
+              <PulseMark size={24} />
             </span>
             pulse<span className="brand-period">.</span>
           </a>
@@ -593,31 +670,36 @@ export default function App() {
         >
           <button className="workspace" onClick={() => go("Watchlist")}>
             <span className="workspace-symbol">
-              <Globe2 size={17} />
+              <Globe2 size={16} />
             </span>
             <span>
               Your saved services
               <small>{watchlist.length} on your watchlist</small>
             </span>
-            <ChevronDown size={14} />
+            <ChevronDown size={16} />
           </button>
-          <div className="nav-label">EXPLORE</div>
-          <nav aria-label="Main navigation">
-            {navigation.map(({ name, icon: Icon }) => (
-              <button
-                key={name}
-                onClick={() => go(name)}
-                className={`nav-item ${page === name ? "active" : ""}`}
-                aria-current={page === name ? "page" : undefined}
-              >
-                <Icon size={18} />
-                <span>{name}</span>
-                {name === "Incidents" && allIncidents.length > 0 && (
-                  <b className="nav-count">{allIncidents.length}</b>
-                )}
-                {name === "Watchlist" && <small>{watchlist.length}</small>}
-              </button>
-            ))}
+          <div className="nav-label">{compact ? "MORE" : "EXPLORE"}</div>
+          <nav aria-label={compact ? "More destinations" : "Main navigation"}>
+            {/* The phone's bottom bar already holds the four primary
+                destinations; repeating them here would make the sheet a
+                second, slower copy of it. */}
+            {(compact ? secondaryNavigation : navigation).map(
+              ({ name, icon: Icon }) => (
+                <button
+                  key={name}
+                  onClick={() => go(name)}
+                  className={`nav-item ${page === name ? "active" : ""}`}
+                  aria-current={page === name ? "page" : undefined}
+                >
+                  <Icon size={20} />
+                  <span>{name}</span>
+                  {name === "Incidents" && allIncidents.length > 0 && (
+                    <b className="nav-count">{allIncidents.length}</b>
+                  )}
+                  {name === "Watchlist" && <small>{watchlist.length}</small>}
+                </button>
+              ),
+            )}
           </nav>
           <div className="nav-label following-label">
             YOUR WATCHLIST{" "}
@@ -625,7 +707,7 @@ export default function App() {
               aria-label="Edit watchlist"
               onClick={() => setModal("monitor")}
             >
-              <Plus size={14} />
+              <Plus size={16} />
             </button>
           </div>
           <div className="sidebar-watches">
@@ -633,10 +715,14 @@ export default function App() {
               .filter((p) => watchlist.includes(p.id))
               .slice(0, 5)
               .map((p) => (
-                <button key={p.id} onClick={() => openProvider(p)}>
+                <button
+                  key={p.id}
+                  aria-label={`${p.name} — ${statusLabels[p.status]}`}
+                  onClick={() => openProvider(p)}
+                >
                   <ProviderLogo provider={p} />
                   <span>{p.name}</span>
-                  <i className={`state-dot ${p.status}`} />
+                  <i aria-hidden="true" className={`state-dot ${p.status}`} />
                 </button>
               ))}
             {!watchlist.length && (
@@ -651,12 +737,12 @@ export default function App() {
               onClick={() => go("Watchlist")}
             >
               View all {watchlist.length} watched services{" "}
-              <ArrowRight size={13} />
+              <ArrowRight size={16} />
             </button>
           )}
           <div className="download-card">
             <span className="download-card-icon">
-              <Layers3 size={19} />
+              <Layers3 size={20} />
             </span>
             <h3>A little peace of mind.</h3>
             <p>
@@ -665,30 +751,30 @@ export default function App() {
               Wherever you work.
             </p>
             <button onClick={() => setModal("apps")}>
-              Get Pulse for your device <ArrowUpRight size={15} />
+              Get Pulse for your device <ArrowUpRight size={16} />
             </button>
           </div>
         </div>
         <div className="sidebar-bottom">
           {compact && import.meta.env.VITE_STATUS_TRANSPORT === "poll" && (
             <button className="nav-item" onClick={() => setModal("apps")}>
-              <Download size={18} />
+              <Download size={20} />
               <span>Get the app</span>
-              <ArrowUpRight size={14} />
+              <ArrowUpRight size={16} />
             </button>
           )}
           <button className="nav-item" onClick={() => setModal("methodology")}>
-            <CircleHelp size={18} />
+            <CircleHelp size={20} />
             <span>Help & methodology</span>
-            <ArrowUpRight size={14} />
+            <ArrowUpRight size={16} />
           </button>
           <button
             className="nav-item sidebar-settings"
             onClick={() => setModal("settings")}
           >
-            <Settings size={18} />
+            <Settings size={20} />
             <span>Settings</span>
-            <ChevronRight size={14} />
+            <ChevronRight size={16} />
           </button>
         </div>
       </aside>
@@ -699,11 +785,10 @@ export default function App() {
         >
           <div className="page-heading">
             <div>
-              <div className="eyebrow">
-                <span /> A CLEARER PICTURE OF THE INTERNET
-              </div>
+              {/* The screen title leads the page. The brand line above it was
+                  repeated chrome that said the same thing on every
+                  destination; it lives on the marketing page instead. */}
               <div className="page-title-row">
-                {navigationButton}
                 <h1>
                   {page === "Overview" ? (
                     <>
@@ -740,7 +825,7 @@ export default function App() {
           </div>
           {error && page !== "Global map" && (
             <div className="error-banner" role="alert">
-              <TriangleAlert size={17} />
+              <TriangleAlert size={16} />
               {error}
               <button onClick={refresh}>Retry</button>
             </div>
@@ -761,6 +846,7 @@ export default function App() {
             <div className="summary-grid">
               <Summary
                 label="Services tracked"
+                loading={firstLoad}
                 number={items.length}
                 icon={Layers3}
                 note={`${categories.length} essential technology sectors`}
@@ -768,6 +854,7 @@ export default function App() {
               />
               <Summary
                 label="Operational"
+                loading={firstLoad}
                 number={!verified ? "—" : healthy}
                 icon={ShieldCheck}
                 note={
@@ -779,6 +866,7 @@ export default function App() {
               />
               <Summary
                 label="Active disruptions"
+                loading={firstLoad}
                 number={!verified ? "—" : disrupted}
                 icon={Activity}
                 note={
@@ -821,7 +909,7 @@ export default function App() {
                   <div className="panel-heading">
                     <h2>
                       <span className="signal-icon">
-                        <Radio size={17} />
+                        <Radio size={16} />
                       </span>
                       Live incidents{" "}
                       <span className="count-label">{allIncidents.length}</span>
@@ -831,18 +919,24 @@ export default function App() {
                       {loading ? "SYNCING" : "FEED"}
                     </span>
                   </div>
+                  {/* The Overview shows the three most recent updates and
+                      hands the rest to the Incidents destination. A scroller
+                      inside a scrolling page is worse than a short list with a
+                      way out of it. */}
                   <div className="incident-stream">
                     {allIncidents.length ? (
-                      allIncidents.map((i) => (
-                        <Incident
-                          key={`${i.provider.id}-${i.id}`}
-                          incident={i}
-                          onClick={() => openProvider(i.provider)}
-                        />
-                      ))
+                      allIncidents
+                        .slice(0, OVERVIEW_INCIDENTS)
+                        .map((i) => (
+                          <Incident
+                            key={`${i.provider.id}-${i.id}`}
+                            incident={i}
+                            onClick={() => openProvider(i.provider)}
+                          />
+                        ))
                     ) : (
                       <div className="quiet-state">
-                        <ShieldCheck size={31} />
+                        <ShieldCheck size={32} />
                         <h3>
                           {loading
                             ? "Tuning into the network…"
@@ -862,7 +956,10 @@ export default function App() {
                     className="panel-footer-button"
                     onClick={() => go("Incidents")}
                   >
-                    View all incidents <ArrowRight size={15} />
+                    {allIncidents.length > OVERVIEW_INCIDENTS
+                      ? `View all ${allIncidents.length} incidents`
+                      : "View all incidents"}{" "}
+                    <ArrowRight size={16} />
                   </button>
                 </section>
               )}
@@ -880,7 +977,11 @@ export default function App() {
                       {page === "Watchlist" ? watchlist.length : items.length}
                     </span>
                   </h2>
-                  <p>The building blocks of your digital world.</p>
+                  <p>
+                    {page === "Watchlist"
+                      ? "The services you chose to keep in view."
+                      : "The building blocks of your digital world."}
+                  </p>
                 </div>
                 <div className="overview-heading-actions">
                   {page === "Overview" && (
@@ -895,10 +996,12 @@ export default function App() {
                     disabled={loading}
                     onClick={refresh}
                   >
-                    <RefreshCw size={13} />
+                    <RefreshCw size={16} />
                     {loading
                       ? "Refreshing…"
-                      : `Updated ${age(fetchedAt).toLowerCase()}`}
+                      : fetchedAt
+                        ? `Updated ${age(fetchedAt).toLowerCase()}`
+                        : "Not checked yet"}
                   </button>
                 </div>
               </div>
@@ -911,6 +1014,7 @@ export default function App() {
                     <button
                       className={filter === f ? "selected" : ""}
                       key={f}
+                      aria-pressed={filter === f}
                       onClick={() => setFilter(f)}
                     >
                       {page === "Watchlist" && f === "All services"
@@ -924,7 +1028,7 @@ export default function App() {
                 </div>
                 <div className="directory-search">
                   <div className="search-input">
-                    <Search size={15} />
+                    <Search size={16} />
                     <input
                       ref={searchRef}
                       placeholder="Search services…"
@@ -946,8 +1050,78 @@ export default function App() {
                   </select>
                 </div>
               </div>
+              <div className="visually-hidden" role="status" aria-live="polite">
+                {firstLoad
+                  ? "Checking official provider feeds…"
+                  : fetchedAt
+                    ? `${visible.length} services loaded`
+                    : ""}
+              </div>
               <div className="service-table-wrap">
-                {visible.length ? (
+                {firstLoad ? (
+                  /* Before the first reading lands, every provider reads
+                     "Status unavailable" — a wall of grey pills that looks like
+                     a total failure rather than a page that is still loading. */
+                  <ul className="service-list" aria-busy="true">
+                    {Array.from({ length: 6 }, (_, i) => (
+                      <li className="skeleton-row" key={i}>
+                        <span className="skeleton skeleton-avatar" />
+                        <div>
+                          <span className="skeleton skeleton-line medium" />
+                          <span className="skeleton skeleton-line short" />
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                ) : shown.length && compact ? (
+                  /* One data path, two presentations. A phone gets list rows
+                     whose whole surface is the tap target; a wide window gets
+                     the full comparison table. */
+                  <ul className="service-list">
+                    {shown.map((p) => {
+                      const watched = watchlist.includes(p.id);
+                      const healthy = p.components.filter(
+                        (c) => c.status === "operational",
+                      ).length;
+                      return (
+                        <li className="service-row" key={p.id}>
+                          <button
+                            className="service-row-main"
+                            onClick={() => openProvider(p)}
+                          >
+                            <ProviderLogo provider={p} />
+                            <span className="service-row-text">
+                              <strong>{p.name}</strong>
+                              <span className="service-row-meta">
+                                <Status status={p.status} />
+                                <small>
+                                  {p.stale
+                                    ? "Stale reading"
+                                    : p.components.length
+                                      ? `${healthy}/${p.components.length} healthy`
+                                      : p.category}
+                                </small>
+                              </span>
+                            </span>
+                            <ChevronRight size={20} />
+                          </button>
+                          <button
+                            className={`star-button ${watched ? "watched" : ""}`}
+                            aria-label={`Watch ${p.name}`}
+                            aria-pressed={watched}
+                            onClick={() => toggleWatch(p.id)}
+                          >
+                            <Star
+                              size={20}
+                              weight={watched ? "fill" : "regular"}
+                              className={`watchlist-star ${watched ? "watched" : ""}`}
+                            />
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                ) : shown.length ? (
                   <table className="service-table">
                     <thead>
                       <tr>
@@ -961,14 +1135,14 @@ export default function App() {
                             onClick={() => setModal("methodology")}
                             aria-label="About component health"
                           >
-                            <CircleHelp size={12} />
+                            <CircleHelp size={16} />
                           </button>
                         </th>
                         <th aria-label="Watchlist" />
                       </tr>
                     </thead>
                     <tbody>
-                      {visible.map((p) => (
+                      {shown.map((p) => (
                         <tr key={p.id}>
                           <td>
                             <button
@@ -1024,7 +1198,7 @@ export default function App() {
                           <td>
                             <button
                               className={`star-button ${watchlist.includes(p.id) ? "watched" : ""}`}
-                              aria-label={`${watchlist.includes(p.id) ? "Remove" : "Add"} ${p.name} ${watchlist.includes(p.id) ? "from" : "to"} watchlist`}
+                              aria-label={`Watch ${p.name}`}
                               aria-pressed={watchlist.includes(p.id)}
                               onClick={() => toggleWatch(p.id)}
                             >
@@ -1043,31 +1217,63 @@ export default function App() {
                   </table>
                 ) : (
                   <div className="empty-state">
-                    <Search size={26} />
-                    <h3>No services in this view</h3>
-                    <p>
-                      Try another search or add a service to your watchlist.
-                    </p>
-                    <button
-                      className="button secondary"
-                      onClick={() => {
-                        setSearch("");
-                        setCategory("All categories");
-                        setFilter("All services");
-                        if (page === "Watchlist") setModal("monitor");
-                      }}
-                    >
-                      Reset view
-                    </button>
+                    {page === "Watchlist" && !watchlist.length ? (
+                      <>
+                        <Star size={24} />
+                        <h3>Your watchlist is empty</h3>
+                        <p>
+                          Choose the services you depend on and Pulse will keep
+                          them in one focused view, with alerts when one reports
+                          a new issue.
+                        </p>
+                        <button
+                          className="button primary"
+                          onClick={() => setModal("monitor")}
+                        >
+                          <Plus size={16} />
+                          Add services
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <Search size={24} />
+                        <h3>No services match this view</h3>
+                        <p>
+                          Try another search term, or clear the filters to see
+                          everything again.
+                        </p>
+                        <button
+                          className="button secondary"
+                          onClick={() => {
+                            setSearch("");
+                            setCategory("All categories");
+                            setFilter("All services");
+                          }}
+                        >
+                          Clear filters
+                        </button>
+                      </>
+                    )}
                   </div>
                 )}
               </div>
+              {(previewing || showAllServices) && (
+                <button
+                  className="panel-footer-button"
+                  onClick={() => setShowAllServices(!showAllServices)}
+                >
+                  {previewing
+                    ? `View all ${visible.length} services`
+                    : "Show fewer services"}
+                  <ArrowRight size={16} />
+                </button>
+              )}
               <div className="table-footer">
                 <span>
-                  Showing {visible.length} of {directoryItems.length} services
+                  Showing {shown.length} of {directoryItems.length} services
                 </span>
                 <span>
-                  <ShieldCheck size={13} />
+                  <ShieldCheck size={16} />
                   {directoryVerified} fresh ·{" "}
                   {directoryItems.length - directoryVerified} unavailable
                 </span>
@@ -1092,7 +1298,7 @@ export default function App() {
                   onClick={refresh}
                   disabled={loading}
                 >
-                  <RefreshCw size={15} />
+                  <RefreshCw size={16} />
                   Refresh
                 </button>
               </div>
@@ -1107,7 +1313,7 @@ export default function App() {
                 ))
               ) : (
                 <div className="empty-state">
-                  <CheckCheck size={34} />
+                  <CheckCheck size={32} />
                   <h3>No active incidents reported</h3>
                   <p>
                     {verified} feeds verified. Unavailable feeds are not
@@ -1123,7 +1329,6 @@ export default function App() {
                 <>
                   <div className="section-title">
                     <div>
-                      <span className="eyebrow">BEYOND THE STATUS LIGHT</span>
                       <h2>Small disruptions. Wider ripples.</h2>
                     </div>
                     {page === "Overview" && (
@@ -1131,7 +1336,7 @@ export default function App() {
                         className="text-button"
                         onClick={() => go("Dependency insights")}
                       >
-                        Explore dependencies <ArrowUpRight size={15} />
+                        Explore dependencies <ArrowUpRight size={16} />
                       </button>
                     )}
                   </div>
@@ -1157,9 +1362,9 @@ export default function App() {
                             }}
                           >
                             <span className={`insight-icon color-${index}`}>
-                              <Icon size={19} />
+                              <Icon size={20} />
                             </span>
-                            <ArrowUpRight className="insight-arrow" size={17} />
+                            <ArrowUpRight className="insight-arrow" size={16} />
                             <h3>{name}</h3>
                             <p>
                               {
@@ -1212,12 +1417,13 @@ export default function App() {
               </span>
               <button onClick={() => setModal("methodology")}>
                 Independent monitoring · Official sources{" "}
-                <ArrowUpRight size={12} />
+                <ArrowUpRight size={16} />
               </button>
             </footer>
           )}
         </main>
       </div>
+      {bottomNavigation}
       {toast && <Toast key={toast}>{toast}</Toast>}
       {modal && (
         <Modal
@@ -1242,7 +1448,7 @@ export default function App() {
                 are saved on this device.
               </p>
               <div className="search-input modal-search">
-                <Search size={17} />
+                <Search size={16} />
                 <input
                   placeholder="Find a service…"
                   aria-label="Find a service to watch"
@@ -1256,16 +1462,22 @@ export default function App() {
                     p.name.toLowerCase().includes(monitorSearch.toLowerCase()),
                   )
                   .map((p) => (
-                    <button key={p.id} onClick={() => toggleWatch(p.id)}>
+                    <button
+                      key={p.id}
+                      role="checkbox"
+                      aria-checked={watchlist.includes(p.id)}
+                      onClick={() => toggleWatch(p.id)}
+                    >
                       <ProviderLogo provider={p} />
                       <span>
                         <strong>{p.name}</strong>
                         <small>{p.product}</small>
                       </span>
                       <span
+                        aria-hidden="true"
                         className={`checkbox ${watchlist.includes(p.id) ? "checked" : ""}`}
                       >
-                        {watchlist.includes(p.id) && <Check size={13} />}
+                        {watchlist.includes(p.id) && <Check size={16} />}
                       </span>
                     </button>
                   ))}
@@ -1310,7 +1522,7 @@ export default function App() {
                   Last successful check
                   <strong>
                     {detail.checkedAt
-                      ? new Date(detail.checkedAt).toLocaleString()
+                      ? timestamp(detail.checkedAt)
                       : "Not verified"}
                   </strong>
                 </span>
@@ -1318,7 +1530,7 @@ export default function App() {
                   Source last changed
                   <strong>
                     {detail.sourceUpdatedAt
-                      ? new Date(detail.sourceUpdatedAt).toLocaleString()
+                      ? timestamp(detail.sourceUpdatedAt)
                       : "Not provided"}
                   </strong>
                 </span>
@@ -1347,10 +1559,8 @@ export default function App() {
                           {i.updates.map((u, index) => (
                             <div key={`${u.at}-${index}`}>
                               <small>
-                                {u.at
-                                  ? new Date(u.at).toLocaleString()
-                                  : "Time not provided"}{" "}
-                                · {u.status?.replaceAll("_", " ")}
+                                {u.at ? timestamp(u.at) : "Time not provided"} ·{" "}
+                                {u.status?.replaceAll("_", " ")}
                               </small>
                               <p>{u.body}</p>
                             </div>
@@ -1393,7 +1603,7 @@ export default function App() {
                   onClick={() => toggleWatch(detail.id)}
                 >
                   <Star
-                    size={15}
+                    size={16}
                     weight={watchlist.includes(detail.id) ? "fill" : "regular"}
                     className={`watchlist-star ${watchlist.includes(detail.id) ? "watched" : ""}`}
                   />
@@ -1407,7 +1617,7 @@ export default function App() {
                   target="_blank"
                   rel="noreferrer"
                 >
-                  Official status page <ExternalLink size={14} />
+                  Official status page <ExternalLink size={16} />
                 </a>
               </div>
             </>
@@ -1439,7 +1649,7 @@ export default function App() {
                   onClick={toggleTheme}
                   aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
                 >
-                  {theme === "dark" ? <Sun size={17} /> : <Moon size={17} />}
+                  {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
                   <span>{theme === "dark" ? "Light mode" : "Dark mode"}</span>
                 </button>
               </div>
@@ -1473,7 +1683,7 @@ export default function App() {
                   className="text-button"
                   onClick={() => setModal("monitor")}
                 >
-                  Manage <ArrowRight size={14} />
+                  Manage <ArrowRight size={16} />
                 </button>
               </div>
               <p className="methodology-note">
@@ -1525,12 +1735,12 @@ export default function App() {
             <div className="prose">
               <p>One consistent view across the web, Windows, and Android.</p>
               <div className="app-option">
-                <Globe2 size={23} />
+                <Globe2 size={24} />
                 <span>
                   <strong>Web</strong>
                   <small>You’re using the shared Pulse experience.</small>
                 </span>
-                <Check size={17} />
+                <Check size={16} />
               </div>
               <a
                 className="app-option"
@@ -1538,14 +1748,14 @@ export default function App() {
                 target="_blank"
                 rel="noreferrer"
               >
-                <Layers3 size={23} />
+                <Layers3 size={24} />
                 <span>
                   <strong>Windows desktop</strong>
                   <small>
                     Download the portable EXE for Windows 10+ (64-bit).
                   </small>
                 </span>
-                <Download size={17} />
+                <Download size={16} />
               </a>
               <a
                 className="app-option"
@@ -1553,7 +1763,7 @@ export default function App() {
                 target="_blank"
                 rel="noreferrer"
               >
-                <PulseMark size={28} />
+                <PulseMark size={24} />
                 <span>
                   <strong>Android</strong>
                   <small>
@@ -1561,7 +1771,7 @@ export default function App() {
                     widget.
                   </small>
                 </span>
-                <Download size={17} />
+                <Download size={16} />
               </a>
               <p className="methodology-note">
                 Early-access builds: Windows is unsigned; Android uses a
@@ -1578,42 +1788,35 @@ export default function App() {
     </div>
   );
 }
-function Summary({ label, number, icon: Icon, note, color, onClick }) {
+function Summary({ label, number, icon: Icon, note, color, onClick, loading }) {
   return (
     <button
       className={`summary-card ${color}`}
       data-motion-card
       onClick={onClick}
       disabled={!onClick}
+      aria-busy={loading || undefined}
     >
       <div>
         <span>{label}</span>
-        <Icon size={17} />
+        <Icon size={20} />
       </div>
-      <strong>
-        {number}
-        <span className="summary-decoration">
-          {color === "green" ? (
-            <>
-              <i />
-              <i />
-              <i />
-              <i />
-              <i />
-              <i />
-              <i />
-              <i />
-              <i />
-              <i />
-            </>
-          ) : color === "amber" ? (
-            <Activity size={51} />
-          ) : null}
-        </span>
-      </strong>
+      {/* The number is the message. The old bar-chart flourish drew a shape
+          that looked like history this product does not measure. */}
+      {loading ? (
+        <span className="skeleton skeleton-metric" />
+      ) : (
+        <strong>{number}</strong>
+      )}
       <small>
-        {color === "green" && <i className="state-dot operational" />}
-        {note}
+        {loading ? (
+          <span className="skeleton skeleton-line medium" />
+        ) : (
+          <>
+            {color === "green" && <i className="state-dot operational" />}
+            {note}
+          </>
+        )}
       </small>
     </button>
   );
@@ -1643,7 +1846,7 @@ function Incident({ incident: i, onClick, expanded }) {
           {i.components.length
             ? `${i.components.length} component${i.components.length === 1 ? "" : "s"}`
             : "Provider update"}
-          <ChevronRight size={13} />
+          <ChevronRight size={16} />
         </span>
       </div>
     </button>

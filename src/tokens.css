@@ -1,0 +1,261 @@
+/* Pulse design tokens — the single source of truth for colour, type, spacing,
+   radius, elevation and layout.
+
+   Loaded before every other stylesheet. Nothing below this file may introduce a
+   raw hex value, a font size, a radius or a spacing step that is not defined
+   here.
+
+   Scale rationale
+   ---------------
+   * Type is mobile-first. Nothing that carries meaning is below 12px at any
+     viewport; inputs are 16px on phones so iOS does not zoom on focus.
+   * Spacing is a 4px grid: 4 8 12 16 20 24 32 40 48.
+   * Radius has five steps. Cards are --radius-lg, controls --radius-md,
+     indicators --radius-pill.
+   * Every text-on-background pair defined here is verified to WCAG AA
+     (see scripts/check-tokens.mjs). */
+
+:root {
+  color-scheme: light;
+
+  /* ---- Surfaces ------------------------------------------------------- */
+  --canvas: #f4f5f6;
+  --surface: #ffffff;
+  --surface-raised: #ffffff;
+  --surface-sunken: #eceef0;
+  --surface-hover: #e6e9ec;
+  /* Tile behind a brand mark. Distinct from --surface-sunken because a well
+     wants to recede while a tile has to let a dark logo read against it. */
+  --surface-tile: #ffffff;
+  --chrome: #ffffff;
+
+  /* ---- Ink ------------------------------------------------------------ */
+  --text: #15171a;
+  --text-secondary: #494d54;
+  --text-muted: #5c6068;
+  --text-on-color: #ffffff;
+
+  /* ---- Lines ---------------------------------------------------------- */
+  --line: #dcdfe5;
+  --line-strong: #c9ced5;
+
+  /* ---- Accent (monochrome ink; colour belongs to status) --------------- */
+  --accent: #15171a;
+  --accent-hover: #343941;
+  --accent-soft: #e9ebee;
+  --accent-ink: #15171a;
+  --on-accent: #ffffff;
+
+  /* ---- Status: foreground / container / container border --------------- */
+  --positive: #106b46;
+  --positive-bg: #e5f4ec;
+  --positive-line: #bfe1cf;
+  --warning: #784d09;
+  --warning-bg: #fdf2db;
+  --warning-line: #efdab1;
+  --negative: #a11f2d;
+  --negative-bg: #fdeaec;
+  --negative-line: #f2cad0;
+  --info: #284c95;
+  --info-bg: #e8effc;
+  --info-line: #ccdbf5;
+  --neutral: #5c6068;
+  --neutral-bg: #eceef0;
+  --neutral-line: #d7dae0;
+
+  /* ---- Status marks (fills and dots; 3:1 non-text contrast) ------------ */
+  --mark-positive: #1a8358;
+  --mark-warning: #b07a16;
+  --mark-negative: #c5333f;
+  --mark-info: #3a63b8;
+  --mark-neutral: #7e848d;
+  --green: var(--mark-positive);
+
+  /* ---- Map ------------------------------------------------------------ */
+  --map-ocean: #f4f5f6;
+  --map-land: #d3d7dc;
+  --map-coast: #a8aeb6;
+  --map-border: #eceef0;
+  --map-grid: #e4e7ea;
+
+  /* ---- Elevation ------------------------------------------------------ */
+  --shadow-1: 0 1px 2px #0f172a0a;
+  --shadow-2: 0 1px 2px #0f172a0a, 0 6px 16px #0f172a0f;
+  --shadow-3: 0 2px 6px #0f172a14, 0 18px 48px #0f172a1f;
+  --shadow: var(--shadow-1);
+
+  /* ---- Type families -------------------------------------------------- */
+  --font-sans: "DM Sans Variable", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: "Manrope Variable", var(--font-sans);
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Mono", "JetBrains Mono", Menlo, monospace;
+
+  /* ---- Type scale (phone) --------------------------------------------- */
+  --fs-display: 30px;
+  --lh-display: 1.12;
+  --fs-title: 22px;
+  --lh-title: 1.24;
+  --fs-section: 17px;
+  --lh-section: 1.3;
+  --fs-card: 15px;
+  --lh-card: 1.35;
+  --fs-body: 15px;
+  --lh-body: 1.55;
+  --fs-body-sm: 13px;
+  --lh-body-sm: 1.5;
+  --fs-label: 13px;
+  --lh-label: 1.3;
+  --fs-caption: 12px;
+  --lh-caption: 1.4;
+  --fs-overline: 12px;
+  --fs-button: 15px;
+  --fs-input: 16px;
+  --fs-metric: 32px;
+
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --fw-bold: 700;
+  --tracking-tight: -0.02em;
+  --tracking-snug: -0.01em;
+  --tracking-wide: 0.08em;
+
+  /* ---- Spacing (4px grid) --------------------------------------------- */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 32px;
+  --space-8: 40px;
+  --space-9: 48px;
+
+  /* ---- Radius --------------------------------------------------------- */
+  --radius-xs: 6px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-pill: 999px;
+
+  /* ---- Layout --------------------------------------------------------- */
+  --tap: 44px;
+  --gutter: 16px;
+  --appbar-h: 56px;
+  --bottomnav-h: 58px;
+  --sidebar: 248px;
+  --content-max: 1560px;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  /* Height the page must keep clear so the bottom navigation never covers
+     content. Zero on viewports that use the sidebar instead. */
+  --bottom-inset: 0px;
+
+  /* ---- Motion --------------------------------------------------------- */
+  --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --duration-fast: 120ms;
+  --duration: 200ms;
+  --duration-slow: 320ms;
+
+  /* ---- Legacy aliases --------------------------------------------------
+     Older rules still reference these names. They resolve to the tokens above
+     so nothing has to change in one pass. Do not use them in new rules. */
+  --secondary: var(--text-secondary);
+  --muted: var(--text-muted);
+  --surface-soft: var(--surface-sunken);
+  --lime: var(--accent);
+
+  color: var(--text);
+  background: var(--canvas);
+  font-family: var(--font-sans);
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --canvas: #101113;
+  --surface: #191b1e;
+  --surface-raised: #202327;
+  --surface-sunken: #232629;
+  --surface-hover: #2b2f34;
+  --surface-tile: #2f343a;
+  --chrome: #191b1e;
+
+  --text: #f3f5f7;
+  --text-secondary: #c4c9d0;
+  --text-muted: #9aa1aa;
+  --text-on-color: #101113;
+
+  --line: #2c3035;
+  --line-strong: #3b4047;
+
+  --accent: #f3f5f7;
+  --accent-hover: #d3d8de;
+  --accent-soft: #2b2f34;
+  --accent-ink: #f3f5f7;
+  --on-accent: #101113;
+
+  --positive: #6fd5a5;
+  --positive-bg: #122a20;
+  --positive-line: #234835;
+  --warning: #e9bd77;
+  --warning-bg: #2c2415;
+  --warning-line: #4c3d21;
+  --negative: #f2939f;
+  --negative-bg: #2e1b1f;
+  --negative-line: #513037;
+  --info: #a0baf3;
+  --info-bg: #1a2237;
+  --info-line: #313f5e;
+  --neutral: #a3aab3;
+  --neutral-bg: #232629;
+  --neutral-line: #373c42;
+
+  --mark-positive: #4fc493;
+  --mark-warning: #d5a44f;
+  --mark-negative: #e26c7b;
+  --mark-info: #7d9de8;
+  --mark-neutral: #7a828c;
+
+  --map-ocean: #101113;
+  --map-land: #32363b;
+  --map-coast: #5a6068;
+  --map-border: #191b1e;
+  --map-grid: #1e2124;
+
+  --shadow-1: 0 1px 2px #00000040;
+  --shadow-2: 0 1px 2px #00000040, 0 6px 16px #00000059;
+  --shadow-3: 0 2px 6px #00000059, 0 18px 48px #00000073;
+}
+
+/* ---- Tablet and desktop: one step up in density and scale -------------- */
+@media (max-width: 760px) {
+  :root {
+    /* Content must clear the fixed bottom navigation bar. */
+    --bottom-inset: calc(
+      var(--bottomnav-h) + max(var(--space-2), var(--safe-bottom))
+    );
+  }
+}
+
+@media (min-width: 761px) {
+  :root {
+    --fs-display: 36px;
+    --fs-title: 28px;
+    --fs-section: 18px;
+    --fs-card: 15px;
+    --fs-body: 14px;
+    --fs-body-sm: 13px;
+    --fs-label: 12px;
+    --fs-button: 14px;
+    --fs-input: 14px;
+    --fs-metric: 34px;
+    --gutter: 24px;
+  }
+}
+
+@media (min-width: 1200px) {
+  :root {
+    --gutter: 32px;
+  }
+}

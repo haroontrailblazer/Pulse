@@ -47,7 +47,7 @@ export default function IncidentInbox({
     <div className="inbox-content">
       <div className="inbox-hero">
         <span className="inbox-hero-icon">
-          <Bell size={26} />
+          <Bell size={24} />
         </span>
         <div>
           <span className="inbox-eyebrow">YOUR SIGNAL, WITHOUT THE NOISE</span>
@@ -83,13 +83,13 @@ export default function IncidentInbox({
           onClick={onRefresh}
           disabled={loading}
         >
-          <RefreshCw size={15} />
+          <RefreshCw size={16} />
           {loading ? "Checking feeds…" : "Check latest"}
         </button>
       </div>
       <div className="inbox-search">
         <div className="search-input">
-          <Search size={15} />
+          <Search size={16} />
           <input
             aria-label="Search incident inbox"
             placeholder="Search incidents or services…"
@@ -120,7 +120,7 @@ export default function IncidentInbox({
           disabled={!matches.some((i) => read[i.key] !== incidentRevision(i))}
           onClick={() => onRead(matches)}
         >
-          <CheckCheck size={14} />
+          <CheckCheck size={16} />
           Mark shown as read
         </button>
       </div>
@@ -173,7 +173,7 @@ export default function IncidentInbox({
                   )}
                 </span>
                 <span className={`inbox-severity ${severity}`}>
-                  <StatusGlyph status={severity} size={15} />
+                  <StatusGlyph status={severity} size={16} />
                   {issueLabels[severity]}
                 </span>
                 <h3>{i.name}</h3>
@@ -196,7 +196,7 @@ export default function IncidentInbox({
       </div>
       {!matches.length && (
         <div className="empty-state">
-          <Bell size={28} />
+          <Bell size={24} />
           <h3>
             {loading
               ? "Checking for the latest updates…"

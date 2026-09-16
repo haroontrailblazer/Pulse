@@ -25,7 +25,7 @@ export default function ProviderLogo({ provider }) {
           <path d={brandIcons[provider.id]} />
         </svg>
       ) : Icon ? (
-        <Icon size={23} strokeWidth={provider.id === "cloudflare" ? 2.8 : 2} />
+        <Icon size={24} strokeWidth={provider.id === "cloudflare" ? 2.8 : 2} />
       ) : (
         provider.mark
       )}

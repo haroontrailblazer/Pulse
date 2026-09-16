@@ -1,0 +1,41 @@
+/* Platform adjustments.
+
+   Everything here exists because a surface differs from the browser, not
+   because a screen wanted a one-off look. Android is the only surface that
+   needs them: its WebView reports different safe-area insets and its window is
+   a phone even when the viewport is wide.
+
+   This file replaces the old refinements.css, which had become a third colour
+   system (28 of its 32 colour rules were dead — fully overridden by theme.css)
+   wrapped around a per-screen font-size patch layer. Colour now lives in
+   tokens.css and type in components.css. */
+
+/* The Capacitor WebView does not always report a top inset, so the status-bar
+   clearance is a floor rather than a pure env() value. */
+:root[data-platform="android"] .main-shell > main {
+  padding-top: max(36px, calc(var(--safe-top) + var(--space-3)));
+}
+:root[data-platform="android"] .bottom-nav {
+  padding-bottom: max(var(--space-3), var(--safe-bottom));
+}
+/* An Android tablet gets the same measure as the desktop window rather than a
+   full-bleed column of very long lines. */
+@media (min-width: 761px) {
+  :root[data-platform="android"] main {
+    max-width: 860px;
+    margin-inline: auto;
+  }
+  :root[data-platform="android"] .service-table th:nth-child(4),
+  :root[data-platform="android"] .service-table td:nth-child(4) {
+    display: none;
+  }
+  :root[data-platform="android"] .service-table th:first-child {
+    width: 54%;
+  }
+  :root[data-platform="android"] .service-table th:nth-child(2) {
+    width: 33%;
+  }
+  :root[data-platform="android"] .service-table th:last-child {
+    width: 13%;
+  }
+}

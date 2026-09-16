@@ -28,24 +28,17 @@
   display: flex;
   align-items: center;
   gap: 7px;
-  font-size: 12px;
   white-space: nowrap;
   color: var(--secondary);
 }
 .inbox-coverage {
-  font-size: 11px;
   color: var(--muted);
-}
-.inbox-coverage button {
-  font-size: 11px;
 }
 .inbox-warning {
   color: var(--warning);
   background: var(--warning-bg);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   padding: 12px;
-  font-size: 12px;
-  line-height: 1.6;
 }
 .inbox-list {
   display: grid;
@@ -55,7 +48,7 @@
   width: 100%;
   text-align: left;
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   padding: 18px;
   background: var(--surface);
   color: var(--text);
@@ -71,30 +64,23 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  font-size: 11px;
   color: var(--muted);
 }
 .inbox-meta strong {
   color: var(--text);
-  font-size: 12px;
 }
 .inbox-meta b {
   margin-left: auto;
   border: 1px solid var(--line);
-  border-radius: 4px;
+  border-radius: var(--radius-pill);
   padding: 3px 6px;
-  font-size: 9px;
   color: var(--text);
 }
 .inbox-update h3 {
-  font-size: 15px;
-  line-height: 1.5;
   margin: 11px 0 6px;
 }
 .inbox-update p {
-  font-size: 12px;
   color: var(--secondary);
-  line-height: 1.7;
   margin: 0;
   display: -webkit-box;
   -webkit-line-clamp: 3;
@@ -108,8 +94,6 @@
   gap: 12px;
   margin-top: 15px;
   color: var(--muted);
-  font-size: 10px;
-  line-height: 1.6;
 }
 .inbox-update-footer svg {
   flex-shrink: 0;
@@ -132,7 +116,7 @@
 }
 .impact-explanation {
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   padding: 20px;
   min-width: 0;
 }
@@ -143,11 +127,9 @@
   justify-content: space-between;
 }
 .impact-card-heading h3 {
-  font-size: 15px;
   margin: 0;
 }
 .impact-card-heading .status-pill {
-  font-size: 10px;
   white-space: nowrap;
 }
 .impact-explanation dl {
@@ -157,16 +139,12 @@
   margin-top: 17px;
 }
 .impact-explanation dt {
-  font-size: 10px;
   font-weight: 700;
   color: var(--muted);
   margin-bottom: 6px;
   text-transform: uppercase;
-  letter-spacing: 0.07em;
 }
 .impact-explanation dd {
-  font-size: 12px;
-  line-height: 1.8;
   color: var(--secondary);
   margin: 0;
   overflow-wrap: anywhere;
@@ -175,8 +153,6 @@
   border-top: 1px solid var(--line);
   padding-top: 14px;
   color: var(--secondary);
-  font-size: 11px;
-  line-height: 1.8;
 }
 .impact-explanation summary {
   cursor: pointer;
@@ -196,20 +172,15 @@
   justify-content: space-between;
   margin-top: 20px;
 }
-.impact-card-actions button {
-  font-size: 11px;
-}
 .impact-empty {
   display: flex;
   align-items: center;
   gap: 12px;
   padding: 20px;
   background: var(--surface-soft);
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
 }
 .impact-empty p {
-  font-size: 12px;
-  line-height: 1.8;
   color: var(--secondary);
   margin: 0;
 }
@@ -217,55 +188,66 @@
   flex-shrink: 0;
 }
 .impact-message {
-  font-size: 12px;
   color: var(--positive);
 }
 @media (max-width: 1000px) {
-  .impact-cards {
+.impact-cards {
     grid-template-columns: 1fr;
   }
 }
-@media (max-width: 600px) {
-  .clear-insights {
+@media (max-width: 760px) {
+.clear-insights {
     padding: 18px;
   }
+  /* Keep the toolbars as rows. Stacking every control put 350px of chrome
+     above the first incident on a phone. */
   .impact-controls,
   .inbox-toolbar,
   .inbox-search,
   .inbox-coverage {
-    align-items: flex-start;
-    flex-direction: column;
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin: var(--space-3) 0;
   }
-  .inbox-toolbar .tabs,
-  .inbox-search .search-input {
-    width: 100%;
+  .inbox-toolbar .tabs {
+    flex: 1;
+    min-width: 0;
   }
-  .inbox-update {
-    padding: 15px;
-  }
-  .impact-explanation {
-    padding: 17px;
+  .inbox-toolbar .tabs button {
+    flex: 1;
+    justify-content: center;
   }
   .inbox-toolbar .button {
-    align-self: flex-end;
+    flex-shrink: 0;
+    padding-inline: var(--space-3);
+  }
+  .inbox-search .search-input {
+    flex: 1;
+    min-width: 150px;
+  }
+  .inbox-coverage span {
+    flex: 1;
+    min-width: 0;
+  }
+  .inbox-update {
+    padding: var(--space-4);
+  }
+  .impact-explanation {
+    padding: var(--space-4);
   }
   .impact-card-heading {
     flex-wrap: wrap;
   }
 }
-
 .source-excerpt {
   display: block;
   margin-top: 8px;
   color: var(--muted);
-  font-size: 11px;
-  line-height: 1.75;
 }
-
 .impact-source-time {
-  font-size: 10px;
   color: var(--muted);
-  line-height: 1.7;
   margin: 10px 0 0;
 }
 .inbox-hero {
@@ -275,7 +257,7 @@
   padding: 20px;
   margin-top: 6px;
   border: 1px solid var(--line);
-  border-radius: 14px;
+  border-radius: var(--radius-md);
   background: var(--surface-soft);
 }
 .inbox-hero-icon {
@@ -284,26 +266,19 @@
   width: 52px;
   height: 52px;
   flex-shrink: 0;
-  border-radius: 15px;
+  border-radius: var(--radius-lg);
   background: var(--accent);
   color: var(--on-accent);
 }
 .inbox-eyebrow {
-  font-size: 9px;
-  letter-spacing: 0.1em;
   font-weight: 650;
   color: var(--muted);
 }
 .inbox-hero h3 {
-  font-family: "Manrope Variable", sans-serif;
   margin: 5px 0;
-  font-size: 24px;
-  letter-spacing: -0.7px;
 }
 .inbox-hero p {
   margin: 0;
-  font-size: 11px;
-  line-height: 1.6;
   color: var(--secondary);
 }
 .inbox-day {
@@ -311,17 +286,15 @@
   align-items: center;
   justify-content: space-between;
   margin: 12px 0 0;
-  font-size: 12px;
 }
 .inbox-day span {
-  font-size: 10px;
   color: var(--muted);
   font-weight: 400;
 }
 .inbox-update {
   --incident-color: var(--neutral);
   --incident-bg: var(--neutral-bg);
-  border-radius: 13px;
+  border-radius: var(--radius-md);
   padding: 20px;
   position: relative;
 }
@@ -355,11 +328,8 @@
 .inbox-meta .provider-logo {
   width: 34px;
   height: 34px;
-  border-radius: 9px;
+  border-radius: var(--radius-sm);
   flex-shrink: 0;
-}
-.inbox-meta strong {
-  font-size: 13px;
 }
 .inbox-meta b {
   display: flex;
@@ -377,25 +347,21 @@
   background: var(--accent);
 }
 .inbox-watching {
-  font-size: 10px;
   color: var(--muted);
 }
 .inbox-severity {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  font-size: 10px;
   font-weight: 600;
   color: var(--incident-color);
   background: var(--incident-bg);
-  border-radius: 5px;
+  border-radius: var(--radius-xs);
   padding: 4px 7px;
 }
 .inbox-update h3 {
-  font-size: 16px;
   margin-top: 10px;
   font-weight: 650;
-  letter-spacing: -0.2px;
 }
 .inbox-update-footer {
   align-items: center;
@@ -410,22 +376,30 @@
 .inbox-source-time {
   margin-left: auto;
 }
-@media (max-width: 600px) {
-  .inbox-hero {
-    padding: 15px;
-    gap: 12px;
-    align-items: flex-start;
+@media (max-width: 760px) {
+.inbox-hero {
+    padding: var(--space-4);
+    gap: var(--space-3);
+    align-items: center;
   }
   .inbox-hero-icon {
     width: 40px;
     height: 40px;
-    border-radius: 11px;
+    border-radius: var(--radius-md);
+  }
+  /* The sheet title already says "Your incident inbox"; the slogan above the
+     count is chrome a phone cannot afford. */
+  .inbox-eyebrow {
+    display: none;
   }
   .inbox-hero h3 {
-    font-size: 21px;
+    font-size: var(--fs-section);
+    margin: 0;
   }
-  .inbox-eyebrow {
-    font-size: 8px;
+  .inbox-hero p {
+    margin-top: var(--space-1);
+    font-size: var(--fs-caption);
+    line-height: var(--lh-caption);
   }
   .inbox-update {
     padding: 15px;
@@ -442,7 +416,7 @@
   }
 }
 @media (max-width: 760px) {
-  .sidebar {
+.sidebar {
     width: min(280px, calc(100vw - 24px));
   }
   .sidebar-header {
