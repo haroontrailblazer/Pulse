@@ -332,7 +332,8 @@ small {
    a device that actually has a pointer, and a press is answered by the element
    briefly giving way under the finger instead of being covered over.
    ==================================================================== */
-:is(button, a, input, select, textarea, summary, [tabindex]):focus-visible {
+:root[data-input="keyboard"]
+  :is(button, a, input, select, textarea, summary, [tabindex]):focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
   border-radius: var(--radius-xs);

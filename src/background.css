@@ -23,7 +23,7 @@
   background: var(--surface-soft);
 }
 }
-.overview-alerts:focus-visible {
+:root[data-input="keyboard"] .overview-alerts:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
