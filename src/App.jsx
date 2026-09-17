@@ -1452,20 +1452,13 @@ export default function App() {
             <section className="insights-section">
               {page === "Overview" && (
                 <>
+                  {/* The heading stands alone: the insight cards below it are
+                      themselves the way through to Dependency insights, which
+                      also has its own entry in the More sheet. */}
                   <div className="section-title">
-                    <div>
-                      <h2>
-                        Small disruptions. <span>Wider ripples.</span>
-                      </h2>
-                    </div>
-                    {page === "Overview" && (
-                      <button
-                        className="text-button"
-                        onClick={() => go("Dependency insights")}
-                      >
-                        Explore dependencies <ArrowUpRight size={16} />
-                      </button>
-                    )}
+                    <h2>
+                      Small disruptions. <span>Wider ripples.</span>
+                    </h2>
                   </div>
                   <div className="insight-grid">
                     {["AI products", "E-commerce", "Developer tools"].map(
