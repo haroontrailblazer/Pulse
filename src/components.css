@@ -774,11 +774,12 @@ select {
        of empty canvas under the footer's last line on a phone. */
     padding-bottom: calc(var(--space-2) + var(--bottom-inset));
   }
-  /* The map has no footer to tighten and runs to the bottom of the display, so
-     it keeps the clearance it was sized against — the shell's padding is the
-     only thing holding it off the bar. */
+  /* The shell's padding is the only thing holding the map off the bar, so this
+     is trimmed rather than dropped: the responsive gate measures the map a few
+     pixels lower than a settled page does, and the slack above the bar has to
+     survive that. 16 leaves 15px, which does. */
   .main-shell > main.map-main {
-    padding-bottom: calc(var(--space-6) + var(--bottom-inset));
+    padding-bottom: calc(var(--space-4) + var(--bottom-inset));
   }
 
   /* The workspace navigation becomes a bottom sheet: same markup, same focus
@@ -1718,7 +1719,7 @@ select {
   .atlas-map.narrow .atlas-service-dock {
     left: var(--space-3);
     right: var(--space-3);
-    bottom: var(--space-3);
+    bottom: var(--space-2);
   }
   /* Four stacked rows of overlay chrome leave no map on a phone. Filters and
      the watchlist toggle share one horizontally scrollable row, so every
