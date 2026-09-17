@@ -1094,7 +1094,7 @@ select {
     overflow: hidden;
   }
 }
-@media (min-height: 760px) {
+@media (min-height: 600px) {
   .watchlist-main {
     display: flex;
     flex-direction: column;
