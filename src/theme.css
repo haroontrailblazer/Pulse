@@ -184,7 +184,7 @@ h2,
   border-color: var(--accent);
 }
 }
-:root[data-theme] .search-input:focus-within {
+:root[data-theme][data-input="keyboard"] .search-input:focus-within {
   border-color: var(--accent);
 }
 :root[data-theme] :is(button,

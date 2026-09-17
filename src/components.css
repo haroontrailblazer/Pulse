@@ -502,7 +502,7 @@ small {
   color: var(--text-muted);
   max-width: none;
 }
-.search-input:focus-within {
+:root[data-input="keyboard"] .search-input:focus-within {
   border-color: var(--accent);
 }
 .search-input input {
