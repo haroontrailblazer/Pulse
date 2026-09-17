@@ -24,24 +24,19 @@ export default function IncidentInbox({
   fetchedAt,
   dismissed = {},
   onDismiss,
-  onRestore,
 }) {
   const [scope, setScope] = useState("All services"),
-    [unreadOnly, setUnreadOnly] = useState(false),
     [query, setQuery] = useState("");
   const kept = incidents.filter(
     (i) => dismissed[i.key] !== incidentRevision(i),
   );
-  const dismissedCount = incidents.length - kept.length;
   const scoped = kept.filter(
     (i) => scope === "All services" || watchlist.includes(i.provider.id),
   );
-  const matches = scoped.filter(
-    (i) =>
-      (!unreadOnly || read[i.key] !== incidentRevision(i)) &&
-      `${i.name} ${i.provider.name} ${i.body}`
-        .toLowerCase()
-        .includes(query.toLowerCase()),
+  const matches = scoped.filter((i) =>
+    `${i.name} ${i.provider.name} ${i.body}`
+      .toLowerCase()
+      .includes(query.toLowerCase()),
   );
   const providers = items.filter(
     (p) => scope === "All services" || watchlist.includes(p.id),
@@ -85,28 +80,12 @@ export default function IncidentInbox({
             onChange={(e) => setQuery(e.target.value)}
           />
         </div>
-        <label>
-          <input
-            type="checkbox"
-            checked={unreadOnly}
-            onChange={(e) => setUnreadOnly(e.target.checked)}
-          />
-          Unread only
-        </label>
       </div>
       <div className="inbox-coverage">
         <span>
           {fetchedAt
             ? `Latest check completed at ${new Date(fetchedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
             : "Waiting for the first check"}
-          {dismissedCount > 0 && (
-            <>
-              {" · "}
-              <button className="inbox-restore" onClick={onRestore}>
-                Restore {dismissedCount} dismissed
-              </button>
-            </>
-          )}
         </span>
         <button
           className="text-button"
@@ -214,9 +193,7 @@ export default function IncidentInbox({
                 ? "Your watchlist is empty"
                 : !fresh.length
                   ? "Current incidents are unavailable"
-                  : unreadOnly
-                    ? "You’re caught up"
-                    : "No matching active incidents"}
+                  : "No matching active incidents"}
           </h3>
           <p>
             {!fresh.length

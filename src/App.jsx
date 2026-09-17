@@ -410,12 +410,6 @@ export default function App() {
       return next;
     });
   }
-  function restoreDismissedIncidents() {
-    setDismissedIncidents({});
-    try {
-      localStorage.removeItem("pulse-inbox-dismissed");
-    } catch {}
-  }
   function markIncidentsRead(incidents) {
     setReadIncidents((previous) => {
       const next = Object.fromEntries(
@@ -1781,7 +1775,6 @@ export default function App() {
               watchlist={watchlist}
               dismissed={dismissedIncidents}
               onDismiss={dismissIncident}
-              onRestore={restoreDismissedIncidents}
               read={readIncidents}
               onRead={markIncidentsRead}
               onProvider={openProvider}

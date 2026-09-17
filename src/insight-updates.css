@@ -491,15 +491,6 @@
   color: var(--text);
 }
 }
-.inbox-restore {
-  border: 0;
-  padding: 0;
-  background: none;
-  color: var(--text);
-  font: inherit;
-  text-decoration: underline;
-  cursor: pointer;
-}
 
 /* The watchlist filter is a toggle, so it shows its state as a fill. */
 .impact-watch-toggle[aria-pressed="true"] {
