@@ -988,6 +988,52 @@ select {
 }
 
 /* ========================================================================
+   The Map destination: the map itself, not a map in a card
+   ------------------------------------------------------------------------
+   On the Overview the map is a card among cards, so it keeps its border and
+   its corners. Here it is the page: the frame comes off, it runs to both
+   edges of the display, and it takes whatever height is left under the title
+   rather than a clamped band. Everything drawn on it — the controls, the
+   dock, the panel — is positioned against the map and follows it.
+   ==================================================================== */
+@media (min-height: 560px) {
+  /* The shell's bottom padding is dropped rather than cancelled with a negative
+     margin: a margin that big confuses the free-space the grid is sized from,
+     and the map ended up hanging under the bottom bar whenever anything above
+     it grew. The grid takes the space that is left and reserves the bar's room
+     inside itself instead. */
+  .map-main {
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+    min-height: 0;
+    overflow: hidden;
+  }
+  .map-main > .page-heading,
+  .map-main > .error-banner {
+    flex: 0 0 auto;
+  }
+  .map-main > .overview-grid {
+    flex: 1 1 0;
+    height: auto;
+    min-height: 0;
+    margin-bottom: 0;
+  }
+}
+/* Edge to edge horizontally: cancel the page gutter on this one child. The
+   shell's own bottom padding already clears the bottom bar, so nothing is
+   reserved here — reserving it twice left a band of empty canvas under the
+   map, and cancelling the shell's padding with a negative margin made the
+   height the grid is given depend on measurements that move. */
+.map-main > .overview-grid {
+  margin-inline: calc(-1 * var(--gutter));
+}
+.map-main .atlas-map {
+  border: 0;
+  border-radius: 0;
+}
+
+/* ========================================================================
    Incidents and Watchlist: a card that fits the viewport
    ------------------------------------------------------------------------
    These two are destinations for a list, not documents to be read top to
@@ -1688,12 +1734,6 @@ select {
   }
   .atlas-map-header {
     inset: var(--space-3) var(--space-3) auto;
-  }
-  /* The floor has to fit the header, a usable map and the dock/controls stack.
-     On a short phone the page scrolls a little rather than squashing the map
-     into a band too thin to read. */
-  .map-main .overview-grid {
-    height: clamp(560px, calc(100dvh - 190px - var(--bottom-inset)), 660px);
   }
   .map-main .page-heading {
     margin-bottom: var(--space-3);
