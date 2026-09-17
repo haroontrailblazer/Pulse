@@ -437,14 +437,8 @@
   }
 }
 @media (max-width: 760px) {
-.sidebar {
-    width: min(280px, calc(100vw - 24px));
-  }
   .sidebar-header {
     gap: 6px;
-  }
-  .sidebar-header .brand {
-    padding-left: 0;
   }
 }
 
