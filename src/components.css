@@ -770,6 +770,15 @@ select {
 @media (max-width: 760px) {
   .main-shell > main {
     padding-top: calc(var(--space-4) + var(--safe-top));
+    /* The bar's own room is `--bottom-inset`; the 24px on top of it left 31px
+       of empty canvas under the footer's last line on a phone. */
+    padding-bottom: calc(var(--space-2) + var(--bottom-inset));
+  }
+  /* The map has no footer to tighten and runs to the bottom of the display, so
+     it keeps the clearance it was sized against — the shell's padding is the
+     only thing holding it off the bar. */
+  .main-shell > main.map-main {
+    padding-bottom: calc(var(--space-6) + var(--bottom-inset));
   }
 
   /* The workspace navigation becomes a bottom sheet: same markup, same focus
