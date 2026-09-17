@@ -932,16 +932,13 @@ select {
   color: var(--text);
 }
 
-/* The menu the native picker used to be. Anchored to the button and right
-   aligned so it cannot leave the card, capped so a long list scrolls inside
-   itself rather than running off the screen. */
+/* The menu the native picker used to be. A portal fixed to the viewport and
+   placed against its trigger by FilterMenu, so no card can clip it; capped at
+   half the screen so a long list scrolls inside itself rather than running off
+   the bottom. */
 .filter-menu-list {
-  position: absolute;
+  position: fixed;
   z-index: 30;
-  top: calc(100% + var(--space-2));
-  right: 0;
-  left: auto;
-  bottom: auto;
   min-width: 220px;
   max-width: min(280px, calc(100vw - 2 * var(--gutter)));
   max-height: min(320px, 50dvh);
@@ -983,14 +980,6 @@ select {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-.filter-menu-list.is-above {
-  top: auto;
-  bottom: calc(100% + var(--space-2));
-}
-.filter-menu-list.is-start {
-  right: auto;
-  left: 0;
 }
 
 .table-footer-toggle {

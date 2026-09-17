@@ -525,6 +525,7 @@ export default function WorldMap({
         icon={<Funnel size={16} />}
         label="Map region"
         placement="above"
+        align="start"
       />
       <button
         className={`atlas-coverage ${feedError ? "is-error" : ""}`}
