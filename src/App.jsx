@@ -1607,15 +1607,21 @@ export default function App() {
                   Official status page <ExternalLink size={16} />
                 </a>
               </>
+            ) : modal === "monitor" ? (
+              <button
+                className="button primary full-width"
+                onClick={() => {
+                  closeModal();
+                  setToast("Your watchlist is saved.");
+                }}
+              >
+                Done · {watchlist.length} services selected
+              </button>
             ) : null
           }
         >
           {modal === "monitor" && (
             <>
-              <p className="modal-description">
-                Keep the services you rely on in one focused view. Your choices
-                are saved on this device.
-              </p>
               <div className="search-input modal-search">
                 <Search size={16} />
                 <input
@@ -1651,15 +1657,6 @@ export default function App() {
                     </button>
                   ))}
               </div>
-              <button
-                className="button primary full-width"
-                onClick={() => {
-                  closeModal();
-                  setToast("Your watchlist is saved.");
-                }}
-              >
-                Done · {watchlist.length} services selected
-              </button>
             </>
           )}
           {modal === "provider" && detail && (
