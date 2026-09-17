@@ -1649,6 +1649,14 @@ select {
   border-radius: var(--radius-md);
   font-size: var(--fs-caption);
 }
+/* This one is a chip on the map, not a row in a form: 20px of checkbox beside
+   a 12px label in a 38px chip read as the box wearing the label. The control
+   that carries the touch target is the chip, so shrinking the box costs
+   nothing. */
+.atlas-watch-filter input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+}
 .atlas-watch-filter::after {
   content: "";
   position: absolute;
@@ -1699,8 +1707,12 @@ select {
      glanceable height and let the Map destination do the exploring. */
   /* The Overview card has to fit its own overlay chrome — a four-row header and
      the service dock — and still leave a map worth looking at. */
+  /* An inch shorter. At 480 the globe was drawn 109px tall with 135px of empty
+     sky above it: it is sized by the card's width, not its height, so the extra
+     height was never going to be used. 384 keeps the globe the same size and
+     takes the emptiness out. */
   .atlas-map:not(.expanded) {
-    height: 480px;
+    height: 384px;
   }
   /* Region selection is an exploration control: it belongs on the Map
      destination, one tap away, not on the Overview summary card. */
