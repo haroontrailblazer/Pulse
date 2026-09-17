@@ -107,26 +107,25 @@
   background: var(--map-ocean);
   border-radius: var(--radius-xs);
 }
-.map-title-with-menu {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
-}
-.map-title-with-menu > div {
-  min-width: 0;
-}
-.atlas-map-title :is(h1,
-h2) {
-  margin: 0;
-}
+/* Bottom-left corner of the map, beside the service dock. It is the map's
+   footnote, not its headline: what it used to say in the header now lives in
+   its accessible name and its tooltip. */
 .atlas-coverage {
-  display: flex;
-  align-items: center;
-  gap: 6px;
+  position: absolute;
+  z-index: 3;
+  left: 12px;
+  bottom: 12px;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  background: var(--surface);
   color: var(--secondary);
-  min-height: 28px;
   text-align: left;
+}
+.atlas-coverage.is-error {
+  color: var(--negative);
 }
 .atlas-map-title select {
   max-width: 145px;
@@ -214,7 +213,7 @@ h2) {
 .atlas-service-dock {
   position: absolute;
   bottom: 16px;
-  left: 16px;
+  left: 60px;
   right: 145px;
   max-width: 345px;
   background: var(--surface);
@@ -478,8 +477,13 @@ h2) {
 .atlas-map.narrow .atlas-service-dock {
   right: 16px;
   bottom: 16px;
+  left: 60px;
   max-width: none;
   min-height: 64px;
+}
+/* With the panel below the map, the corner button rides above it. */
+.atlas-map.narrow.has-inspector .atlas-coverage {
+  bottom: 284px;
 }
 .atlas-map.narrow:not(.has-inspector) .atlas-map-tools {
   bottom: 95px;
@@ -507,10 +511,6 @@ h2) {
   height: 100%;
 }
 @media (max-width: 760px) {
-.atlas-map-title :is(h1,
-h2) {
-    white-space: nowrap;
-  }
 .map-main .overview-grid {
     height: clamp(460px, calc(100dvh - 180px), 620px);
   }
@@ -525,9 +525,6 @@ h2) {
 .atlas-map-header {
     gap: 5px;
     top: 8px;
-  }
-.atlas-coverage {
-    min-height: 20px;
   }
 .atlas-watch-filter {
     position: absolute;

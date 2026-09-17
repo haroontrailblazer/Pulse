@@ -280,6 +280,9 @@ export default function WorldMap({
   // and because a keyboard Enter on any of them still dispatches a click, this
   // needs no extra keyboard path and no nested interactive wrapper.
   const preview = !expanded && typeof onOpen === "function";
+  const coverageLabel = feedError
+    ? "Connection needs attention"
+    : `${atlas.fresh}/${stackOnly ? providers.filter((p) => watchlist.includes(p.id)).length : providers.length} feeds current`;
   return (
     <section
       ref={frame}
@@ -389,20 +392,6 @@ export default function WorldMap({
 
       <div className="atlas-map-header" ref={headerRef}>
         <div className="atlas-map-title">
-          <div className="map-title-with-menu">
-            <div>
-              <h2>Infrastructure map</h2>
-              <button
-                className="atlas-coverage"
-                onClick={(event) => openPanel("about", event)}
-              >
-                {feedError
-                  ? "Connection needs attention"
-                  : `${atlas.fresh}/${stackOnly ? providers.filter((p) => watchlist.includes(p.id)).length : providers.length} feeds current`}
-                <CircleHelp size={16} />
-              </button>
-            </div>
-          </div>
           <select
             aria-label="Map region"
             value={region}
@@ -462,6 +451,14 @@ export default function WorldMap({
         </div>
       </div>
 
+      <button
+        className={`atlas-coverage ${feedError ? "is-error" : ""}`}
+        aria-label={coverageLabel}
+        title={coverageLabel}
+        onClick={(event) => openPanel("about", event)}
+      >
+        <CircleHelp size={16} />
+      </button>
       <div className="atlas-map-tools" aria-label="Map controls">
         <button
           title="Reset map"

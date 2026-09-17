@@ -1313,18 +1313,16 @@ select {
 .atlas-map-header {
   gap: var(--space-3);
 }
-.atlas-map-title :is(h1, h2) {
-  font-family: var(--font-display);
-  font-size: var(--fs-section);
-  line-height: var(--lh-section);
-  font-weight: var(--fw-semibold);
-  letter-spacing: var(--tracking-snug);
-  white-space: normal;
-}
+/* 36px button, 44px reach — the same expander the map's chips use. */
 .atlas-coverage {
-  min-height: var(--tap);
+  min-height: 36px;
   font-size: var(--fs-caption);
   color: var(--text-muted);
+}
+.atlas-coverage::after {
+  content: "";
+  position: absolute;
+  inset: -4px;
 }
 /* The map's own controls are chips over the map, not page-level buttons: they
    read better small. The visible chip is 38px; a transparent inset carries the
@@ -1353,8 +1351,11 @@ select {
   border: 0;
   box-shadow: var(--shadow-2);
 }
+/* It floats on the map like the chips and the zoom cluster, so it lifts off
+   the map the same way they do. It used to be a line of text in the header,
+   where a shadow would have been wrong. */
 .atlas-coverage {
-  box-shadow: none;
+  box-shadow: var(--shadow-2);
 }
 /* A selected filter is carried by its tinted fill (map.css sets one per
    state); a ring would put the outline straight back. */
@@ -1444,7 +1445,8 @@ select {
   /* Keep the zoom controls clear of the service dock, which wraps to two
      lines at phone width. */
   .atlas-map.narrow .atlas-service-dock {
-    left: var(--space-3);
+    /* Starts clear of the coverage button in the bottom-left corner. */
+    left: 60px;
     right: var(--space-3);
     bottom: var(--space-3);
   }
@@ -2409,7 +2411,7 @@ select {
       .toggle
     ):not(.atlas-filter):not(.tabs button):not(.category-filter select):not(
       .page-footer button
-    ) {
+    ):not(.atlas-coverage) {
     min-height: var(--tap);
   }
   /* A checkbox is small by platform convention; its label carries the target. */
