@@ -11,13 +11,6 @@
   color: var(--live-text);
   overflow: hidden;
 }
-[data-theme="dark"] .live-console {
-  --live-bg: #141b25;
-  --live-soft: #1b2431;
-  --live-border: #2a3545;
-  --live-text: #edf1f7;
-  --live-muted: #a1afc1;
-}
 .live-console-heading {
   display: flex;
   align-items: center;

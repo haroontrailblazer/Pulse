@@ -385,17 +385,22 @@ legible brand tiles; the product accent belongs to Pulse controls. */
   background: var(--surface-tile);
   border-color: var(--line);
 }
-:root[data-theme="dark"] .provider-logo {
-  color: #d4d4d4 !important;
-}
-:root[data-theme="dark"] .logo-cloudflare {
-  color: #edb37d !important;
-}
-:root[data-theme="dark"] .logo-anthropic {
-  color: #d9ac98 !important;
-}
-:root[data-theme="dark"] .logo-supabase {
-  color: #93cfb0 !important;
+/* Dark mode used to flatten every mark to one grey, which cost the brands the
+   thing that identifies them at a glance. On the darker tile 21 of the 28
+   marks clear 3:1 exactly as their brand draws them, so they are left alone.
+   The exceptions below are the marks drawn in near-black, which no amount of
+   tile will separate — and which their own brands render white on dark. */
+:root[data-theme="dark"]
+  :is(
+    .logo-circleci,
+    .logo-hackerone,
+    .logo-vercel,
+    .logo-replicate,
+    .logo-notion,
+    .logo-github,
+    .logo-openai
+  ) {
+  color: var(--text) !important;
 }
 /* Three brand oranges/yellows sit below 3:1 on a light tile. Each is darkened
    to the minimum that clears it while staying recognisably the brand; the
@@ -411,14 +416,12 @@ so the mark identifies rather than
 :root:not([data-theme="dark"]) .logo-postman {
   color: #e85a26 !important;
 }
-.logo-openai { color: #161616 !important; background: #fafafa !important; }
-:root[data-theme="dark"] .logo-openai { color: #fafafa !important; background: #242424 !important; }
-:root[data-theme="dark"]
-  :is(.logo-googlecloud,
-.logo-azure,
-.logo-digitalocean,
-.logo-pypi) {
-  color: #a5bce4 !important;
+.logo-openai {
+  color: #161616 !important;
+  background: #fafafa !important;
+}
+:root[data-theme="dark"] .logo-openai {
+  background: var(--surface-tile) !important;
 }
 :root[data-theme] .mini-logos .provider-logo {
   border-color: var(--surface);

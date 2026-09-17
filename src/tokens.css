@@ -189,14 +189,19 @@
 :root[data-theme="dark"] {
   color-scheme: dark;
 
+  /* Neutral, and close to the canvas. The greys used to carry a blue cast and
+     sit well above black; against a pitch-black canvas that reads as a
+     different material rather than the same one lit a little more. Every step
+     is a true grey now, and each one is darker — the hairline does the
+     separating, so it keeps the contrast the lighter surfaces used to have. */
   --canvas: #000000;
-  --surface: #0e1013;
+  --surface: #0b0b0c;
   /* Sunken is *lighter* than the card here, not darker: on black a recess
      reads as an inset lit from above, and there is no room below #000. */
-  --surface-sunken: #171a1e;
-  --surface-raised: #1b1f24;
-  --surface-hover: #23272d;
-  --surface-tile: #22262b;
+  --surface-sunken: #121214;
+  --surface-raised: #17171a;
+  --surface-hover: #202023;
+  --surface-tile: #161618;
   --chrome: #000000;
 
   --text: #e9ebee;
@@ -204,12 +209,12 @@
   --text-muted: #939aa3;
   --text-on-color: #000000;
 
-  --line: #2a2e34;
-  --line-strong: #3c4149;
+  --line: #2b2b2f;
+  --line-strong: #3d3d43;
 
   --accent: #f2f4f7;
   --accent-hover: #d5dae1;
-  --accent-soft: #1b1f24;
+  --accent-soft: #17171a;
   --accent-ink: #f2f4f7;
   --on-accent: #000000;
 
@@ -226,8 +231,8 @@
   --info-bg: #172038;
   --info-line: #313f60;
   --neutral: #a9b0b9;
-  --neutral-bg: #1d2125;
-  --neutral-line: #373c43;
+  --neutral-bg: #1b1b1e;
+  --neutral-line: #37373d;
 
   --mark-positive: #35c98d;
   --mark-warning: #dcab54;
@@ -236,10 +241,10 @@
   --mark-neutral: #848c96;
 
   --map-ocean: #000000;
-  --map-land: #2b3036;
-  --map-coast: #5b626b;
+  --map-land: #2f2f2f;
+  --map-coast: #616161;
   --map-border: #000000;
-  --map-grid: #121518;
+  --map-grid: #151515;
 
   /* Cast shadow still separates a sheet from the page, but the inset hairline
      is what actually reads as elevation against a black canvas. */
