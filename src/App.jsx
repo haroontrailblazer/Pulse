@@ -1263,8 +1263,18 @@ export default function App() {
                       {page === "Watchlist" && f === "All services"
                         ? "All watched"
                         : f}
-                      {f === "Disruptions" && directoryDisrupted > 0 && (
-                        <span>{directoryDisrupted}</span>
+                      {/* The count's slot is always here, even before the
+                          first reading lands. Letting it appear with the data
+                          grew this pill by 28px and shoved "Watching" sideways
+                          on every load, and again whenever the count crossed
+                          zero or gained a digit. */}
+                      {f === "Disruptions" && (
+                        <span
+                          className={directoryDisrupted > 0 ? "" : "is-empty"}
+                          aria-hidden={directoryDisrupted === 0 || undefined}
+                        >
+                          {directoryDisrupted > 0 ? directoryDisrupted : "0"}
+                        </span>
                       )}
                     </button>
                   ))}

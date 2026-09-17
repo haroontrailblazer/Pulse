@@ -607,17 +607,24 @@ select {
   position: absolute;
   inset: -7px -2px;
 }
+.tabs button > span.is-empty {
+  visibility: hidden;
+}
 .tabs button.selected {
   background: var(--surface);
   color: var(--text);
   box-shadow: var(--shadow-1);
 }
+/* A fixed slot, and digits that all occupy the same width, so the pill is the
+   same size whether the count is absent, 5 or 12. */
 .tabs button > span {
   display: inline-grid;
   place-items: center;
-  min-width: 20px;
+  width: 24px;
+  min-width: 24px;
   height: 18px;
-  padding: 0 5px;
+  padding: 0;
+  font-variant-numeric: tabular-nums;
   border-radius: var(--radius-pill);
   font-size: var(--fs-caption);
   font-weight: var(--fw-semibold);
