@@ -132,13 +132,6 @@ small {
   margin-left: auto;
   margin-top: -2px;
 }
-.page-heading p {
-  margin-top: var(--space-3);
-  font-size: var(--fs-body);
-  line-height: var(--lh-body);
-  color: var(--text-muted);
-  max-width: 62ch;
-}
 
 /* ========================================================================
    3. Bottom navigation (phones only)

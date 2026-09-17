@@ -930,17 +930,6 @@ export default function App() {
                 </h1>
                 {notificationButton}
               </div>
-              {/* Only the two tool destinations still carry a standfirst. An
-                  allowlist rather than a growing list of exclusions: the four
-                  main destinations let their title and their metrics speak. */}
-              {(page === "Developer tools" ||
-                page === "Dependency insights") && (
-                <p>
-                  {page === "Developer tools"
-                    ? "Registry health, component signals, and security utilities in one place."
-                    : "Major issues and degradation across services, with practical next checks."}
-                </p>
-              )}
             </div>
           </div>
           {error && page !== "Global map" && (

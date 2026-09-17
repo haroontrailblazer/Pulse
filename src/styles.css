@@ -356,9 +356,6 @@ h1 {
   font-weight: 650;
   margin-top: 9px;
 }
-.page-heading p {
-  margin-top: 9px;
-}
 .button {
   display: inline-flex;
   align-items: center;
@@ -1342,10 +1339,6 @@ h1 {
   }
 .page-title-row h1 {
     white-space: nowrap;
-  }
-.page-heading p {
-    max-width: 310px;
-    margin-top: 9px;
   }
 .button {
     min-height: 35px;
