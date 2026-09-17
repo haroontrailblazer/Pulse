@@ -204,6 +204,8 @@ function SheetGrabber({ sheetRef, onClose, label }) {
 function Modal({ title, children, onClose, wide = false, actions = null }) {
   const ref = useRef();
   const backdropRef = useRef();
+  const bodyRef = useRef();
+  const [hint, setHint] = useState(false);
   useLayoutEffect(() => {
     if (!motionEnabled()) return;
     const context = gsap.context(() => {
@@ -226,6 +228,43 @@ function Modal({ title, children, onClose, wide = false, actions = null }) {
         );
     }, backdropRef);
     return () => context.revert();
+  }, []);
+  // A sheet is 60% of the screen and its content usually runs past the fold,
+  // but nothing on a touch screen says so. For the first five seconds a
+  // chevron sits at the foot of the scroller — only when there is something
+  // below, and only until the reader scrolls, because after that it is telling
+  // them what they already did.
+  //
+  // The question is asked repeatedly rather than once at open: the inbox and
+  // the service sheet are empty until their feeds land, so a single reading at
+  // mount would answer for a sheet that has not been filled yet. The polling
+  // ends with the window in which the hint could appear at all.
+  useEffect(() => {
+    const body = bodyRef.current;
+    if (!body) return;
+    let shown = false;
+    const look = () => {
+      const more =
+        body.scrollHeight - body.clientHeight > 4 && body.scrollTop < 4;
+      if (more !== shown) {
+        shown = more;
+        setHint(more);
+      }
+    };
+    look();
+    const watch = window.setInterval(look, 200);
+    const done = () => {
+      window.clearInterval(watch);
+      shown = false;
+      setHint(false);
+    };
+    const stop = window.setTimeout(done, 5000);
+    body.addEventListener("scroll", done, { passive: true });
+    return () => {
+      window.clearInterval(watch);
+      window.clearTimeout(stop);
+      body.removeEventListener("scroll", done);
+    };
   }, []);
   useEffect(() => {
     const previous = document.activeElement;
@@ -290,7 +329,16 @@ function Modal({ title, children, onClose, wide = false, actions = null }) {
             <X size={20} />
           </button>
         </div>
-        <div className="modal-body">{children}</div>
+        <div className="modal-body" ref={bodyRef}>
+          {children}
+        </div>
+        <div className="sheet-hint-anchor" aria-hidden="true">
+          {hint && (
+            <span className="sheet-hint">
+              <ChevronDown size={20} />
+            </span>
+          )}
+        </div>
         {actions ? <div className="modal-actions">{actions}</div> : null}
       </section>
     </div>

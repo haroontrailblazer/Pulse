@@ -1987,6 +1987,46 @@ select {
   color: var(--text-muted);
   margin-bottom: var(--space-4);
 }
+/* The scroll hint. A zero-height seam between the scroller and whatever sits
+   under it, so it costs the sheet no layout at all: it adds nothing to
+   .modal-body's scrollHeight (which is what decides whether the hint shows, so
+   an in-flow or sticky hint would feed itself), and nothing to .modal's height
+   (which is what the drag-to-dismiss gesture measures its 25% threshold from).
+
+   A span, never a button: the sheet's focus trap re-queries every focusable on
+   each Tab and takes the first and last, so a focusable decoration would
+   become the thing Tab wraps to — and a [tabindex] of any value, including -1,
+   draws the keyboard focus ring. pointer-events: none because the same box
+   sits over the pinned primary button and would otherwise swallow its tap. */
+.sheet-hint-anchor {
+  position: relative;
+  flex: 0 0 0;
+  height: 0;
+  overflow: visible;
+}
+.sheet-hint {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  color: var(--text-muted);
+  animation: sheet-hint-bob 1.1s ease-in-out infinite;
+}
+/* Nothing behind it — the icon alone, over whatever it is standing on. */
+@keyframes sheet-hint-bob {
+  50% {
+    transform: translateY(5px);
+  }
+}
+/* Without a pinned band the scroller runs to the sheet's bottom edge, which on
+   a phone is the bottom of the screen: the hint needs the home indicator's
+   clearance that .modal-actions would otherwise have carried. */
+.modal:not(:has(.modal-actions)) .sheet-hint {
+  bottom: max(var(--space-3), var(--safe-bottom));
+}
 .modal-actions {
   flex: 0 0 auto;
   display: flex;
@@ -2009,6 +2049,7 @@ select {
   width: 100%;
   border: 0;
   background: none;
+  place-content: center;
   padding: var(--space-3) 0 var(--space-2);
   touch-action: none;
   cursor: grab;
@@ -2399,8 +2440,14 @@ select {
     border-radius: var(--radius-xl) var(--radius-xl) 0 0;
     padding: 0;
   }
+  /* The title band is the sheet's smallest job, and it was taking 25px under a
+     22px line — the heading's own padding, its margin and the rule between
+     them. Half of that is enough to separate a title from a list. The 44px
+     above it is not spacing: it is the drag handle's touch target, and it is
+     the control that dismisses the sheet, so it keeps its full reach. */
   .modal-heading {
-    padding: 0 var(--gutter) var(--space-3);
+    padding: 0 var(--gutter) var(--space-2);
+    margin-bottom: var(--space-2);
   }
   .modal-body {
     padding: 0 var(--gutter) var(--space-5);
@@ -2409,7 +2456,7 @@ select {
      thumb-stretch to the far top corner for something the gesture already
      does, so the sheets drop it and the handle becomes the control. */
   .sheet-grabber {
-    display: block;
+    display: grid;
   }
   .modal-heading .icon-button,
   .sidebar .sidebar-close {
