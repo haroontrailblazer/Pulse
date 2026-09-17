@@ -119,13 +119,14 @@
 .atlas-coverage {
   position: absolute;
   z-index: 3;
-  left: 12px;
-  bottom: 12px;
+  left: 16px;
+  bottom: 16px;
   display: grid;
   place-items: center;
-  width: 36px;
-  height: 36px;
-  border-radius: var(--radius-md);
+  width: 46px;
+  height: 46px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
   background: var(--surface);
   color: var(--secondary);
   text-align: left;
@@ -219,7 +220,10 @@
 .atlas-service-dock {
   position: absolute;
   bottom: 16px;
-  left: 60px;
+  /* A wide map keeps its zoom cluster on the dock's row, so the coverage
+     button beside it needs its corner: 16 + 46 + 16. A narrow map lifts both
+     of them a row higher, and takes the full width back below. */
+  left: 78px;
   right: 145px;
   max-width: 345px;
   background: var(--surface);
@@ -485,13 +489,16 @@
 .atlas-map.narrow .atlas-service-dock {
   right: 16px;
   bottom: 16px;
-  left: 60px;
+  left: 16px;
   max-width: none;
   min-height: 64px;
 }
-/* With the panel below the map, the corner button rides above it. */
+/* Wherever the zoom cluster sits, the coverage button sits beside it. */
 .atlas-map.narrow.has-inspector .atlas-coverage {
   bottom: 284px;
+}
+.atlas-map.narrow:not(.has-inspector) .atlas-coverage {
+  bottom: 95px;
 }
 .atlas-map.narrow:not(.has-inspector) .atlas-map-tools {
   bottom: 95px;

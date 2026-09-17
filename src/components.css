@@ -1538,16 +1538,10 @@ select {
 .atlas-map-header {
   gap: var(--space-3);
 }
-/* 36px button, 44px reach — the same expander the map's chips use. */
 .atlas-coverage {
-  min-height: 36px;
+  min-height: 46px;
   font-size: var(--fs-caption);
   color: var(--text-muted);
-}
-.atlas-coverage::after {
-  content: "";
-  position: absolute;
-  inset: -4px;
 }
 /* The map's own controls are chips over the map, not page-level buttons: they
    read better small. The visible chip is 38px; a transparent inset carries the
@@ -1576,11 +1570,9 @@ select {
   border: 0;
   box-shadow: var(--shadow-2);
 }
-/* It floats on the map like the chips and the zoom cluster, so it lifts off
-   the map the same way they do. It used to be a line of text in the header,
-   where a shadow would have been wrong. */
+/* Built like the zoom cluster it sits beside, down to the lift. */
 .atlas-coverage {
-  box-shadow: var(--shadow-2);
+  box-shadow: var(--shadow);
 }
 /* A selected filter is carried by its tinted fill (map.css sets one per
    state); a ring would put the outline straight back. */
@@ -1670,8 +1662,7 @@ select {
   /* Keep the zoom controls clear of the service dock, which wraps to two
      lines at phone width. */
   .atlas-map.narrow .atlas-service-dock {
-    /* Starts clear of the coverage button in the bottom-left corner. */
-    left: 60px;
+    left: var(--space-3);
     right: var(--space-3);
     bottom: var(--space-3);
   }
@@ -1855,7 +1846,7 @@ select {
 /* The service dock spans the foot of a narrow map, so the zoom controls sit
    above it rather than on top of it — at any viewport width, since a narrow
    map also occurs in a 900px window. */
-.atlas-map.narrow:not(.has-inspector) .atlas-map-tools {
+.atlas-map.narrow:not(.has-inspector) :is(.atlas-map-tools, .atlas-coverage) {
   bottom: 124px;
 }
 /* The filters/watchlist strip is a plain row above 760px, where it has space. */
@@ -2640,7 +2631,7 @@ select {
       .toggle
     ):not(.atlas-filter):not(.tabs button):not(.category-filter-button):not(
       .page-footer button
-    ):not(.atlas-coverage) {
+    ) {
     min-height: var(--tap);
   }
   /* A checkbox is small by platform convention; its label carries the target. */
