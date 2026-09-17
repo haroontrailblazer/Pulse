@@ -341,6 +341,10 @@ small {
   -webkit-tap-highlight-color: transparent;
 }
 @media (hover: none) {
+  /* A segmented pill and a map chip are left out: selecting one already moves
+     the fill onto it, which is immediate and unmistakable feedback, and a 3%
+     scale on a 30px pill on top of that reads as the label jumping rather than
+     as a press. */
   :is(
       button,
       a,
@@ -354,7 +358,7 @@ small {
       .insight-card,
       .stack-provider,
       .atlas-hub
-    ):active {
+    ):not(.tabs button):not(.atlas-filter):not(.atlas-watch-filter):active {
     transform: scale(0.97);
     transition: transform 90ms var(--ease);
   }
