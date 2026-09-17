@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Bell, CheckCheck, RefreshCw, Search, ArrowUpRight, X } from "./icons";
+import { Bell, RefreshCw, Search, ArrowUpRight, X } from "./icons";
 import { incidentRevision } from "../shared/incidents";
 import { isFresh } from "../shared/monitor";
 import ProviderLogo from "./ProviderLogo";
@@ -87,14 +87,6 @@ export default function IncidentInbox({
             ? `Latest check completed at ${new Date(fetchedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
             : "Waiting for the first check"}
         </span>
-        <button
-          className="text-button"
-          disabled={!matches.some((i) => read[i.key] !== incidentRevision(i))}
-          onClick={() => onRead(matches)}
-        >
-          <CheckCheck size={16} />
-          Mark shown as read
-        </button>
       </div>
       {error && (
         <p className="inbox-warning" role="alert">
