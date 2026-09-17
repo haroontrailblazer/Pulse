@@ -205,7 +205,15 @@ export default function WorldMap({
   // the globe would be laid out for a height it no longer has.
   const panelBelow = cardHeight ? cardHeight + 12 : 0;
   const board = Math.max(200, size.height - panelBelow);
-  const top = Math.max(board < 430 ? 105 : 140, headerBottom + 16);
+  // The 105/140 floor is for a header that still has its region picker and its
+  // chips: it reserves room the measurement cannot see until they have laid
+  // out. With the panel open those fold away and the header really is ~12px
+  // tall, so the floor was holding back 77px of sky above a globe that had
+  // been squeezed to 61px. Once the panel is up, the header's own measured
+  // bottom is the honest reserve.
+  const top = cardHeight
+    ? Math.max(24, headerBottom + 16)
+    : Math.max(board < 430 ? 105 : 140, headerBottom + 16);
   // What sits along the bottom edge of a narrow map: the service dock always,
   // and on the Map destination the zoom controls above it. Markers have to
   // clear all of it — on a short screen the difference between 130 and 200 is
