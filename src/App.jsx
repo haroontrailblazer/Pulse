@@ -475,6 +475,9 @@ export default function App() {
   const [autoRefresh, setAutoRefresh] = useState(() =>
     saved("pulse-refresh", true),
   );
+  // What the Overview's map preview was asked to show, handed to the Map
+  // destination so it opens on that view rather than on a bare map.
+  const [mapView, setMapView] = useState(null);
   const [modal, setModal] = useState(null);
   const [selected, setSelected] = useState(null);
   const [mobileNav, setMobileNav] = useState(false);
@@ -614,6 +617,7 @@ export default function App() {
     setSearch("");
     setFilter("All services");
     setCategory("All categories");
+    setMapView(null);
   };
   // Nothing has been confirmed yet: the page is loading, not reporting a
   // service-wide failure. Screens show skeletons rather than 28 "unavailable"
@@ -1112,8 +1116,15 @@ export default function App() {
                 now={now}
                 onToggleWatch={toggleWatch}
                 feedError={error}
+                initialView={page === "Global map" ? mapView : null}
                 onOpen={
-                  page === "Overview" ? () => go("Global map") : undefined
+                  page === "Overview"
+                    ? (view) => {
+                        // `go` clears it; setting after is what survives.
+                        go("Global map");
+                        setMapView(view);
+                      }
+                    : undefined
                 }
               />
               {page === "Overview" && (

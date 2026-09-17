@@ -47,6 +47,7 @@ export default function WorldMap({
   onToggleWatch,
   feedError,
   onOpen,
+  initialView,
 }) {
   const frame = useRef(null),
     closeRef = useRef(null),
@@ -161,6 +162,36 @@ export default function WorldMap({
     setSeverity("all");
     openPanel("region", event);
   };
+  const preview = !expanded && typeof onOpen === "function";
+  // The Overview and the Map destination share one instance of this component,
+  // so panel state survives the navigation between them. A preview never shows
+  // an inspector: leaving the destination closes it, which also restores the
+  // dock and the chips that a `has-inspector` card hides.
+  useEffect(() => {
+    if (!preview) return;
+    setPanel(null);
+    setSelected(null);
+    setService(null);
+  }, [preview]);
+  const appliedView = useRef(null);
+  useEffect(() => {
+    if (!expanded || !initialView || appliedView.current === initialView) return;
+    appliedView.current = initialView;
+    setService(null);
+    setEvidenceLimit(6);
+    if (initialView.panel === "region" && Number.isInteger(initialView.hub)) {
+      setSelected(initialView.hub);
+      setSeverity("all");
+      setPanel("region");
+      return;
+    }
+    if (initialView.panel === "services") {
+      setSeverity(initialView.severity || "all");
+      setPanel("services");
+      return;
+    }
+    if (initialView.panel === "about") setPanel("about");
+  }, [expanded, initialView]);
   const wide = size.width > 700 || (size.width > 570 && size.height < 430);
   const side = panel && wide ? Math.min(350, size.width * 0.43) : 0;
   // Fixed, and mirrored by NARROW_PANEL in map.css: the card grows to fit the
@@ -279,7 +310,21 @@ export default function WorldMap({
   // markers, chips and the region picker all resolve to the same destination —
   // and because a keyboard Enter on any of them still dispatches a click, this
   // needs no extra keyboard path and no nested interactive wrapper.
-  const preview = !expanded && typeof onOpen === "function";
+  // Opening the Map destination should land on whatever was touched here, not
+  // on a bare map the reader then has to find their way around again. Each
+  // control says what it is, and the destination reopens that same view.
+  const intentFor = (target) => {
+    const node = target instanceof Element ? target : null;
+    if (!node) return null;
+    const hub = node.closest?.("[data-hub]");
+    if (hub) return { panel: "region", hub: Number(hub.dataset.hub) };
+    const chip = node.closest?.(".atlas-filter");
+    if (chip) return { panel: "services", severity: chip.dataset.state };
+    if (node.closest?.(".atlas-service-dock"))
+      return { panel: "services", severity: "all" };
+    if (node.closest?.(".atlas-coverage")) return { panel: "about" };
+    return null;
+  };
   const coverageLabel = feedError
     ? "Connection needs attention"
     : `${atlas.fresh}/${stackOnly ? providers.filter((p) => watchlist.includes(p.id)).length : providers.length} feeds current`;
@@ -297,7 +342,7 @@ export default function WorldMap({
           ? (event) => {
               event.preventDefault();
               event.stopPropagation();
-              onOpen();
+              onOpen(intentFor(event.target));
             }
           : undefined
       }
@@ -340,6 +385,7 @@ export default function WorldMap({
                 aria-label={`Explore ${h.name}: ${issueLabels[state]}`}
                 aria-pressed={selected === h.index && panel === "region"}
                 className={`atlas-hub ${state} ${h.global ? "global" : ""} ${matching ? "" : "filtered"}`}
+                data-hub={h.index}
                 onClick={(event) => chooseHub(h.index, event)}
                 onKeyDown={(event) => {
                   if (event.key === "Enter" || event.key === " ") {
@@ -419,6 +465,7 @@ export default function WorldMap({
               <button
                 key={state}
                 className={`atlas-filter ${state}`}
+                data-state={state}
                 aria-pressed={panel === "services" && severity === state}
                 onClick={(event) => {
                   setSeverity(state);
