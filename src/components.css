@@ -893,11 +893,11 @@ select {
 /* The category list collapses to a funnel. The native select still does the
    work — it is stretched invisibly over the button so the platform picker,
    keyboard access and the accessible name all survive. */
-.category-filter {
+.filter-menu {
   position: relative;
   flex: 0 0 auto;
 }
-.category-filter-button {
+.filter-menu-button {
   position: relative;
   display: grid;
   place-items: center;
@@ -911,12 +911,12 @@ select {
   color: var(--text-secondary);
 }
 /* 36px control, 44px reach. */
-.category-filter-button::after {
+.filter-menu-button::after {
   content: "";
   position: absolute;
   inset: -4px;
 }
-.category-filter.is-active .category-filter-button {
+.filter-menu.is-active .filter-menu-button {
   border-color: var(--accent);
   background: var(--accent-soft);
   color: var(--text);
@@ -925,11 +925,13 @@ select {
 /* The menu the native picker used to be. Anchored to the button and right
    aligned so it cannot leave the card, capped so a long list scrolls inside
    itself rather than running off the screen. */
-.category-menu {
+.filter-menu-list {
   position: absolute;
   z-index: 30;
   top: calc(100% + var(--space-2));
   right: 0;
+  left: auto;
+  bottom: auto;
   min-width: 220px;
   max-width: min(280px, calc(100vw - 2 * var(--gutter)));
   max-height: min(320px, 50dvh);
@@ -941,7 +943,7 @@ select {
   background: var(--surface-raised);
   box-shadow: var(--shadow-3);
 }
-.category-menu > button {
+.filter-menu-list > button {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -957,20 +959,28 @@ select {
   text-align: left;
 }
 @media (hover: hover) {
-  .category-menu > button:hover {
+  .filter-menu-list > button:hover {
   background: var(--surface-hover);
   color: var(--text);
 }
 }
-.category-menu > button[aria-selected="true"] {
+.filter-menu-list > button[aria-selected="true"] {
   color: var(--text);
   font-weight: var(--fw-semibold);
 }
-.category-menu > button > span {
+.filter-menu-list > button > span {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.filter-menu-list.is-above {
+  top: auto;
+  bottom: calc(100% + var(--space-2));
+}
+.filter-menu-list.is-start {
+  right: auto;
+  left: 0;
 }
 
 .table-footer-toggle {
@@ -1858,7 +1868,8 @@ select {
 /* The service dock spans the foot of a narrow map, so the zoom controls sit
    above it rather than on top of it — at any viewport width, since a narrow
    map also occurs in a 900px window. */
-.atlas-map.narrow:not(.has-inspector) :is(.atlas-map-tools, .atlas-coverage) {
+.atlas-map.narrow:not(.has-inspector)
+  :is(.atlas-map-tools, .atlas-coverage, .atlas-region) {
   bottom: 124px;
 }
 /* The filters/watchlist strip is a plain row above 760px, where it has space. */
@@ -2641,7 +2652,7 @@ select {
       .stack-provider
     ):not(.inbox-update):not(.monitor-list > button):not(.atlas-hub):not(
       .toggle
-    ):not(.atlas-filter):not(.tabs button):not(.category-filter-button):not(
+    ):not(.atlas-filter):not(.tabs button):not(.filter-menu-button):not(
       .page-footer button
     ) {
     min-height: var(--tap);
@@ -2760,8 +2771,9 @@ select {
   .page-footer {
     flex-direction: column;
     flex-wrap: nowrap;
-    align-items: flex-start;
-    justify-content: flex-start;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
     gap: 2px;
     margin-top: var(--space-4);
     padding-top: var(--space-3);

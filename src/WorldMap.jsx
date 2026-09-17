@@ -16,6 +16,7 @@ import {
   CircleHelp,
   Star,
   ArrowLeft,
+  Funnel,
 } from "./icons";
 import { buildAtlas, severityRank, workflowHints } from "../shared/atlas.js";
 import {
@@ -30,6 +31,7 @@ import StatusGlyph, { StatusShape } from "./StatusGlyph";
 import mapData from "./map-data.json";
 import { arrangeMapPins } from "../shared/map-layout";
 import { gsap, motionEnabled } from "./motion";
+import FilterMenu from "./FilterMenu";
 import "./map.css";
 
 const views = {
@@ -437,22 +439,6 @@ export default function WorldMap({
       </svg>
 
       <div className="atlas-map-header" ref={headerRef}>
-        <div className="atlas-map-title">
-          <select
-            aria-label="Map region"
-            value={region}
-            onChange={(event) => {
-              setRegion(event.target.value);
-              setZoom(1);
-              setPanel(null);
-              setSelected(null);
-            }}
-          >
-            {Object.keys(views).map((name) => (
-              <option key={name}>{name}</option>
-            ))}
-          </select>
-        </div>
         {/* Condition filters and the watchlist toggle share one row so a phone
             keeps every control in a single scrollable strip instead of
             stacking four bands of chrome over the map. */}
@@ -498,6 +484,20 @@ export default function WorldMap({
         </div>
       </div>
 
+      <FilterMenu
+        className="atlas-region"
+        value={region}
+        options={Object.keys(views)}
+        onChange={(name) => {
+          setRegion(name);
+          setZoom(1);
+          setPanel(null);
+          setSelected(null);
+        }}
+        icon={<Funnel size={16} />}
+        label="Map region"
+        placement="above"
+      />
       <button
         className={`atlas-coverage ${feedError ? "is-error" : ""}`}
         aria-label={coverageLabel}

@@ -220,10 +220,10 @@
 .atlas-service-dock {
   position: absolute;
   bottom: 16px;
-  /* A wide map keeps its zoom cluster on the dock's row, so the coverage
-     button beside it needs its corner: 16 + 46 + 16. A narrow map lifts both
-     of them a row higher, and takes the full width back below. */
-  left: 78px;
+  /* A wide map keeps its zoom cluster on the dock's row, so the two corner
+     buttons beside it need their space: 16 + 46 + 12 + 46 + 16. A narrow map
+     lifts them a row higher, and takes the full width back below. */
+  left: 136px;
   right: 145px;
   max-width: 345px;
   background: var(--surface);
@@ -492,6 +492,32 @@
   max-width: none;
   min-height: 64px;
 }
+/* The region picker sits beside the coverage button, built the same way, and
+   its list stands above them both because they live at the foot of the map. */
+.atlas-map .atlas-region {
+  position: absolute;
+  z-index: 4;
+  left: 74px;
+  bottom: 16px;
+}
+.atlas-region .filter-menu-button {
+  width: 46px;
+  height: 46px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--secondary);
+  box-shadow: var(--shadow);
+}
+.atlas-region.is-active .filter-menu-button {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--text);
+}
+.atlas-map.narrow.has-inspector .atlas-region {
+  bottom: 284px;
+}
+
 /* Wherever the zoom cluster sits, the coverage button sits beside it. */
 .atlas-map.narrow.has-inspector .atlas-coverage {
   bottom: 284px;
