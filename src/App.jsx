@@ -1782,7 +1782,6 @@ export default function App() {
               loading={loading}
               now={now}
               error={error}
-              fetchedAt={fetchedAt}
             />
           )}
           {modal === "settings" && (

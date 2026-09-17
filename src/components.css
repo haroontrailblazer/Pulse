@@ -1912,10 +1912,13 @@ select {
 
 /* The service dock spans the foot of a narrow map, so the zoom controls sit
    above it rather than on top of it — at any viewport width, since a narrow
-   map also occurs in a 900px window. */
+   map also occurs in a 900px window. The offset is the dock's measured height
+   (--dock-h, set by WorldMap) plus its own gap from the edge and the gap above
+   it: a constant would have to be tall enough for the three-line dock a 320px
+   screen produces, and would hang 17px of nothing over every wider one. */
 .atlas-map.narrow:not(.has-inspector)
   :is(.atlas-map-tools, .atlas-coverage, .atlas-region) {
-  bottom: 124px;
+  bottom: calc(var(--dock-h, 70px) + var(--space-2) + var(--space-3));
 }
 /* The filters/watchlist strip is a plain row above 760px, where it has space. */
 .atlas-map-controls {
@@ -2623,7 +2626,6 @@ select {
   font-size: var(--fs-caption);
   line-height: var(--lh-caption);
 }
-.inbox-coverage span,
 .inbox-warning {
   font-size: var(--fs-body-sm);
   line-height: var(--lh-body-sm);
@@ -2877,8 +2879,7 @@ select {
 /* A text button that ends a row must not use its negative gutter, or it is
    clipped by the card it sits in. */
 .overview-heading-actions > .text-button:last-child,
-.section-title > .text-button:last-child,
-.inbox-coverage > .text-button:last-child {
+.section-title > .text-button:last-child {
   margin-right: 0;
 }
 

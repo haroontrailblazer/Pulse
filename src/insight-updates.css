@@ -7,8 +7,7 @@
   outline-offset: 2px;
 }
 .inbox-toolbar,
-.inbox-search,
-.inbox-coverage {
+.inbox-search {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -30,9 +29,6 @@
   gap: 7px;
   white-space: nowrap;
   color: var(--secondary);
-}
-.inbox-coverage {
-  color: var(--muted);
 }
 .inbox-warning {
   color: var(--warning);
@@ -205,8 +201,7 @@
      above the first incident on a phone. */
   .impact-controls,
   .inbox-toolbar,
-  .inbox-search,
-  .inbox-coverage {
+  .inbox-search {
     flex-direction: row;
     align-items: center;
     flex-wrap: wrap;
@@ -254,10 +249,6 @@
     font-size: var(--fs-body-sm);
     min-height: var(--tap);
     margin-block: calc((36px - var(--tap)) / 2);
-  }
-  .inbox-coverage span {
-    flex: 1;
-    min-width: 0;
   }
   .inbox-update {
     padding: var(--space-4);

@@ -34,6 +34,10 @@ import { gsap, motionEnabled } from "./motion";
 import FilterMenu from "./FilterMenu";
 import "./map.css";
 
+// The dock sits var(--space-2) off the bottom edge, the control row stands
+// var(--space-3) above it, and that row is 46px tall. Mirrored by the narrow
+// `bottom` calc in components.css.
+const DOCK_STACK = 8 + 12 + 46;
 const views = {
   Global: [435, 210, 1],
   "North America": [250, 132, 1.85],
@@ -56,7 +60,8 @@ export default function WorldMap({
     triggerRef = useRef(null),
     bodyRef = useRef(null),
     headerRef = useRef(null),
-    inspectorRef = useRef(null);
+    inspectorRef = useRef(null),
+    dockRef = useRef(null);
   const [size, setSize] = useState({ width: 870, height: 600 });
   // The overlay header is four rows tall on a phone and one on a desktop, so
   // the space reserved for it has to be measured rather than assumed — markers
@@ -89,6 +94,20 @@ export default function WorldMap({
     observer.observe(node);
     return () => observer.disconnect();
   }, []);
+  // The corner controls are stacked on top of the dock, so the dock's height
+  // decides where they sit. It is not a constant: the line wraps to a third
+  // row on a 320px screen, where a fixed offset would either collide with it
+  // or leave a hole everywhere else.
+  const [dockHeight, setDockHeight] = useState(70);
+  useEffect(() => {
+    const node = dockRef.current;
+    if (!node) return;
+    const measure = () => setDockHeight(node.offsetHeight);
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [panel]);
   useEffect(() => {
     if (panel) closeRef.current?.focus({ preventScroll: true });
     if (bodyRef.current) bodyRef.current.scrollTop = 0;
@@ -214,11 +233,11 @@ export default function WorldMap({
   const top = cardHeight
     ? Math.max(24, headerBottom + 16)
     : Math.max(board < 430 ? 105 : 140, headerBottom + 16);
-  // What sits along the bottom edge of a narrow map: the service dock always,
-  // and on the Map destination the zoom controls above it. Markers have to
-  // clear all of it — on a short screen the difference between 130 and 200 is
-  // the difference between a readable map and a pile-up.
-  const narrowFooter = cardHeight ? 56 : expanded ? 170 : 130;
+  // What sits along the bottom edge of a narrow map: the service dock, and the
+  // control row standing on it. Markers have to clear all of it, so the reserve
+  // is that stack's real height — the dock, its 8px from the edge, the 12px
+  // above it and the 46px row. DOCK_STACK mirrors the same sum in components.css.
+  const narrowFooter = cardHeight ? 56 : dockHeight + DOCK_STACK;
   const footer = wide ? 85 : narrowFooter;
   const bottomReserve = wide ? 50 : narrowFooter;
   const spaceHeight = Math.max(80, board - top - footer);
@@ -342,6 +361,7 @@ export default function WorldMap({
     <section
       ref={frame}
       className={`atlas atlas-map ${expanded ? "expanded" : ""} ${panel ? "has-inspector" : ""} ${wide ? "wide" : "narrow"} ${preview ? "is-preview" : ""}`}
+      style={{ "--dock-h": `${dockHeight}px` }}
       aria-label={
         preview
           ? "Infrastructure map preview. Opens the full map."
@@ -545,6 +565,7 @@ export default function WorldMap({
       </div>
       {!panel && (
         <button
+          ref={dockRef}
           className="atlas-service-dock"
           onClick={(event) => {
             setSeverity("all");

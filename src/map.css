@@ -522,12 +522,6 @@
 .atlas-map.narrow.has-inspector .atlas-coverage {
   bottom: 284px;
 }
-.atlas-map.narrow:not(.has-inspector) .atlas-coverage {
-  bottom: 95px;
-}
-.atlas-map.narrow:not(.has-inspector) .atlas-map-tools {
-  bottom: 95px;
-}
 .atlas-map.narrow .atlas-map-title select {
   max-width: 120px;
 }

@@ -21,7 +21,6 @@ export default function IncidentInbox({
   loading,
   now,
   error,
-  fetchedAt,
   dismissed = {},
   onDismiss,
 }) {
@@ -80,13 +79,6 @@ export default function IncidentInbox({
             onChange={(e) => setQuery(e.target.value)}
           />
         </div>
-      </div>
-      <div className="inbox-coverage">
-        <span>
-          {fetchedAt
-            ? `Latest check completed at ${new Date(fetchedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
-            : "Waiting for the first check"}
-        </span>
       </div>
       {error && (
         <p className="inbox-warning" role="alert">
