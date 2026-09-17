@@ -49,9 +49,11 @@ select,
   border-color: var(--accent);
   color: var(--on-accent);
 }
-:root[data-theme] .button.primary:hover {
+@media (hover: hover) {
+  :root[data-theme] .button.primary:hover {
   background: var(--accent-hover);
   border-color: var(--accent-hover);
+}
 }
 :root[data-theme] .brand-period {
   color: var(--accent);
@@ -65,7 +67,8 @@ select,
   color: var(--accent-ink);
   box-shadow: var(--shadow-1);
 }
-:root[data-theme]
+@media (hover: hover) {
+  :root[data-theme]
   :is(.nav-item:hover,
 .sidebar-watches > button:hover,
 .icon-button:hover,
@@ -77,6 +80,7 @@ select,
 .change-list > button:hover) {
   background: var(--surface-hover);
   color: var(--text);
+}
 }
 :root[data-theme]
   :is(.workspace small,
@@ -174,16 +178,14 @@ h2,
 .checkbox) {
   border-color: var(--line);
 }
-:root[data-theme]
-  :is(
-    .summary-card:not(:disabled):hover,
-.insight-card:hover,
-.search-input:focus-within
-  ) {
+@media (hover: hover) {
+  :root[data-theme]
+  :is(.summary-card:not(:disabled):hover, .insight-card:hover) {
   border-color: var(--accent);
 }
+}
 :root[data-theme] .search-input:focus-within {
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 12%, transparent);
+  border-color: var(--accent);
 }
 :root[data-theme] :is(button,
 a):focus-visible {
@@ -239,9 +241,11 @@ a):focus-visible {
   border-color: var(--line);
   box-shadow: var(--shadow-1);
 }
-:root[data-theme] .stack-provider:hover {
+@media (hover: hover) {
+  :root[data-theme] .stack-provider:hover {
   background: var(--surface-hover);
   border-color: var(--accent);
+}
 }
 :root[data-theme] .stack-provider.degraded {
   border-color: var(--warning-line);
@@ -424,8 +428,10 @@ so the mark identifies rather than
 :root[data-theme] .tabs button.selected {
   color: var(--accent-ink);
 }
-:root[data-theme] .advisory-list a:hover {
+@media (hover: hover) {
+  :root[data-theme] .advisory-list a:hover {
   border-color: var(--accent);
+}
 }
 :root[data-theme] .atlas {
   --atlas-ocean: var(--map-ocean);

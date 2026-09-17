@@ -61,11 +61,17 @@
   fill: currentColor;
   opacity: 0.12;
 }
-.atlas-hub:focus-visible .atlas-ring,
-.atlas-hub:hover .atlas-ring {
+.atlas-hub:focus-visible .atlas-ring {
   opacity: 0.35;
   stroke: currentColor;
   stroke-width: 2;
+}
+@media (hover: hover) {
+  .atlas-hub:hover .atlas-ring {
+  opacity: 0.35;
+  stroke: currentColor;
+  stroke-width: 2;
+}
 }
 .atlas-symbol-back {
   fill: var(--surface);
@@ -442,8 +448,10 @@
   outline: 2px solid var(--accent);
   outline-offset: -2px;
 }
-.atlas-map button:hover:not(:disabled) {
+@media (hover: hover) {
+  .atlas-map button:hover:not(:disabled) {
   background-color: var(--surface-soft);
+}
 }
 /* While the panel is open the card is split between a map and a reading pane,
    and a 170px header would leave the map a sliver. The region picker and the

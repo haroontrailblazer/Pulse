@@ -186,8 +186,10 @@
   border-radius: var(--radius-sm);
   min-width: 0;
 }
-.advisory-list a:hover {
+@media (hover: hover) {
+  .advisory-list a:hover {
   border-color: var(--line-strong);
+}
 }
 .advisory-list a > div {
   display: flex;

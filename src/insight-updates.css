@@ -54,8 +54,10 @@
   color: var(--text);
   cursor: pointer;
 }
-.inbox-update:hover {
+@media (hover: hover) {
+  .inbox-update:hover {
   background: var(--surface-soft);
+}
 }
 .inbox-update.is-unread {
   border-left: 3px solid var(--accent);
@@ -339,8 +341,10 @@
 .inbox-update.is-unread {
   border-left: 1px solid var(--line);
 }
-.inbox-update:hover {
+@media (hover: hover) {
+  .inbox-update:hover {
   border-color: var(--incident-color);
+}
 }
 .inbox-update:focus-visible {
   outline: 2px solid var(--accent);
@@ -481,9 +485,11 @@
   position: absolute;
   inset: -6px;
 }
-.inbox-dismiss:hover {
+@media (hover: hover) {
+  .inbox-dismiss:hover {
   background: var(--surface-hover);
   color: var(--text);
+}
 }
 .inbox-restore {
   border: 0;

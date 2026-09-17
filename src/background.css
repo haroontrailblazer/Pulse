@@ -18,8 +18,10 @@
   font-weight: 600;
   white-space: nowrap;
 }
-.overview-alerts:hover {
+@media (hover: hover) {
+  .overview-alerts:hover {
   background: var(--surface-soft);
+}
 }
 .overview-alerts:focus-visible {
   outline: 2px solid var(--accent);

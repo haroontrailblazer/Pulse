@@ -127,10 +127,12 @@ select {
   padding: 12px;
   color: var(--secondary);
 }
-.sidebar-view-all:hover {
+@media (hover: hover) {
+  .sidebar-view-all:hover {
   color: var(--text);
   background: var(--surface-hover);
   border-radius: var(--radius-xs);
+}
 }
 .brand {
   font-family: "Manrope Variable", sans-serif;
@@ -225,8 +227,10 @@ select {
   width: 100%;
   padding: 5px 12px;
 }
-.sidebar-watches > button:hover {
+@media (hover: hover) {
+  .sidebar-watches > button:hover {
   border-radius: var(--radius-xs);
+}
 }
 .sidebar-watches > button > span:nth-child(2) {
   flex: 1;
@@ -368,8 +372,10 @@ h1 {
   font-weight: 550;
   transition: 0.2s;
 }
-.button:hover {
+@media (hover: hover) {
+  .button:hover {
   transform: translateY(-1px);
+}
 }
 .button.secondary {
   border: 1px solid var(--line);
@@ -824,8 +830,10 @@ h1 {
 .star-button .watchlist-star:not(.watched) {
   color: var(--muted);
 }
-.star-button:hover .watchlist-star {
+@media (hover: hover) {
+  .star-button:hover .watchlist-star {
   transform: translateY(-0.5px);
+}
 }
 .table-footer {
   display: flex;
@@ -863,8 +871,10 @@ h1 {
   text-align: left;
   transition: 0.2s;
 }
-.insight-card:hover {
+@media (hover: hover) {
+  .insight-card:hover {
   transform: translateY(-3px);
+}
 }
 .insight-icon {
   width: 33px;

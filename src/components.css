@@ -234,17 +234,21 @@ small {
   border-color: var(--accent);
   color: var(--on-accent);
 }
-.button.primary:hover:not(:disabled) {
+@media (hover: hover) {
+  .button.primary:hover:not(:disabled) {
   background: var(--accent-hover);
   border-color: var(--accent-hover);
+}
 }
 .button.secondary {
   background: var(--surface);
   border-color: var(--line-strong);
   color: var(--text);
 }
-.button.secondary:hover:not(:disabled) {
+@media (hover: hover) {
+  .button.secondary:hover:not(:disabled) {
   background: var(--surface-hover);
+}
 }
 .button.full-width {
   width: 100%;
@@ -270,9 +274,11 @@ small {
   line-height: var(--lh-label);
   color: var(--text-secondary);
 }
-.text-button:hover:not(:disabled) {
+@media (hover: hover) {
+  .text-button:hover:not(:disabled) {
   color: var(--text);
   background: var(--surface-hover);
+}
 }
 .text-button:disabled {
   opacity: 0.5;
@@ -290,9 +296,11 @@ small {
   color: var(--text-secondary);
   transition: background var(--duration-fast) var(--ease);
 }
-.icon-button:hover {
+@media (hover: hover) {
+  .icon-button:hover {
   background: var(--surface-hover);
   color: var(--text);
+}
 }
 .notification-button {
   position: relative;
@@ -309,12 +317,67 @@ small {
 }
 
 /* ========================================================================
-   5. Focus
+   5. Focus and touch feedback
+   ------------------------------------------------------------------------
+   Two different jobs that a browser confuses by default.
+
+   A focus ring belongs to the keyboard. `:focus-visible` already limits it to
+   that, so clicking or tapping never draws one — the exception was the search
+   field, which used `:focus-within` and so ringed itself on every tap.
+
+   Touch feedback is the other job. The platform's own answer is a grey block
+   painted over whatever was touched, and because a tap also leaves the element
+   in `:hover`, the tint then stays there until something else is touched. Both
+   are gone: the highlight is off everywhere, every hover rule is gated behind
+   a device that actually has a pointer, and a press is answered by the element
+   briefly giving way under the finger instead of being covered over.
    ==================================================================== */
 :is(button, a, input, select, textarea, summary, [tabindex]):focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
   border-radius: var(--radius-xs);
+}
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+@media (hover: none) {
+  :is(
+      button,
+      a,
+      summary,
+      [role="button"],
+      [role="option"],
+      .service-row-main,
+      .incident-item,
+      .inbox-update,
+      .summary-card,
+      .insight-card,
+      .stack-provider,
+      .atlas-hub
+    ):active {
+    transform: scale(0.97);
+    transition: transform 90ms var(--ease);
+  }
+  /* A full-width row or card scales less; 3% on a 358px card reads as a lurch
+     rather than a press. */
+  :is(
+      .service-row-main,
+      .incident-item,
+      .inbox-update,
+      .summary-card,
+      .insight-card,
+      .panel-footer-button,
+      .nav-item,
+      .atlas-service-dock
+    ):active {
+    transform: scale(0.995);
+  }
+}
+@media (hover: none) and (prefers-reduced-motion: reduce) {
+  :is(button, a, summary, [role="button"], [role="option"]):active {
+    transform: none;
+    opacity: 0.7;
+  }
 }
 
 /* ========================================================================
@@ -441,7 +504,6 @@ small {
 }
 .search-input:focus-within {
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 12%, transparent);
 }
 .search-input input {
   flex: 1;
@@ -778,10 +840,12 @@ select {
   background: none;
   color: var(--text-secondary);
 }
-.refresh-button:hover,
-.overview-alerts:hover {
+@media (hover: hover) {
+  .refresh-button:hover,
+  .overview-alerts:hover {
   background: var(--surface-hover);
   color: var(--text);
+}
 }
 .overview-alerts.is-on {
   color: var(--mark-positive);
@@ -880,9 +944,11 @@ select {
   color: var(--text-secondary);
   text-align: left;
 }
-.category-menu > button:hover {
+@media (hover: hover) {
+  .category-menu > button:hover {
   background: var(--surface-hover);
   color: var(--text);
+}
 }
 .category-menu > button[aria-selected="true"] {
   color: var(--text);
@@ -908,8 +974,10 @@ select {
   color: var(--text);
   white-space: nowrap;
 }
-.table-footer-toggle:hover {
+@media (hover: hover) {
+  .table-footer-toggle:hover {
   color: var(--accent);
+}
 }
 
 /* The directory previews three rows and expands in place. Nothing here scrolls
@@ -948,8 +1016,10 @@ select {
   text-align: left;
   color: var(--text);
 }
-.service-row-main:hover {
+@media (hover: hover) {
+  .service-row-main:hover {
   background: var(--surface-hover);
+}
 }
 .service-row-main > svg:last-child {
   color: var(--mark-neutral);
@@ -997,9 +1067,11 @@ select {
   background: none;
   color: var(--mark-neutral);
 }
-.star-button:hover {
+@media (hover: hover) {
+  .star-button:hover {
   background: var(--surface-hover);
   color: var(--text-secondary);
+}
 }
 /* The watched gold is a fixed brand value, not a semantic status colour: the
    filled-versus-outlined shape and aria-pressed carry the state, so it never
@@ -1077,9 +1149,11 @@ select {
 .summary-card:not(:disabled) {
   cursor: pointer;
 }
-.summary-card:not(:disabled):hover {
+@media (hover: hover) {
+  .summary-card:not(:disabled):hover {
   border-color: var(--line-strong);
   background: var(--surface-hover);
+}
 }
 .summary-card > div {
   display: flex;
@@ -1177,8 +1251,10 @@ select {
   background: none;
   text-align: left;
 }
-.incident-item:hover {
+@media (hover: hover) {
+  .incident-item:hover {
   background: var(--surface-hover);
+}
 }
 .incident-meta {
   display: flex;
@@ -1281,9 +1357,11 @@ select {
   font-weight: var(--fw-semibold);
   flex-shrink: 0;
 }
-.panel-footer-button:hover {
+@media (hover: hover) {
+  .panel-footer-button:hover {
   background: var(--surface-hover);
   color: var(--text);
+}
 }
 
 /* ========================================================================
@@ -1319,9 +1397,11 @@ select {
   font-size: var(--fs-body-sm);
   color: var(--text-muted);
 }
-.page-footer button:hover {
+@media (hover: hover) {
+  .page-footer button:hover {
   color: var(--text);
   background: var(--surface-hover);
+}
 }
 
 @media (max-width: 760px) {
@@ -1583,9 +1663,11 @@ select {
   box-shadow: var(--shadow-1);
   text-align: left;
 }
-.insight-card:hover {
+@media (hover: hover) {
+  .insight-card:hover {
   border-color: var(--line-strong);
   background: var(--surface-hover);
+}
 }
 .insight-icon {
   display: grid;
@@ -1821,8 +1903,10 @@ select {
   background: none;
   text-align: left;
 }
-.monitor-list > button:hover {
+@media (hover: hover) {
+  .monitor-list > button:hover {
   background: var(--surface-hover);
+}
 }
 .monitor-list > button > span:nth-child(2) {
   flex: 1;
@@ -1930,12 +2014,16 @@ select {
   background: var(--on-accent);
   box-shadow: var(--shadow-1);
 }
-.toggle:hover {
+@media (hover: hover) {
+  .toggle:hover {
   border-color: var(--text-muted);
 }
-.toggle.on:hover {
+}
+@media (hover: hover) {
+  .toggle.on:hover {
   background: var(--accent-hover);
   border-color: var(--accent-hover);
+}
 }
 .theme-toggle {
   display: inline-flex;
@@ -1953,8 +2041,10 @@ select {
   font-weight: var(--fw-semibold);
   white-space: nowrap;
 }
-.theme-toggle:hover {
+@media (hover: hover) {
+  .theme-toggle:hover {
   background: var(--surface-hover);
+}
 }
 .methodology-note {
   margin-top: var(--space-4);

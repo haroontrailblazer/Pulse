@@ -270,10 +270,13 @@ function CategoryFilter({ value, options, onChange }) {
               type="button"
               role="option"
               aria-selected={value === name}
-              onClick={() => {
+              onClick={(e) => {
                 onChange(name);
                 setOpen(false);
-                buttonRef.current?.focus();
+                // A keyboard activation reports no coordinates. Only then does
+                // focus go back to the trigger: doing it after a tap is what
+                // drew a focus ring on a control nobody had focused.
+                if (!e.detail) buttonRef.current?.focus();
               }}
             >
               <span>{name}</span>
