@@ -819,42 +819,80 @@ select {
    keyboard access and the accessible name all survive. */
 .category-filter {
   position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
   flex: 0 0 auto;
+}
+.category-filter-button {
+  position: relative;
+  display: grid;
+  place-items: center;
   width: 36px;
   height: 36px;
+  min-height: 0;
+  padding: 0;
   border: 1px solid var(--line-strong);
   border-radius: var(--radius-md);
   background: var(--surface);
   color: var(--text-secondary);
 }
-.category-filter.is-active {
+/* 36px control, 44px reach. */
+.category-filter-button::after {
+  content: "";
+  position: absolute;
+  inset: -4px;
+}
+.category-filter.is-active .category-filter-button {
   border-color: var(--accent);
   background: var(--accent-soft);
   color: var(--text);
 }
-.category-filter select {
+
+/* The menu the native picker used to be. Anchored to the button and right
+   aligned so it cannot leave the card, capped so a long list scrolls inside
+   itself rather than running off the screen. */
+.category-menu {
   position: absolute;
-  width: auto;
-  max-width: none;
-  /* Overhangs the button so the target clears 44px while the control stays
-     36px. Insets resolve against the padding box (34px inside the 1px
-     border), so -5px is what reaches 44. */
-  inset: -5px;
-  min-height: 0;
-  padding: 0;
-  border: 0;
-  border-radius: inherit;
-  background: none;
-  color: transparent;
-  opacity: 0;
-  cursor: pointer;
-  appearance: none;
+  z-index: 30;
+  top: calc(100% + var(--space-2));
+  right: 0;
+  min-width: 220px;
+  max-width: min(280px, calc(100vw - 2 * var(--gutter)));
+  max-height: min(320px, 50dvh);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: var(--space-1);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-3);
 }
-.category-filter:focus-within {
-  border-color: var(--accent);
+.category-menu > button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  width: 100%;
+  min-height: var(--tap);
+  padding: 0 var(--space-3);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: none;
+  font-size: var(--fs-body-sm);
+  color: var(--text-secondary);
+  text-align: left;
+}
+.category-menu > button:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+}
+.category-menu > button[aria-selected="true"] {
+  color: var(--text);
+  font-weight: var(--fw-semibold);
+}
+.category-menu > button > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .table-footer-toggle {
@@ -2413,7 +2451,7 @@ select {
       .stack-provider
     ):not(.inbox-update):not(.monitor-list > button):not(.atlas-hub):not(
       .toggle
-    ):not(.atlas-filter):not(.tabs button):not(.category-filter select):not(
+    ):not(.atlas-filter):not(.tabs button):not(.category-filter-button):not(
       .page-footer button
     ):not(.atlas-coverage) {
     min-height: var(--tap);
