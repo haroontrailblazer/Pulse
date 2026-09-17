@@ -529,7 +529,7 @@ select {
   background: none;
   font-size: var(--fs-caption);
   font-weight: var(--fw-medium);
-  line-height: 1;
+  line-height: var(--lh-label);
   white-space: nowrap;
   color: var(--text-secondary);
 }
@@ -543,7 +543,6 @@ select {
 .tabs button.selected {
   background: var(--surface);
   color: var(--text);
-  font-weight: var(--fw-semibold);
   box-shadow: var(--shadow-1);
 }
 .tabs button > span {
@@ -972,13 +971,18 @@ select {
   color: #ffd24a;
 }
 
+/* Sized to match the incidents card's footer button: the row is one 44px band
+   with no padding of its own, because the control inside it already carries
+   that height. It used to add 12px above and below a 44px control, so the
+   directory's footer stood 25px taller than the one it sits beside. */
 .table-footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-3);
   flex-wrap: wrap;
-  padding: var(--space-3) var(--space-4);
+  min-height: var(--tap);
+  padding: 0 var(--space-4);
   border-top: 1px solid var(--line);
   font-size: var(--fs-caption);
   line-height: var(--lh-caption);
