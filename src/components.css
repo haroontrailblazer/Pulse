@@ -1065,13 +1065,19 @@ select {
    where the card already clipped its overflow without scrolling — anything
    past the fold was simply unreachable.
    ==================================================================== */
-/* Only where the result is usable. The fixed chrome — page title, card
-   heading, toolbar, card footer, page footer, bottom bar — comes to roughly
-   450px, so on a short screen holding everything in the viewport left the list
-   64px to live in. Below this height the page scrolls the ordinary way
-   instead, which is the honest fallback. */
-@media (min-height: 700px) {
-  .list-main {
+/* Only where the result is usable, and 700px was too cautious a floor: it
+   excluded the phone this ships to, whose WebView is 640 CSS pixels tall.
+   Measured at 640 the feed gets 357px and the watchlist 184px, both fine; at
+   560 the watchlist is down to 104px, about a row and a half. Below this the
+   page scrolls the ordinary way, which is the honest fallback. */
+/* Each page holds its card at the height its own chrome allows. The Incidents
+   feed carries only a card heading above it, so at 640 — the WebView this
+   ships to — the feed still gets 282px. The Watchlist carries a toolbar and a
+   card footer as well, and at the same height it is down to 104px, about a row
+   and a half, so it waits for a taller screen and scrolls the page until then.
+   Measured, not guessed: below each floor the numbers stop being usable. */
+@media (min-height: 600px) {
+  .incidents-main {
     display: flex;
     flex-direction: column;
     height: 100dvh;
@@ -1079,7 +1085,16 @@ select {
     overflow: hidden;
   }
 }
-@media (min-height: 700px) {
+@media (min-height: 760px) {
+  .watchlist-main {
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+    min-height: 0;
+    overflow: hidden;
+  }
+}
+@media (min-height: 600px) {
   .list-main > .page-heading,
   .list-main > .page-footer,
   .list-main > .error-banner {

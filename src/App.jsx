@@ -905,9 +905,11 @@ export default function App() {
           className={
             page === "Global map"
               ? "map-main"
-              : page === "Incidents" || page === "Watchlist"
-                ? "list-main"
-                : ""
+              : page === "Incidents"
+                ? "list-main incidents-main"
+                : page === "Watchlist"
+                  ? "list-main watchlist-main"
+                  : ""
           }
         >
           <div className="page-heading">
