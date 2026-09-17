@@ -215,9 +215,6 @@ a):focus-visible {
   background: var(--accent-soft);
   color: var(--text);
 }
-:root[data-theme] .incident-stream {
-  scrollbar-color: var(--line) transparent;
-}
 /* Live monitoring and tools consume the same semantic palette. */
 :root[data-theme] .live-console {
   --live-bg: var(--surface);

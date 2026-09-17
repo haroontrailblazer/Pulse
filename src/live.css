@@ -162,7 +162,6 @@
 .change-list {
   max-height: 330px;
   overflow: auto;
-  scrollbar-color: var(--live-border) transparent;
 }
 .live-component-list > button,
 .change-list > button {

@@ -308,7 +308,6 @@
   overflow-y: auto;
   overscroll-behavior: contain;
   padding: 0 16px 14px;
-  scrollbar-width: thin;
 }
 .atlas-inspector-body > p {
   color: var(--secondary);

@@ -38,6 +38,11 @@
   /* ---- Lines ---------------------------------------------------------- */
   --line: #dcdfe5;
   --line-strong: #c9ced5;
+  /* A scroll rail is a control, not a hairline: it has to be findable against
+     the recessed surfaces a scroller usually sits on, so it clears 3:1 on the
+     sunken grey rather than on the card it borders. */
+  --scroll-thumb: #898989;
+  --scroll-thumb-hover: #5c6068;
 
   /* ---- Accent (monochrome ink; colour belongs to status) --------------- */
   --accent: #15171a;
@@ -211,6 +216,8 @@
 
   --line: #2b2b2f;
   --line-strong: #3d3d43;
+  --scroll-thumb: #636369;
+  --scroll-thumb-hover: #8a8a92;
 
   --accent: #f2f4f7;
   --accent-hover: #d5dae1;

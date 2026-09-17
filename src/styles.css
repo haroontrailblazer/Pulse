@@ -8,6 +8,50 @@ body::-webkit-scrollbar {
   width: 0;
   height: 0;
 }
+
+/* One slim rail for every scroller in the app — a card's list, a sheet's body,
+   the map's panel, the sidebar. A scroller inside a card is part of that card,
+   and the 15px system bar is not: it is furniture from another application.
+   Transparent track, a thumb in a grey that clears 3:1 on the sunken surfaces
+   these usually sit on, inset by its own border so it never touches the edge
+   it runs along.
+
+   Only where a pointer can grab one. A touch surface already has overlay bars
+   that appear as you scroll and fade afterwards; styling them here would turn
+   them into permanent furniture, so the APK keeps exactly what it has.
+
+   Scoped through :where() so it carries no specificity: the handful of strips
+   that deliberately hide their scrollbar — the tab rails, the map's control
+   row — still win with a plain class. */
+@media (pointer: fine) {
+  :where(:root:not([data-platform="android"])) ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  :where(:root:not([data-platform="android"])) ::-webkit-scrollbar-track,
+  :where(:root:not([data-platform="android"])) ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+  :where(:root:not([data-platform="android"])) ::-webkit-scrollbar-thumb {
+    border: 3px solid transparent;
+    border-radius: 999px;
+    background: var(--scroll-thumb);
+    background-clip: padding-box;
+  }
+  :where(:root:not([data-platform="android"])) ::-webkit-scrollbar-thumb:hover {
+    background: var(--scroll-thumb-hover);
+    background-clip: padding-box;
+  }
+  /* Engines without the pseudo-elements get the standard pair instead. Setting
+     both would be worse than setting either: a non-auto scrollbar-width makes
+     Chromium ignore everything above. */
+  @supports not selector(::-webkit-scrollbar) {
+    :where(:root:not([data-platform="android"])) * {
+      scrollbar-width: thin;
+      scrollbar-color: var(--scroll-thumb) transparent;
+    }
+  }
+}
 * {
   box-sizing: border-box;
 }
@@ -99,8 +143,6 @@ select {
   overflow-y: auto;
   overflow-x: hidden;
   overscroll-behavior-y: contain;
-  scrollbar-width: thin;
-  scrollbar-color: var(--line) transparent;
   padding: 4px 4px 16px;
   margin: 0 -4px;
   scroll-padding-block: 8px;
@@ -522,8 +564,6 @@ h1 {
   max-height: none;
   overflow-y: auto;
   overscroll-behavior: contain;
-  scrollbar-width: thin;
-  scrollbar-color: var(--line) transparent;
 }
 .incident-item {
   display: block;
