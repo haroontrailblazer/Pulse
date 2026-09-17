@@ -987,6 +987,63 @@ select {
   min-height: 0;
 }
 
+/* ========================================================================
+   Incidents and Watchlist: a card that fits the viewport
+   ------------------------------------------------------------------------
+   These two are destinations for a list, not documents to be read top to
+   bottom, so the page does not scroll: the title, the card's own heading and
+   toolbar, the card's footer and the page footer all stay put, and only the
+   list inside the card moves. It also fixes a quiet bug on the Watchlist,
+   where the card already clipped its overflow without scrolling — anything
+   past the fold was simply unreachable.
+   ==================================================================== */
+/* Only where the result is usable. The fixed chrome — page title, card
+   heading, toolbar, card footer, page footer, bottom bar — comes to roughly
+   450px, so on a short screen holding everything in the viewport left the list
+   64px to live in. Below this height the page scrolls the ordinary way
+   instead, which is the honest fallback. */
+@media (min-height: 700px) {
+  .list-main {
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+    min-height: 0;
+    overflow: hidden;
+  }
+}
+@media (min-height: 700px) {
+  .list-main > .page-heading,
+  .list-main > .page-footer,
+  .list-main > .error-banner {
+    flex: 0 0 auto;
+  }
+  .list-main > .panel {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  /* The one scrolling region in each card. */
+  .incident-feed,
+  .list-main .service-table-wrap {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+  .list-main :is(.panel-heading, .directory-toolbar, .table-footer) {
+    flex: 0 0 auto;
+  }
+}
+/* The Watchlist card clipped its overflow without scrolling it, so anything
+   past the fold was unreachable. That is true at every height. */
+.service-table-wrap {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
 /* ---- Phone: list rows ------------------------------------------------- */
 .service-list {
   list-style: none;
@@ -2655,7 +2712,12 @@ select {
   /* Stacked on a phone, the footer was three separate 44px bands with 32px of
      air above them. The lines close up; the link keeps a 44px target on an
      expander rather than on its own height. */
+  /* Stacked, and stated as a stack rather than as a row coerced into wrapping.
+     The two lines are their own rows; nothing needs to wrap. */
   .page-footer {
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-items: flex-start;
     justify-content: flex-start;
     gap: 2px;
     margin-top: var(--space-4);
@@ -2663,7 +2725,8 @@ select {
   }
   .page-footer > span,
   .page-footer button {
-    flex-basis: 100%;
+    flex: 0 0 auto;
+    max-width: 100%;
   }
   .page-footer button {
     position: relative;

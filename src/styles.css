@@ -1499,13 +1499,6 @@ h1 {
     margin-top: 15px;
     padding-top: 13px;
   }
-.page-footer {
-    margin-top: 25px;
-    display: flex;
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 10px;
-  }
 .provider-detail-header {
     gap: 10px;
   }

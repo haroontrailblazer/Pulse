@@ -1004,7 +1004,13 @@ export default function App() {
       <div className="main-shell">
         <main
           ref={pageStageRef}
-          className={page === "Global map" ? "map-main" : ""}
+          className={
+            page === "Global map"
+              ? "map-main"
+              : page === "Incidents" || page === "Watchlist"
+                ? "list-main"
+                : ""
+          }
         >
           <div className="page-heading">
             <div>
@@ -1531,25 +1537,30 @@ export default function App() {
                   <RefreshCw size={20} />
                 </button>
               </div>
-              {allIncidents.length ? (
-                allIncidents.map((i) => (
-                  <Incident
-                    key={`${i.provider.id}-${i.id}`}
-                    incident={i}
-                    onClick={() => openProvider(i.provider)}
-                    expanded
-                  />
-                ))
-              ) : (
-                <div className="empty-state">
-                  <CheckCheck size={32} />
-                  <h3>No active incidents reported</h3>
-                  <p>
-                    {verified} feeds verified. Unavailable feeds are not
-                    included.
-                  </p>
-                </div>
-              )}
+              {/* The feed is the only part of this card that scrolls; its
+                  heading stays put at the top of a card that fills the
+                  viewport. */}
+              <div className="incident-feed">
+                {allIncidents.length ? (
+                  allIncidents.map((i) => (
+                    <Incident
+                      key={`${i.provider.id}-${i.id}`}
+                      incident={i}
+                      onClick={() => openProvider(i.provider)}
+                      expanded
+                    />
+                  ))
+                ) : (
+                  <div className="empty-state">
+                    <CheckCheck size={32} />
+                    <h3>No active incidents reported</h3>
+                    <p>
+                      {verified} feeds verified. Unavailable feeds are not
+                      included.
+                    </p>
+                  </div>
+                )}
+              </div>
             </section>
           )}
           {(page === "Overview" || page === "Dependency insights") && (
