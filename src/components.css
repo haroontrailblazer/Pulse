@@ -913,6 +913,9 @@ select {
   flex: 1;
   min-width: 0;
 }
+:root[data-platform="android"] .directory-toolbar .directory-search {
+  margin-top: 0;
+}
 .directory-search .search-input {
   flex: 1 1 auto;
   min-width: 0;
