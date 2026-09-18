@@ -201,11 +201,63 @@ function SheetGrabber({ sheetRef, onClose, label }) {
   );
 }
 
+// A scroller that runs past the fold says so for five seconds: a chevron at
+// its foot, only when there is something below, and only until the reader
+// scrolls, because after that it is describing what they just did.
+//
+// The question is asked repeatedly rather than once at mount. The inbox, the
+// service sheet and the incident feed are all empty until their feeds land, so
+// a single reading would answer for a list that has not been filled yet. The
+// polling ends with the window in which the hint could appear at all.
+function useScrollHint(ref, when) {
+  const [hint, setHint] = useState(false);
+  useEffect(() => {
+    const node = ref.current;
+    if (!node) return;
+    let shown = false;
+    const look = () => {
+      const more =
+        node.scrollHeight - node.clientHeight > 4 && node.scrollTop < 4;
+      if (more !== shown) {
+        shown = more;
+        setHint(more);
+      }
+    };
+    look();
+    const watch = window.setInterval(look, 200);
+    const done = () => {
+      window.clearInterval(watch);
+      shown = false;
+      setHint(false);
+    };
+    const stop = window.setTimeout(done, 5000);
+    node.addEventListener("scroll", done, { passive: true });
+    return () => {
+      window.clearInterval(watch);
+      window.clearTimeout(stop);
+      node.removeEventListener("scroll", done);
+    };
+  }, [ref, when]);
+  return hint;
+}
+
+function ScrollHint({ shown }) {
+  return (
+    <div className="scroll-hint-anchor" aria-hidden="true">
+      {shown && (
+        <span className="scroll-hint">
+          <ChevronDown size={20} />
+        </span>
+      )}
+    </div>
+  );
+}
+
 function Modal({ title, children, onClose, wide = false, actions = null }) {
   const ref = useRef();
   const backdropRef = useRef();
   const bodyRef = useRef();
-  const [hint, setHint] = useState(false);
+  const hint = useScrollHint(bodyRef);
   useLayoutEffect(() => {
     if (!motionEnabled()) return;
     const context = gsap.context(() => {
@@ -228,43 +280,6 @@ function Modal({ title, children, onClose, wide = false, actions = null }) {
         );
     }, backdropRef);
     return () => context.revert();
-  }, []);
-  // A sheet is 60% of the screen and its content usually runs past the fold,
-  // but nothing on a touch screen says so. For the first five seconds a
-  // chevron sits at the foot of the scroller — only when there is something
-  // below, and only until the reader scrolls, because after that it is telling
-  // them what they already did.
-  //
-  // The question is asked repeatedly rather than once at open: the inbox and
-  // the service sheet are empty until their feeds land, so a single reading at
-  // mount would answer for a sheet that has not been filled yet. The polling
-  // ends with the window in which the hint could appear at all.
-  useEffect(() => {
-    const body = bodyRef.current;
-    if (!body) return;
-    let shown = false;
-    const look = () => {
-      const more =
-        body.scrollHeight - body.clientHeight > 4 && body.scrollTop < 4;
-      if (more !== shown) {
-        shown = more;
-        setHint(more);
-      }
-    };
-    look();
-    const watch = window.setInterval(look, 200);
-    const done = () => {
-      window.clearInterval(watch);
-      shown = false;
-      setHint(false);
-    };
-    const stop = window.setTimeout(done, 5000);
-    body.addEventListener("scroll", done, { passive: true });
-    return () => {
-      window.clearInterval(watch);
-      window.clearTimeout(stop);
-      body.removeEventListener("scroll", done);
-    };
   }, []);
   useEffect(() => {
     const previous = document.activeElement;
@@ -332,13 +347,7 @@ function Modal({ title, children, onClose, wide = false, actions = null }) {
         <div className="modal-body" ref={bodyRef}>
           {children}
         </div>
-        <div className="sheet-hint-anchor" aria-hidden="true">
-          {hint && (
-            <span className="sheet-hint">
-              <ChevronDown size={20} />
-            </span>
-          )}
-        </div>
+        <ScrollHint shown={hint} />
         {actions ? <div className="modal-actions">{actions}</div> : null}
       </section>
     </div>
@@ -427,6 +436,10 @@ export default function App() {
   // What the Overview's map preview was asked to show, handed to the Map
   // destination so it opens on that view rather than on a bare map.
   const [mapView, setMapView] = useState(null);
+  // The incident feed is a fixed-viewport scroller like a sheet's body, so it
+  // gets the same five-second chevron when there is more below the fold.
+  const incidentFeedRef = useRef(null);
+  const incidentHint = useScrollHint(incidentFeedRef, page);
   const [modal, setModal] = useState(null);
   const [selected, setSelected] = useState(null);
   const [mobileNav, setMobileNav] = useState(false);
@@ -1474,7 +1487,7 @@ export default function App() {
             </section>
           )}
           {page === "Incidents" && (
-            <section className="incident-page">
+            <section className="panel incident-page">
               <div className="panel-heading">
                 <div>
                   <h2>
@@ -1495,7 +1508,7 @@ export default function App() {
               {/* The feed is the only part of this page that scrolls; the bar
                   above it and the footer below hold their place in a page that
                   fills the viewport. */}
-              <div className="incident-feed">
+              <div className="incident-feed" ref={incidentFeedRef}>
                 {allIncidents.length ? (
                   allIncidents.map((i) => (
                     <Incident
@@ -1516,6 +1529,7 @@ export default function App() {
                   </div>
                 )}
               </div>
+              <ScrollHint shown={incidentHint} />
             </section>
           )}
           {(page === "Overview" || page === "Dependency insights") && (
