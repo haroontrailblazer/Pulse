@@ -1162,6 +1162,26 @@ select {
    The viewport behaviour is untouched — the bar and the footer hold their
    place and the feed is still the only thing that scrolls; that is the
    .list-main rule above, which now names this section too. */
+/* The Watchlist destination is the same idea as Incidents: a list on the page
+   rather than a card holding one, on the APK only. The frame comes off, the
+   heading and the filter row become the bar above the list — each keeping the
+   page's gutter on its contents — and the rows run edge to edge on their own
+   16px inset, which lands them on the same left edge as the bar's title. The
+   site and the EXE keep the card. Mirrors the .incident-page block below. */
+:root[data-platform="android"] .watchlist-main > .services-panel.panel {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  margin-inline: calc(-1 * var(--gutter));
+}
+:root[data-platform="android"]
+  .watchlist-main
+  > .services-panel.panel
+  > :is(.panel-heading, .directory-toolbar, .table-footer) {
+  padding-inline: var(--gutter);
+}
+
 :root[data-platform="android"] .incident-page.panel {
   border: 0;
   border-radius: 0;
