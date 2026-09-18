@@ -2105,6 +2105,11 @@ select {
 /* Without a pinned band the scroller runs to the sheet's bottom edge, which on
    a phone is the bottom of the screen: the hint needs the home indicator's
    clearance that .modal-actions would otherwise have carried. */
+/* The incident list has no pinned band under it, so the chevron would sit on
+   the feed's own edge; it lifts clear of it. */
+.incident-page .scroll-hint {
+  bottom: 5px;
+}
 .modal:not(:has(.modal-actions)) .scroll-hint {
   bottom: max(var(--space-3), var(--safe-bottom));
 }
