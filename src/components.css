@@ -1129,7 +1129,8 @@ select {
      the footer's 16px top margin were 41px of dead space between them that the
      card should have been filling — constant at every viewport, so it read as
      a gap under the card rather than as breathing room. */
-  .list-main > .panel {
+  .list-main > .panel,
+  .list-main > .incident-page {
     flex: 1 1 auto;
     min-height: 0;
     display: flex;
@@ -1153,6 +1154,26 @@ select {
     flex: 0 0 auto;
   }
 }
+/* The Incidents destination is a list on the page, not a card containing one.
+   The frame comes off and the heading becomes the bar above the list: full
+   width, carrying its own rule underneath, with the page's gutter on its
+   contents rather than on the box. The rows keep the separators that give the
+   list its structure and run edge to edge.
+
+   The viewport behaviour is untouched — the bar and the footer hold their
+   place and the feed is still the only thing that scrolls; that is the
+   .list-main rule above, which now names this section too. */
+.incident-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  margin-inline: calc(-1 * var(--gutter));
+}
+.incident-page > .panel-heading,
+.incident-page > .incident-feed {
+  padding-inline: var(--gutter);
+}
+
 /* The Watchlist card clipped its overflow without scrolling it, so anything
    past the fold was unreachable. That is true at every height — but only on
    that page. The Overview shows a three-row preview that never overflows

@@ -1474,7 +1474,7 @@ export default function App() {
             </section>
           )}
           {page === "Incidents" && (
-            <section className="panel incident-page">
+            <section className="incident-page">
               <div className="panel-heading">
                 <div>
                   <h2>
@@ -1492,9 +1492,9 @@ export default function App() {
                   <RefreshCw size={20} />
                 </button>
               </div>
-              {/* The feed is the only part of this card that scrolls; its
-                  heading stays put at the top of a card that fills the
-                  viewport. */}
+              {/* The feed is the only part of this page that scrolls; the bar
+                  above it and the footer below hold their place in a page that
+                  fills the viewport. */}
               <div className="incident-feed">
                 {allIncidents.length ? (
                   allIncidents.map((i) => (
