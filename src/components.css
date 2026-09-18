@@ -2108,7 +2108,7 @@ select {
 /* The incident list has no pinned band under it, so the chevron would sit on
    the feed's own edge; it lifts clear of it. */
 .incident-page .scroll-hint {
-  bottom: 5px;
+  bottom: 7px;
 }
 .modal:not(:has(.modal-actions)) .scroll-hint {
   bottom: max(var(--space-3), var(--safe-bottom));
