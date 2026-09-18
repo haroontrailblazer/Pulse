@@ -1408,6 +1408,46 @@ select {
   flex: 0 0 auto;
 }
 
+/* ---- The watchlist filter's pressed state ------------------------------ */
+/* The website and the EXE keep the pressed pill (the APK filters with a
+   segmented control instead), and until now that press painted nothing at
+   all. The rule lived in insight-updates.css as
+   `.impact-watch-toggle[aria-pressed="true"]`, which is (0,2,0), and
+   theme.css names `.button.secondary` inside two `:root[data-theme] :is(…)`
+   lists that are both (0,4,0) — one sets background and border-color, the
+   other sets color. All three declarations lost. The only one that survived
+   was the nested `svg` rule, so the single visible effect of pressing was the
+   star turning `--on-accent` against an unchanged surface: white on white in
+   light, black on black in dark. Measured contrast 1.0:1. The state did not
+   just fail to show, it deleted the one glyph carrying it.
+
+   So this belongs in components.css, which is what theme.css's own header
+   asks for, and it is written to out-specify theme.css rather than to tie
+   with it: `.button` is already on the element, which makes this (0,5,0) and
+   independent of the order the stylesheets happen to be bundled in. That
+   matters here — insight-updates.css is emitted first precisely because App
+   imports the component before main.jsx imports the stylesheets, which is
+   exactly the kind of thing that changes without anyone meaning to. */
+:root[data-theme] .button.impact-watch-toggle[aria-pressed="true"] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
+}
+:root[data-theme] .button.impact-watch-toggle[aria-pressed="true"] svg {
+  color: var(--on-accent);
+}
+/* Pressed still answers the mouse. Without this the (0,4,0)
+   `.button.secondary:hover` is out-specified too, and a filled toggle would
+   be the one control on the page that ignores the pointer — which the EXE
+   and the website both have. */
+@media (hover: hover) {
+  :root[data-theme]
+    .button.impact-watch-toggle[aria-pressed="true"]:hover:not(:disabled) {
+    background: var(--accent-hover);
+    border-color: var(--accent-hover);
+  }
+}
+
 /* The chevron is the APK's alone, like the frame it replaces. */
 .insights-main .scroll-hint-anchor {
   display: none;

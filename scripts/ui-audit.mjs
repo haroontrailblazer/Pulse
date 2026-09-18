@@ -250,7 +250,7 @@ const browser = await chromium.launch({
   headless: true,
   channel: process.env.PLAYWRIGHT_CHANNEL || "msedge",
 });
-const report = { origin, minTextPx: MIN_TEXT_PX, minTarget: MIN_TARGET, runs: [] };
+const report = { origin, minTextPx: MIN_TEXT_PX, minTarget: MIN_TARGET, runs: [], toggles: [] };
 try {
   for (const width of WIDTHS) {
     for (const theme of ["light", "dark"]) {
@@ -288,6 +288,59 @@ try {
         process.stdout.write(
           `${width}/${theme}/${name}: ${result.tinyText.length} tiny, ${result.lowContrast.length} low-contrast, ${result.smallTargets.length} small targets, ${result.overflow.length} overflowing\n`,
         );
+      }
+
+      // A toggle whose pressed state paints nothing is invisible in a
+      // screenshot of the default state, so nothing else in this file would
+      // catch it. One shipped that way: the insights filter's accent fill was
+      // written at (0,2,0) and lost the cascade to a (0,4,0) :is() list in
+      // theme.css, so pressing it changed no background, no border and no
+      // text — the single visible effect was the star turning --on-accent
+      // against an unchanged surface, which is white on white in light and
+      // black on black in dark. Press every unpressed toggle on this screen
+      // and require that something actually changes colour.
+      const toggles = await page.evaluate(async () => {
+        const settle = () =>
+          new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+        const read = (el) => {
+          const cs = getComputedStyle(el);
+          const svg = el.querySelector("svg");
+          return {
+            background: cs.backgroundColor,
+            borderColor: cs.borderTopColor,
+            color: cs.color,
+            svgColor: svg ? getComputedStyle(svg).color : null,
+          };
+        };
+        const out = [];
+        const candidates = [...document.querySelectorAll(".impact-controls [aria-pressed]")];
+        for (const el of candidates) {
+          if (el.getAttribute("aria-pressed") !== "false") continue;
+          const before = read(el);
+          el.click();
+          await settle();
+          const after = read(el);
+          out.push({
+            label: el.textContent.trim().replace(/\s+/g, " "),
+            becamePressed: el.getAttribute("aria-pressed") === "true",
+            changed: ["background", "borderColor", "color"].filter((k) => before[k] !== after[k]),
+            before,
+            after,
+          });
+          // Hand the screen back in its default state for the next probe.
+          const reset = candidates.find((n) => n !== el && n.getAttribute("aria-pressed") === "false");
+          (reset || el).click();
+          await settle();
+        }
+        return out;
+      });
+      for (const t of toggles) {
+        report.toggles.push({ width, theme, ...t });
+        if (t.becamePressed && !t.changed.length)
+          process.stdout.write(
+            `${width}/${theme}/toggle "${t.label}": PRESSED STATE PAINTS NOTHING
+`,
+          );
       }
 
       // Overlays get their own pass — they are where the deepest content lives.
@@ -336,6 +389,10 @@ try {
     smallTargetUniqueSelectors: unique("smallTargets", (x) => x.selector),
     overflowInstances: total("overflow"),
     horizontalScrollScreens: report.runs.filter((r) => r.documentScrollWidth > r.innerWidth).map((r) => `${r.width}/${r.theme}/${r.screen}`),
+    togglesChecked: report.toggles.length,
+    deadToggleStates: report.toggles
+      .filter((t) => t.becamePressed && !t.changed.length)
+      .map((t) => `${t.width}/${t.theme}/${t.label}`),
   };
   await mkdir(dirname(outFile), { recursive: true });
   await writeFile(outFile, JSON.stringify(report, null, 2));

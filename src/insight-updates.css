@@ -477,12 +477,5 @@
 }
 }
 
-/* The watchlist filter is a toggle, so it shows its state as a fill. */
-.impact-watch-toggle[aria-pressed="true"] {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: var(--on-accent);
-}
-.impact-watch-toggle[aria-pressed="true"] svg {
-  color: var(--on-accent);
-}
+/* The watchlist filter's pressed fill lives in components.css: at this
+   file's specificity theme.css won the cascade and the state never painted. */
