@@ -832,11 +832,34 @@ select {
 /* Title on the left, its two controls on the same line to the right. Both are
    icon-only: at this size a labelled button wraps to its own row and pushes the
    table down for information the title already carries. */
+/* Matched to .incidents-panel .panel-heading, which is the card this one sits
+   next to on the Overview. The padding is the same 21/18/16; the icon buttons
+   are what made the row 77px against the other card's 60px, because a 44px
+   control sets the row height and the title then centres in it. They keep the
+   full 44px reach through the expander below and give up only the empty ring
+   around the glyph, which puts the title back on the same 22/17 the incidents
+   card has. */
 .services-heading {
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-3);
+  padding: 21px 18px 16px;
+}
+.services-heading .icon-button {
+  position: relative;
+  width: 24px;
+  min-width: 24px;
+  height: 24px;
+  min-height: 24px;
+  padding: 0;
+  border: 0;
+  background: none;
+}
+.services-heading .icon-button::after {
+  content: "";
+  position: absolute;
+  inset: -10px;
 }
 .services-heading > div:first-child {
   min-width: 0;
@@ -1128,8 +1151,13 @@ select {
   }
 }
 /* The Watchlist card clipped its overflow without scrolling it, so anything
-   past the fold was unreachable. That is true at every height. */
-.service-table-wrap {
+   past the fold was unreachable. That is true at every height — but only on
+   that page. The Overview shows a three-row preview that never overflows
+   (measured 0px of scrollable content at 390x844, 390x560 and 1440x900), and
+   making it a scroll container there made it a dead one: overscroll-behavior
+   keeps the gesture from chaining to the page, so a drag that began on the
+   directory list scrolled nothing at all. */
+.list-main .service-table-wrap {
   overflow-y: auto;
   overscroll-behavior: contain;
 }
@@ -2735,7 +2763,7 @@ select {
       .toggle
     ):not(.atlas-filter):not(.tabs button):not(.filter-menu-button):not(
       .page-footer button
-    ) {
+    ):not(.services-heading .icon-button) {
     min-height: var(--tap);
   }
   /* A checkbox is small by platform convention; its label carries the target. */

@@ -649,9 +649,6 @@ h1 {
 .services-panel > .table-footer {
   flex-shrink: 0;
 }
-.services-heading {
-  padding-bottom: 19px;
-}
 .text-button {
   display: inline-flex;
   align-items: center;
