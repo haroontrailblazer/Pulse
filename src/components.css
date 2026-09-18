@@ -1173,6 +1173,16 @@ select {
 .incident-page > .incident-feed {
   padding-inline: var(--gutter);
 }
+/* The bar reads as the page title's second line, so it sits close under it:
+   the heading's margin and the bar's own top padding both come in. What is
+   left between the two titles is the bar's 44px refresh control holding its
+   row open, which is the bar's height rather than the space above it. */
+.incidents-main > .page-heading {
+  margin-bottom: var(--space-1);
+}
+.incident-page > .panel-heading {
+  padding-block: var(--space-3) var(--space-4);
+}
 
 /* The Watchlist card clipped its overflow without scrolling it, so anything
    past the fold was unreachable. That is true at every height — but only on
