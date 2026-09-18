@@ -1181,6 +1181,34 @@ select {
   > :is(.panel-heading, .directory-toolbar, .table-footer) {
   padding-inline: var(--gutter);
 }
+/* Closed up on the APK: the title under the page title, the filter row under
+   the description, and the search under the toggle. */
+:root[data-platform="android"] .watchlist-main > .page-heading {
+  margin-bottom: var(--space-1);
+}
+:root[data-platform="android"]
+  .watchlist-main
+  > .services-panel.panel
+  > .panel-heading {
+  padding-block: var(--space-3) var(--space-2);
+}
+:root[data-platform="android"]
+  .watchlist-main
+  > .services-panel.panel
+  > .directory-toolbar {
+  padding-block: var(--space-2);
+  row-gap: var(--space-2);
+}
+/* The list's chevron is the APK's alone, like the frame it sits in. */
+.watchlist-main .scroll-hint-anchor {
+  display: none;
+}
+:root[data-platform="android"] .watchlist-main .scroll-hint-anchor {
+  display: block;
+}
+.watchlist-main .scroll-hint {
+  bottom: 7px;
+}
 
 :root[data-platform="android"] .incident-page.panel {
   border: 0;

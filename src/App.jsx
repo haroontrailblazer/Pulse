@@ -440,6 +440,10 @@ export default function App() {
   // gets the same five-second chevron when there is more below the fold.
   const incidentFeedRef = useRef(null);
   const incidentHint = useScrollHint(incidentFeedRef, page);
+  // The watchlist's own list, same treatment. The anchor is hidden off Android
+  // by the stylesheet, so this is the APK's hint only.
+  const watchWrapRef = useRef(null);
+  const watchHint = useScrollHint(watchWrapRef, page);
   const [modal, setModal] = useState(null);
   const [selected, setSelected] = useState(null);
   const [mobileNav, setMobileNav] = useState(false);
@@ -1263,7 +1267,10 @@ export default function App() {
                     ? `${visible.length} services loaded`
                     : ""}
               </div>
-              <div className="service-table-wrap">
+              <div
+                className="service-table-wrap"
+                ref={page === "Watchlist" ? watchWrapRef : null}
+              >
                 {firstLoad ? (
                   /* Before the first reading lands, every provider reads
                      "Status unavailable" — a wall of grey pills that looks like
@@ -1463,6 +1470,7 @@ export default function App() {
                   </div>
                 )}
               </div>
+              {page === "Watchlist" && <ScrollHint shown={watchHint} />}
               {/* One control, not two: the footer line that used to report
                   "Showing 3 of 28" is the control that opens the rest. */}
               <div className="table-footer">
