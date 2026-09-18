@@ -1172,9 +1172,6 @@ export default function App() {
                       {page === "Watchlist" ? watchlist.length : items.length}
                     </span>
                   </h2>
-                  {page === "Watchlist" && (
-                    <p>The services you chose to keep in view.</p>
-                  )}
                 </div>
                 <div className="overview-heading-actions">
                   {page === "Overview" && (
