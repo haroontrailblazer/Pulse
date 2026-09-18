@@ -521,6 +521,25 @@
 .atlas-map.narrow.has-inspector .atlas-coverage {
   bottom: 284px;
 }
+
+/* The APK only. On a phone the conditions card was 260px of a 683px frame with
+   the globe drawn small and centred above it, leaving 120px of empty sky under
+   the page title. The card takes 340 and sits 8 off the edge, the drawing
+   surface gives up the difference, and the globe — opened one zoom step in —
+   fills what is left instead of floating in it. The site and the EXE keep the
+   260/12 card above. Mirrored by cardHeight and panelBelow in WorldMap.jsx. */
+:root[data-platform="android"] .atlas-map.narrow .atlas-inspector {
+  bottom: 8px;
+  height: 340px;
+}
+:root[data-platform="android"] .atlas-map.narrow.has-inspector .atlas-world {
+  bottom: 348px;
+}
+:root[data-platform="android"]
+  .atlas-map.narrow.has-inspector
+  :is(.atlas-map-tools, .atlas-region, .atlas-coverage) {
+  bottom: 360px;
+}
 .atlas-map.narrow .atlas-map-title select {
   max-width: 120px;
 }

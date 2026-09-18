@@ -38,6 +38,11 @@ import "./map.css";
 // var(--space-3) above it, and that row is 46px tall. Mirrored by the narrow
 // `bottom` calc in components.css.
 const DOCK_STACK = 8 + 12 + 46;
+// One press of the + button, which steps by 0.5.
+const MAP_PAGE_ZOOM = 1.5;
+const onAndroid = () =>
+  typeof document !== "undefined" &&
+  document.documentElement.dataset.platform === "android";
 const views = {
   Global: [435, 210, 1],
   "North America": [250, 132, 1.85],
@@ -194,6 +199,30 @@ export default function WorldMap({
     setSelected(null);
     setService(null);
   }, [preview]);
+  // The APK's map page opens one zoom step in. On a phone the globe is
+  // width-limited — 360px of usable width against 870 map units — so at zoom 1
+  // it is drawn about 160px tall inside a 411px surface, with 120px of empty
+  // sky above it. One step is exactly what the + button gives.
+  //
+  // Not initial state: there is a single WorldMap whose `expanded` prop flips
+  // between the Overview card and the Map page, so an initial value would never
+  // fire for the page. Leaving the page returns it to 1 so the Overview's
+  // preview card is never zoomed.
+  //
+  // Arriving on a marker is left exactly as it was: `focus` is derived from
+  // zoom, so zooming in on arrival would pan the map onto the marker instead of
+  // showing it where the Overview showed it.
+  const wasExpanded = useRef(expanded);
+  useEffect(() => {
+    if (wasExpanded.current === expanded) return;
+    wasExpanded.current = expanded;
+    if (!onAndroid()) return;
+    const landingOnMarker =
+      expanded &&
+      initialView?.panel === "region" &&
+      Number.isInteger(initialView?.hub);
+    setZoom(expanded && !landingOnMarker ? MAP_PAGE_ZOOM : 1);
+  }, [expanded, initialView]);
   const appliedView = useRef(null);
   useEffect(() => {
     if (!expanded || !initialView || appliedView.current === initialView) return;
@@ -215,14 +244,17 @@ export default function WorldMap({
   }, [expanded, initialView]);
   const wide = size.width > 700 || (size.width > 570 && size.height < 430);
   const side = panel && wide ? Math.min(350, size.width * 0.43) : 0;
-  // Fixed, and mirrored by NARROW_PANEL in map.css: the card grows to fit the
-  // panel, so there is nothing for a percentage to adapt to.
-  const cardHeight = panel && !wide ? 260 : 0;
+  // Fixed, and mirrored by the narrow inspector rules in map.css: the card
+  // grows to fit the panel, so there is nothing for a percentage to adapt to.
+  // The APK gives the card 340 and sits it 8 off the edge; the site and the EXE
+  // keep 260 and 12. Both numbers exist in map.css too and have to move together.
+  const android = onAndroid();
+  const cardHeight = panel && !wide ? (android ? 340 : 260) : 0;
   // Opening the panel on a narrow card does not park it on top of the map: the
   // drawing surface gives up the space instead, so the map moves up and shrinks
   // into what is left. Everything below measures that surface, not the card, or
   // the globe would be laid out for a height it no longer has.
-  const panelBelow = cardHeight ? cardHeight + 12 : 0;
+  const panelBelow = cardHeight ? cardHeight + (android ? 8 : 12) : 0;
   const board = Math.max(200, size.height - panelBelow);
   // The 105/140 floor is for a header that still has its region picker and its
   // chips: it reserves room the measurement cannot see until they have laid
