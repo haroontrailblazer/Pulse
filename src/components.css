@@ -1199,6 +1199,26 @@ select {
   padding-block: var(--space-2);
   row-gap: var(--space-2);
 }
+/* The refresh sits beside the count rather than out at the far edge: the title
+   group stops stretching, so the row packs from the left and the control lands
+   one gap after the number it refreshes. APK only, both list pages. */
+:root[data-platform="android"] .incident-page > .panel-heading,
+:root[data-platform="android"]
+  .watchlist-main
+  > .services-panel.panel
+  > .panel-heading {
+  justify-content: flex-start;
+  gap: var(--space-2);
+}
+:root[data-platform="android"] .incident-page > .panel-heading > div:first-child,
+:root[data-platform="android"]
+  .watchlist-main
+  > .services-panel.panel
+  > .panel-heading
+  > div:first-child {
+  flex: 0 0 auto;
+}
+
 /* The list's chevron is the APK's alone, like the frame it sits in. */
 .watchlist-main .scroll-hint-anchor {
   display: none;
