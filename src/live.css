@@ -305,4 +305,273 @@
   }
 }
 
+/* ========================================================================
+   APK: Developer tools is a list on the page too
+   ------------------------------------------------------------------------
+   This was the worst-proportioned screen in the app. Measured on the APK at
+   360x851, the first row of content sat 514px down the screen — 60% of it,
+   and 80% of the 640px WebView this actually ships to — behind four stacked
+   blocks of preamble: a second display headline under the page title, a
+   paragraph that restates the methodology modal, a four-figure band that
+   wrapped to four lines, and a tab strip. The page then scrolled 250-716px
+   depending on the tool, the footer was never on screen at any width, and
+   three of the tools held a 330px scroll window inside it: on Feed health,
+   330px showing 1932px, inside a document that itself scrolled 361px.
 
+   So it becomes what Incidents, Watchlist and Dependency insights already
+   are: the frame comes off, the heading becomes the bar above the list, one
+   region scrolls and the footer holds the bottom. The site and the EXE keep
+   the card — they have a wide column where a frame still earns its place —
+   and every rule here is scoped so they cannot see it.
+   ==================================================================== */
+:root[data-platform="android"] .tools-main > .live-console {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  margin-inline: calc(-1 * var(--gutter));
+  margin-bottom: 0;
+}
+:root[data-platform="android"] .tools-main :is(.tools-bar, .tools-note),
+:root[data-platform="android"] .tools-main > .live-console > .live-tool-panel {
+  padding-inline: var(--gutter);
+}
+/* The bar reads as the page title's second line, so it sits close under it —
+   the same treatment the other three bars get. */
+:root[data-platform="android"] .tools-main > .page-heading {
+  margin-bottom: 0;
+}
+:root[data-platform="android"] .tools-main .tools-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding-block: var(--space-2);
+  border-bottom: 1px solid var(--line);
+}
+:root[data-platform="android"] .tools-main .tools-note {
+  margin: var(--space-2) 0 0;
+  font-size: var(--fs-caption);
+  line-height: var(--lh-caption);
+  color: var(--text-muted);
+}
+
+/* ---- The tool switch ---------------------------------------------------
+   Six tools cannot be a strip on a phone, and that is arithmetic rather than
+   taste. The six labels need 488px of track; the track is 326px at 360, 359
+   at 393 and 396 at 430, so 2-3 of the 6 were always off-screen and "Feed
+   health" was never visible at rest at 360. Shortening them does not reach
+   either: measured at this file's own type, "Stack / Pkgs / Security / Parts
+   / Changes / Feeds" — already past the point of being readable — still needs
+   332px against 326px of track. Only four labels or fewer fit, and this page
+   has six.
+
+   So the switch stops being a row. It is FilterMenu, the app's own anchored
+   listbox, already shipping as the service directory's category funnel: six
+   44px options at 6 * 44 + 8 = 272px against its `max-height: min(320px,
+   50dvh)`, so every tool is visible in one gesture with nothing sliced and
+   nothing to drag — at 640px of window that cap is still 320px. It is also a
+   portal fixed to the viewport, which is the property that matters most here:
+   the lock below puts `overflow: hidden` on both `main` and `.live-console`,
+   and a menu anchored inside either of those would be cut off. FilterMenu's
+   own header says it was rewritten for exactly that bug.
+
+   The trigger is the bar's title rather than a control beside it, so the
+   switch costs the bar nothing per tool and the tool's name is the largest
+   type on the screen — which is the answer to "where am I" that the strip
+   spent a selected-pill state on. */
+:root[data-platform="android"] .tools-main .tools-picker {
+  min-width: 0;
+  flex: 0 1 auto;
+}
+:root[data-platform="android"] .tools-main .tools-picker .filter-menu-button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  width: auto;
+  max-width: 100%;
+  height: 28px;
+  min-height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--text);
+}
+/* 28px control, 44px reach. The 8px inset lands the expander's top edge
+   exactly on the bar's top edge, which is `.live-console`'s top edge under
+   the lock — a 24px control with the -10px inset the Incidents bar uses would
+   put it 2px past, where `overflow: hidden` cuts it and the reach is 42px. */
+:root[data-platform="android"]
+  .tools-main
+  .tools-picker
+  .filter-menu-button::after {
+  inset: -8px -6px;
+}
+:root[data-platform="android"] .tools-main .tools-picker-name {
+  overflow: hidden;
+  font-family: var(--font-display);
+  font-size: var(--fs-section);
+  line-height: var(--lh-section);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--tracking-snug);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* The refresh sits beside the count it refreshes, the way it already does on
+   the other three list pages: a glyph rather than a labelled pill, and the
+   same expander arithmetic as the picker so both clear 44px inside the bar. */
+:root[data-platform="android"] .tools-main .tools-refresh {
+  position: relative;
+  width: 28px;
+  min-width: 28px;
+  height: 28px;
+  min-height: 28px;
+  margin-left: auto;
+  padding: 0;
+  border: 0;
+  background: none;
+}
+:root[data-platform="android"] .tools-main .tools-refresh::after {
+  content: "";
+  position: absolute;
+  inset: -8px -6px;
+}
+:root[data-platform="android"] .tools-main .count-label {
+  flex: 0 0 auto;
+}
+
+/* ---- The panel is the one scrolling region ---------------------------- */
+:root[data-platform="android"] .tools-main .live-tool-panel {
+  padding-block: var(--space-3);
+}
+/* Six scroll windows lived inside this page, not the three the layout made
+   obvious: the three 330px lists here, plus `.advisory-list` at 380px and the
+   two JWT `pre` blocks at 360px in security.css. Every one of them was a
+   window on a list inside a page that scrolled as well — two axes under one
+   thumb, and the outer one is what a drag actually grabs. They are removed
+   rather than re-nested: the page has exactly one scroller now, so a list
+   simply runs to its end inside it.
+
+   Unconditionally, not inside the min-height gate below. Under 600px the page
+   goes back to scrolling the ordinary way, and a 330px window inside an
+   ordinary scrolling page is the same two-axis problem. */
+:root[data-platform="android"]
+  .tools-main
+  :is(.live-component-list, .change-list, .feed-list, .advisory-list),
+:root[data-platform="android"] .tools-main .jwt-output pre {
+  max-height: none;
+  overflow: visible;
+}
+
+/* ---- Chrome inside the tools ------------------------------------------ */
+/* A third heading block — a 44px icon tile, an h3, a tagline and a badge the
+   phone never renders anyway — under a page title and a bar that both already
+   name this screen. The utilities below it are labelled by their own
+   sub-tabs, which are the one strip on this page that does fit: security.css
+   already makes them a 3-column grid of 44px targets under 600px. */
+:root[data-platform="android"] .tools-main .lab-heading {
+  display: none;
+}
+/* Four provider cards do not need an introduction; this was an h3 and three
+   lines of copy above them. The coverage caveat that follows the cards is the
+   part that carries information, and it stays. */
+:root[data-platform="android"] .tools-main .registry-intro {
+  display: none;
+}
+/* The card-in-a-card went two frames deep here: `.security-lab` is its own
+   bordered, rounded box inside the one this page has just given up. */
+:root[data-platform="android"] .tools-main .security-lab {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  overflow: visible;
+}
+:root[data-platform="android"] .tools-main :is(.lab-body, .lab-tabs) {
+  padding-inline: 0;
+}
+
+/* ---- The viewport lock -------------------------------------------------
+   Same shape and the same measured floor as the other three: below 600px of
+   window the page scrolls the ordinary way, which is the honest fallback. */
+@media (min-height: 600px) {
+  :root[data-platform="android"] .tools-main {
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+    min-height: 0;
+    overflow: hidden;
+  }
+  :root[data-platform="android"]
+    .tools-main
+    > :is(.page-heading, .error-banner, .page-footer) {
+    flex: 0 0 auto;
+  }
+  :root[data-platform="android"] .tools-main > .page-footer {
+    margin-top: 0;
+  }
+  :root[data-platform="android"] .tools-main > .live-console {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  :root[data-platform="android"] .tools-main :is(.tools-bar, .tools-note) {
+    flex: 0 0 auto;
+  }
+  :root[data-platform="android"] .tools-main .live-tool-panel {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* The chevron is the APK's alone, like the frame it replaces. */
+.tools-main .scroll-hint-anchor {
+  display: none;
+}
+:root[data-platform="android"] .tools-main .scroll-hint-anchor {
+  display: block;
+}
+.tools-main .scroll-hint {
+  bottom: 7px;
+}
+
+/* ---- Two defects this screen carried, fixed on the APK ---------------- */
+/* The component rows clipped their own status word. `.component-state` is
+   `white-space: nowrap` (section 20) inside a `max-width: 42%` column
+   (live.css), and "degraded performance" fits neither: measured 10px cut at
+   360 and 50px at 1.3x Android text zoom, on every non-operational row — the
+   only rows the tab shows by default, since `onlyIssues` starts true. Both
+   constraints come off and the status takes the line under the name, where it
+   has the row's full width and cannot clip at any zoom. Removing the cap
+   alone would still rely on nowrap holding, which is what re-clips at 1.3x. */
+:root[data-platform="android"] .tools-main .live-component-list > button {
+  align-items: flex-start;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+:root[data-platform="android"] .tools-main .live-component-list .component-state {
+  max-width: none;
+  text-align: left;
+  white-space: normal;
+}
+/* The one control on this page with no touch floor at all. Section 21's
+   selector lists `a.button` and `a.app-option`, so a bare `<a>` is missed
+   entirely and this one measured 19.5px of reach. An expander gives it 44px
+   at no layout cost, which is what `.text-button`, both list-page refreshes
+   and the bar above already do. (The feed rows' source links were never
+   short: `.icon-button` sets width and height to var(--tap), so they are
+   44x44 already and are left alone.) */
+:root[data-platform="android"] .tools-main .lab-source a {
+  position: relative;
+}
+:root[data-platform="android"] .tools-main .lab-source a::after {
+  content: "";
+  position: absolute;
+  /* The link paints 19.5px, so this is the inset that clears 44 rather than
+     the round number that lands just under it: 19.5 + 26 = 45.5px. */
+  inset: -13px -8px;
+}

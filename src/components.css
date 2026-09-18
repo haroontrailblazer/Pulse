@@ -3077,7 +3077,9 @@ select {
       .toggle
     ):not(.atlas-filter):not(.tabs button):not(.filter-menu-button):not(
       .page-footer button
-    ):not(.services-heading .icon-button):not(.incident-page .icon-button) {
+    ):not(.services-heading .icon-button):not(.incident-page .icon-button):not(
+      .tools-bar .icon-button
+    ) {
     min-height: var(--tap);
   }
   /* A checkbox is small by platform convention; its label carries the target. */

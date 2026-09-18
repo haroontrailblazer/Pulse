@@ -447,6 +447,13 @@ export default function App() {
   // Dependency insights scrolls its own list too, so it gets the same chevron.
   const insightListRef = useRef(null);
   const insightHint = useScrollHint(insightListRef, page);
+  // Developer tools scrolls one panel too, and its content changes when the
+  // reader picks a different tool, so the hint is keyed on both. LiveConsole
+  // keeps owning the selection and reports it up; App only uses it as a key,
+  // which leaves the website's behaviour exactly as it was.
+  const toolsListRef = useRef(null);
+  const [toolView, setToolView] = useState("My stack");
+  const toolsHint = useScrollHint(toolsListRef, `${page}:${toolView}`);
   const [modal, setModal] = useState(null);
   const [selected, setSelected] = useState(null);
   const [mobileNav, setMobileNav] = useState(false);
@@ -973,7 +980,9 @@ export default function App() {
                   ? "list-main watchlist-main"
                   : page === "Dependency insights"
                     ? "insights-main"
-                    : ""
+                    : page === "Developer tools"
+                      ? "tools-main"
+                      : ""
           }
         >
           <div className="page-heading">
@@ -1026,6 +1035,9 @@ export default function App() {
               loading={loading}
               onRefresh={refresh}
               onProvider={openProvider}
+              listRef={toolsListRef}
+              hint={toolsHint}
+              onView={setToolView}
             />
           )}
           {page === "Overview" && (

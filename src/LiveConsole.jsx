@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Activity,
   RefreshCw,
@@ -8,13 +8,31 @@ import {
   Terminal,
   Radio,
   Clock3,
+  ChevronDown,
   TriangleAlert,
   Check,
 } from "./icons";
 import { feedUrl, statusLabels } from "../shared/providers.js";
 import { isFresh } from "../shared/monitor.js";
+import FilterMenu from "./FilterMenu";
 import SecurityLab from "./SecurityLab";
 import "./live.css";
+// The APK gets a different arrangement of the same tools, so the surface is
+// read at render time rather than shipped twice and half hidden: the site and
+// the EXE render exactly the markup they rendered before. Off the same
+// attribute the stylesheet keys on, the way WorldMap and InsightDetails do it
+// — a module-scope read would run before main.jsx sets it.
+const onAndroid = () =>
+  typeof document !== "undefined" &&
+  document.documentElement.dataset.platform === "android";
+const TOOLS = [
+  "My stack",
+  "Registries",
+  "Security lab",
+  "Components",
+  "Changes",
+  "Feed health",
+];
 export function since(value, now) {
   if (!value) return "Not checked";
   const seconds = Math.max(0, Math.floor((now - Date.parse(value)) / 1000));
@@ -35,6 +53,9 @@ export default function LiveConsole({
   loading,
   onRefresh,
   onProvider,
+  listRef = null,
+  hint = false,
+  onView = null,
 }) {
   const [view, setView] = useState("My stack");
   const [query, setQuery] = useState("");
@@ -78,6 +99,47 @@ export default function LiveConsole({
     paused: "Auto-refresh paused",
     sleeping: "Checks paused while hidden",
   }[connection];
+  const android = onAndroid();
+  // The page's own scroll hint is keyed on the selected tool, and the hook
+  // that drives it lives in App beside the other three list pages. Reporting
+  // the selection up costs the website nothing: App uses it only as the key.
+  useEffect(() => {
+    onView?.(view);
+  }, [view, onView]);
+  // What the bar counts, per tool. Security lab counts nothing — it is three
+  // utilities, not a list of rows.
+  const toolCount = {
+    "My stack": cards.length,
+    Registries: cards.length,
+    Components: matches.length,
+    Changes: changes.length,
+    "Feed health": items.length,
+  }[view];
+  // Every tool's size, on the option itself. Five of the six tools are behind
+  // the picker at rest, so the menu is where they have to advertise
+  // themselves; a bare list of names would be a worse trade than the strip it
+  // replaces. FilterMenu keys its options on the label, so the decorated
+  // strings are translated back by index rather than parsed.
+  const counts = {
+    "My stack": watched.length,
+    Registries: items.filter((p) => p.category === "Package registries").length,
+    Components: matches.length,
+    Changes: changes.length,
+    "Feed health": items.length,
+  };
+  const options = TOOLS.map((name) =>
+    counts[name] == null ? name : `${name} · ${counts[name]}`,
+  );
+  // One line, and only when there is something to say: a sweep in progress,
+  // a paused monitor, or feeds that are not all current. On a clean reading it
+  // is not rendered at all rather than saying so.
+  const barNote = loading
+    ? `Checking ${data.completedChecks || 0}/${items.length}`
+    : connection === "paused" || connection === "sleeping"
+      ? transport
+      : fresh.length < items.length
+        ? `${fresh.length}/${items.length} feeds current${stale.length ? ` · ${stale.length} stale` : ""}`
+        : null;
   async function copy(value, label) {
     try {
       await navigator.clipboard.writeText(value);
@@ -90,80 +152,140 @@ export default function LiveConsole({
   }
   return (
     <section className="live-console" aria-label="Developer live monitor">
-      <div className="live-console-heading">
-        <div>
-          <span className={`connection-state ${connection}`}>
-            <i />
-            {transport}
-          </span>
-          <h2>Your infrastructure. Right now.</h2>
-          <p>
-            Official feeds checked every 30 seconds. Changes appear as each
-            check finishes.
-          </p>
-        </div>
-        <button
-          className="button secondary"
-          onClick={onRefresh}
-          disabled={loading}
-        >
-          <RefreshCw size={16} className={loading ? "live-spin" : ""} />
-          {loading
-            ? `Checking ${data.completedChecks || 0}/${items.length}`
-            : "Check now"}
-        </button>
-      </div>
-      <div className="live-metrics">
-        <span>
-          <Radio size={16} />
-          <strong>
-            {fresh.length}/{items.length}
-          </strong>{" "}
-          fresh feeds
-        </span>
-        <span>
-          <Activity size={16} />
-          <strong>{impacted.length}</strong> watched providers with issues
-        </span>
-        <span className={stale.length ? "live-warning" : ""}>
-          <Clock3 size={16} />
-          <strong>{stale.length}</strong> stale readings
-        </span>
-        <span>
-          {connection === "paused"
-            ? "Automatic checks paused"
-            : loading
-              ? "Receiving provider readings…"
-              : `Next sweep in ${next}s`}
-        </span>
-      </div>
-      <div className="live-tabs" role="tablist" aria-label="Developer tools">
-        {[
-          "My stack",
-          "Registries",
-          "Security lab",
-          "Components",
-          "Changes",
-          "Feed health",
-        ].map((name) => (
-          <button
-            role="tab"
-            aria-selected={view === name}
-            aria-controls="live-tool-panel"
-            key={name}
-            onClick={() => setView(name)}
-          >
-            {name}
-            {name === "Changes" && changes.length > 0 && (
-              <small>{changes.length}</small>
+      {android ? (
+        <>
+          {/* The bar is the page title's second line, the way the Incidents,
+              Watchlist and Dependency insights bars already are. It carries
+              the three things the 378px of chrome above it carried that were
+              load-bearing: which tool you are in, how big it is, and the
+              refresh. The tool name is the switch itself — see the picker
+              note in live.css for why it is a menu and not a strip. */}
+          <div className="tools-bar">
+            {/* The bar's title is a button, so the document outline would go
+                h1 to nothing. This costs no geometry and restores it. */}
+            <h2 className="visually-hidden">{view}</h2>
+            <FilterMenu
+              className="tools-picker"
+              value={options[TOOLS.indexOf(view)]}
+              options={options}
+              onChange={(label) =>
+                setView(TOOLS[options.indexOf(label)] || view)
+              }
+              icon={
+                <>
+                  <span className="tools-picker-name">{view}</span>
+                  <ChevronDown size={16} />
+                </>
+              }
+              label="Developer tool"
+              align="start"
+              /* Every option is a tool, so none of them is a filter that is
+                 "on" — the accent treatment would be reporting a state that
+                 does not exist. */
+              activeWhen={() => false}
+            />
+            {toolCount != null && (
+              <span className="count-label">{toolCount}</span>
             )}
-          </button>
-        ))}
-      </div>
+            <button
+              className="icon-button tools-refresh"
+              onClick={onRefresh}
+              disabled={loading}
+              aria-label={
+                loading
+                  ? `Checking ${data.completedChecks || 0} of ${items.length} feeds`
+                  : "Check now"
+              }
+              title="Check now"
+            >
+              <RefreshCw size={16} className={loading ? "live-spin" : ""} />
+            </button>
+          </div>
+          {barNote && <p className="tools-note">{barNote}</p>}
+        </>
+      ) : (
+        <>
+          <div className="live-console-heading">
+            <div>
+              <span className={`connection-state ${connection}`}>
+                <i />
+                {transport}
+              </span>
+              <h2>Your infrastructure. Right now.</h2>
+              <p>
+                Official feeds checked every 30 seconds. Changes appear as each
+                check finishes.
+              </p>
+            </div>
+            <button
+              className="button secondary"
+              onClick={onRefresh}
+              disabled={loading}
+            >
+              <RefreshCw size={16} className={loading ? "live-spin" : ""} />
+              {loading
+                ? `Checking ${data.completedChecks || 0}/${items.length}`
+                : "Check now"}
+            </button>
+          </div>
+          <div className="live-metrics">
+            <span>
+              <Radio size={16} />
+              <strong>
+                {fresh.length}/{items.length}
+              </strong>{" "}
+              fresh feeds
+            </span>
+            <span>
+              <Activity size={16} />
+              <strong>{impacted.length}</strong> watched providers with issues
+            </span>
+            <span className={stale.length ? "live-warning" : ""}>
+              <Clock3 size={16} />
+              <strong>{stale.length}</strong> stale readings
+            </span>
+            <span>
+              {connection === "paused"
+                ? "Automatic checks paused"
+                : loading
+                  ? "Receiving provider readings…"
+                  : `Next sweep in ${next}s`}
+            </span>
+          </div>
+          <div
+            className="live-tabs"
+            role="tablist"
+            aria-label="Developer tools"
+          >
+            {[
+              "My stack",
+              "Registries",
+              "Security lab",
+              "Components",
+              "Changes",
+              "Feed health",
+            ].map((name) => (
+              <button
+                role="tab"
+                aria-selected={view === name}
+                aria-controls="live-tool-panel"
+                key={name}
+                onClick={() => setView(name)}
+              >
+                {name}
+                {name === "Changes" && changes.length > 0 && (
+                  <small>{changes.length}</small>
+                )}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
       <div
         id="live-tool-panel"
         className="live-tool-panel"
-        role="tabpanel"
+        ref={android ? listRef : null}
+        role={android ? undefined : "tabpanel"}
         aria-label={view}
       >
         {(view === "My stack" || view === "Registries") && (
@@ -425,6 +547,13 @@ export default function LiveConsole({
             <Check size={16} />
             {copied}
           </p>
+        )}
+      </div>
+      <div className="scroll-hint-anchor" aria-hidden="true">
+        {hint && (
+          <span className="scroll-hint">
+            <ChevronDown size={20} />
+          </span>
         )}
       </div>
     </section>
