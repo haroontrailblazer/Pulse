@@ -444,6 +444,9 @@ export default function App() {
   // by the stylesheet, so this is the APK's hint only.
   const watchWrapRef = useRef(null);
   const watchHint = useScrollHint(watchWrapRef, page);
+  // Dependency insights scrolls its own list too, so it gets the same chevron.
+  const insightListRef = useRef(null);
+  const insightHint = useScrollHint(insightListRef, page);
   const [modal, setModal] = useState(null);
   const [selected, setSelected] = useState(null);
   const [mobileNav, setMobileNav] = useState(false);
@@ -968,7 +971,9 @@ export default function App() {
                 ? "list-main incidents-main"
                 : page === "Watchlist"
                   ? "list-main watchlist-main"
-                  : ""
+                  : page === "Dependency insights"
+                    ? "insights-main"
+                    : ""
           }
         >
           <div className="page-heading">
@@ -1537,87 +1542,89 @@ export default function App() {
               <ScrollHint shown={incidentHint} />
             </section>
           )}
-          {(page === "Overview" || page === "Dependency insights") && (
+          {page === "Overview" && (
             <section className="insights-section">
-              {page === "Overview" && (
-                <>
-                  {/* The heading stands alone: the insight cards below it are
-                      themselves the way through to Dependency insights, which
-                      also has its own entry in the More sheet. */}
-                  <div className="section-title">
-                    <h2>
-                      Small disruptions. <span>Wider ripples.</span>
-                    </h2>
-                  </div>
-                  <div className="insight-grid">
-                    {["AI products", "E-commerce", "Developer tools"].map(
-                      (name, index) => {
-                        const relevant = items.filter((p) =>
-                          p.industries.includes(name),
-                        );
-                        const affected = explainIndustry(
-                          items,
-                          name,
-                          watchlist,
-                          now,
-                        ).issues;
-                        const Icon = [Zap, Globe2, Command][index];
-                        return (
-                          <button
-                            className="insight-card"
-                            key={name}
-                            onClick={() => {
-                              go("Dependency insights");
-                            }}
-                          >
-                            <span className={`insight-icon color-${index}`}>
-                              <Icon size={20} />
-                            </span>
-                            <ArrowUpRight className="insight-arrow" size={16} />
-                            <h3>{name}</h3>
-                            <p>
-                              {
-                                [
-                                  "The models and platforms powering intelligent products.",
-                                  "The networks behind storefronts and digital experiences.",
-                                  "The infrastructure behind your next build.",
-                                ][index]
-                              }
-                            </p>
-                            <div className="insight-card-bottom">
-                              <span className="mini-logos">
-                                {relevant.slice(0, 4).map((p) => (
-                                  <ProviderLogo key={p.id} provider={p} />
-                                ))}
-                              </span>
-                              <span>
-                                {affected.length ? (
-                                  <>
-                                    <i className="state-dot degraded" />
-                                    {affected.length} reporting issues
-                                  </>
-                                ) : (
-                                  `${relevant.length} relevant providers`
-                                )}
-                              </span>
-                            </div>
-                          </button>
-                        );
-                      },
-                    )}
-                  </div>
-                </>
-              )}
-              {page === "Dependency insights" && (
-                <InsightDetails
-                  items={items}
-                  watchlist={watchlist}
-                  onWatch={toggleWatch}
-                  onProvider={openProvider}
-                  now={now}
-                />
-              )}
+              {/* The heading stands alone: the insight cards below it are
+                  themselves the way through to Dependency insights, which
+                  also has its own entry in the More sheet. */}
+              <div className="section-title">
+                <h2>
+                  Small disruptions. <span>Wider ripples.</span>
+                </h2>
+              </div>
+              <div className="insight-grid">
+                {["AI products", "E-commerce", "Developer tools"].map(
+                  (name, index) => {
+                    const relevant = items.filter((p) =>
+                      p.industries.includes(name),
+                    );
+                    const affected = explainIndustry(
+                      items,
+                      name,
+                      watchlist,
+                      now,
+                    ).issues;
+                    const Icon = [Zap, Globe2, Command][index];
+                    return (
+                      <button
+                        className="insight-card"
+                        key={name}
+                        onClick={() => {
+                          go("Dependency insights");
+                        }}
+                      >
+                        <span className={`insight-icon color-${index}`}>
+                          <Icon size={20} />
+                        </span>
+                        <ArrowUpRight className="insight-arrow" size={16} />
+                        <h3>{name}</h3>
+                        <p>
+                          {
+                            [
+                              "The models and platforms powering intelligent products.",
+                              "The networks behind storefronts and digital experiences.",
+                              "The infrastructure behind your next build.",
+                            ][index]
+                          }
+                        </p>
+                        <div className="insight-card-bottom">
+                          <span className="mini-logos">
+                            {relevant.slice(0, 4).map((p) => (
+                              <ProviderLogo key={p.id} provider={p} />
+                            ))}
+                          </span>
+                          <span>
+                            {affected.length ? (
+                              <>
+                                <i className="state-dot degraded" />
+                                {affected.length} reporting issues
+                              </>
+                            ) : (
+                              `${relevant.length} relevant providers`
+                            )}
+                          </span>
+                        </div>
+                      </button>
+                    );
+                  },
+                )}
+              </div>
             </section>
+          )}
+          {/* Dependency insights is a list destination like Incidents and
+              Watchlist, so it stands directly in the page rather than inside
+              the Overview's insight wrapper: the stylesheet needs the card to
+              be a child of main to hold it between the title and the footer. */}
+          {page === "Dependency insights" && (
+            <InsightDetails
+              items={items}
+              watchlist={watchlist}
+              onWatch={toggleWatch}
+              onProvider={openProvider}
+              now={now}
+              listRef={insightListRef}
+              hint={insightHint}
+            />
           )}
           {page !== "Global map" && (
             <footer className="page-footer">

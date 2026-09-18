@@ -1271,6 +1271,154 @@ select {
   inset: -10px;
 }
 
+/* ---- Dependency insights: the third list on the page ------------------ */
+/* This screen was the worst card-in-a-card in the app: a bordered, rounded,
+   shadowed panel whose entire contents were more bordered, rounded cards, so
+   every explanation was framed twice and the list gave up 38px of its width
+   (18px of padding and a 1px border on each side) to a frame it did not need.
+   The outer frame comes off, the controls become the bar above the list — the
+   same full-bleed rule under it as every other .panel-heading — and the
+   explanations run on their own inset. APK only: the site and the EXE have a
+   wide column where a frame still earns its place. */
+:root[data-platform="android"] .insights-main > .clear-insights.panel {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  margin-inline: calc(-1 * var(--gutter));
+  margin-top: 0;
+  padding: 0;
+}
+:root[data-platform="android"]
+  .insights-main
+  > .clear-insights.panel
+  > :is(.impact-controls, .impact-cards, .impact-message) {
+  padding-inline: var(--gutter);
+}
+/* The bar reads as the page title's second line, so it sits close under it —
+   the same treatment the Incidents and Watchlist bars already get. */
+:root[data-platform="android"] .insights-main > .page-heading {
+  margin-bottom: 0;
+}
+:root[data-platform="android"] .insights-main .impact-controls {
+  margin: 0;
+  padding-block: var(--space-2);
+  border-bottom: 1px solid var(--line);
+}
+/* The list clears the bar above it and the footer's rule below. */
+:root[data-platform="android"] .insights-main .impact-cards {
+  padding-block: var(--space-3);
+}
+/* The empty state is a panel of its own, so it keeps its inset rather than
+   running edge to edge as a band of tinted surface. */
+:root[data-platform="android"] .insights-main .impact-empty {
+  margin: var(--space-3) var(--gutter) 0;
+}
+:root[data-platform="android"] .insights-main .impact-message {
+  margin-block: var(--space-2) 0;
+}
+/* Same viewport lock as Incidents and Watchlist: the title, the bar and the
+   footer hold their place and the explanations are the only thing that moves.
+   Same measured floor, too — below 600px of window the page scrolls the
+   ordinary way, which is the honest fallback. */
+@media (min-height: 600px) {
+  :root[data-platform="android"] .insights-main {
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+    min-height: 0;
+    overflow: hidden;
+  }
+  :root[data-platform="android"]
+    .insights-main
+    > :is(.page-heading, .error-banner, .page-footer) {
+    flex: 0 0 auto;
+  }
+  :root[data-platform="android"] .insights-main > .page-footer {
+    margin-top: 0;
+  }
+  :root[data-platform="android"] .insights-main > .clear-insights.panel {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    margin-bottom: 0;
+  }
+  :root[data-platform="android"]
+    .insights-main
+    :is(.impact-controls, .impact-empty, .impact-message) {
+    flex: 0 0 auto;
+  }
+  :root[data-platform="android"] .insights-main .impact-cards {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+/* The controls row: a segmented scope and an unframed action. Both halves of
+   this row used to be .button.secondary pills sharing the row through
+   `flex: 1 1 0`, so each got exactly half of 328px at 360 — 19px less than
+   "Only my watchlist" needs and 8px less than "Copy summary" needs, measured
+   intrinsically. (scrollWidth said otherwise; it under-reports, because
+   `justify-content: center` makes a flex line overflow in both directions and
+   only the inline-end half ever counts.) Pills sized by their own labels
+   cannot clip, which is the rule .inbox-toolbar and .directory-toolbar
+   already carry, so this row stops being the one that disagrees with them.
+
+   The track is the stock .tabs and nothing more, so it is the same object the
+   Watchlist opens with: a 40px track around 30px pills, measured identical on
+   both pages. It is worth saying why it is not taller. .tabs is
+   `overflow-x: auto`, which makes overflow-y compute to auto as well, and
+   that clips the `::after { inset: -7px -2px }` expander the pills lean on,
+   leaving about 37px of reach rather than 44px. Section 21 excludes
+   `.tabs button` from the touch-target floor for exactly this control, so
+   that is the app's standing decision about segmented pills rather than
+   something this screen gets to answer differently — and a filter that is
+   visibly a different size from the same filter one destination over costs
+   more than the 7px buys. Past about 1.3x Android text zoom the track stops
+   shrinking and scrolls inside itself — that is .tabs' own fallback, not a
+   bug. */
+:root[data-platform="android"] .insights-main .impact-controls {
+  /* One line at every size this ships to, with 14px to spare at 360. Past
+     about 1.1x Android text zoom the pair stops fitting, and then the copy
+     action takes a second line rather than the track hiding "My watchlist"
+     behind a sideways scroll — the pill a reader is reaching for is the worst
+     thing to put out of sight. Only if a single line cannot hold the track
+     alone does it fall back to scrolling inside itself. */
+  flex-wrap: wrap;
+  row-gap: var(--space-2);
+}
+:root[data-platform="android"] .insights-main .impact-controls .tabs {
+  flex: 0 1 auto;
+  min-width: 0;
+  width: fit-content;
+  max-width: 100%;
+}
+:root[data-platform="android"] .insights-main .impact-controls .tabs button {
+  flex: 0 0 auto;
+  justify-content: center;
+}
+/* The export keeps its words and loses its frame — the same move the page
+   itself just made, and the control this page already uses twice inside every
+   card below. */
+:root[data-platform="android"] .insights-main .impact-copy {
+  flex: 0 0 auto;
+}
+
+/* The chevron is the APK's alone, like the frame it replaces. */
+.insights-main .scroll-hint-anchor {
+  display: none;
+}
+:root[data-platform="android"] .insights-main .scroll-hint-anchor {
+  display: block;
+}
+.insights-main .scroll-hint {
+  bottom: 7px;
+}
+
 /* The Watchlist card clipped its overflow without scrolling it, so anything
    past the fold was unreachable. That is true at every height — but only on
    that page. The Overview shows a three-row preview that never overflows
