@@ -6,6 +6,8 @@
     <string name="back_confirm">Press back again to leave Pulse</string>
     <string name="update_title">Pulse %1$s is available</string>
     <string name="update_body">Open Pulse to download the new version.</string>
+    <string name="installed_title">Pulse %1$s is installed</string>
+    <string name="installed_body">Tap to open the new version.</string>
     <string name="title_activity_main">Pulse</string>
     <string name="package_name">app.pulse.status</string>
     <string name="custom_url_scheme">app.pulse.status</string>

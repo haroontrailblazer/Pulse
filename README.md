@@ -277,15 +277,61 @@ and report "up to date" forever.
   tray-resident and the morning check happens; a reader who turned it off gets the
   check on their next launch after 08:00 instead.
 
-Nothing is downloaded or installed for the reader. The row is a link that opens
-the installer in their browser, which is why the APK needs no
-`REQUEST_INSTALL_PACKAGES` and the EXE needs no updater framework -- the portable
-EXE is unsigned and there is nothing an in-app updater could safely do with it.
+Tapping the row downloads the new version inside Pulse. No browser, no download
+manager, no save dialog. Progress is drawn in the row itself, and nothing is
+handed to an installer or executed until its byte count and SHA-256 both match
+what the manifest published -- which the app knew before it fetched a single byte.
 
-What leaves the device is one HTTPS GET of a static JSON file, carrying no
-identifier of any kind. It is the app's own CDN, which the download links already
-point at.
+On Android the verified file goes into a `PackageInstaller` session and the
+platform raises its own sheet: "Do you want to update this app?". The digest is
+computed a second time there, over the bytes actually written into the session,
+and the commit sits inside that check, so nothing is committed that was not just
+hashed. It needs one permission, `REQUEST_INSTALL_PACKAGES`, which is a Settings
+toggle the reader grants per app rather than a runtime dialog; Pulse sends them
+there before spending their data, not after. The permission can only ever install
+Pulse: the session names this package, and the archive is refused unless its
+signing certificate matches the installed one -- which is checked before the sheet,
+because the platform's own failure for a mismatch reads as a bare "App not
+installed" with nothing the reader can act on.
 
+**The app cannot restart itself afterwards, and that is a platform rule rather
+than a missing feature.** When Pulse installs Pulse the process is killed, and
+coming back means starting an activity from a fresh process with no window, which
+Android refuses. Measured on an API 36 emulator:
+
+    Background activity launch blocked! goo.gle/android-bal
+      [callingPackage: app.pulse.status; callingPackageTargetSdk: 36;
+       callingUidProcState: FOREGROUND_SERVICE; isPendingIntent: false]
+    START ... app.pulse.status/.MainActivity (BAL_BLOCK) result code=102
+
+`startActivity` returned without throwing, so code that tries this only looks like
+it works. A foreground service process state buys no exemption, and the same
+record reports `resultIfPiSenderAllowsBal: BAL_BLOCK`, so routing it through a
+PendingIntent does not help either. The reader comes back with one tap: the
+installer's own "Open" button, or the notification Pulse posts from the new
+process once the replacement lands. A tapped notification is a system-sent
+PendingIntent, which is the exemption that block record is itself quoting.
+
+On Windows there is no installer to raise, because the EXE is a portable
+single file. Pulse downloads the new version beside the copy the reader keeps,
+verifies it the same way, and restarts into it -- `app.relaunch` with an explicit
+`execPath`, which Electron acts on once the current instance exits, releasing the
+single-instance lock and port 47823 with it. Three consequences worth stating
+plainly rather than burying: the old .exe stays on disk, because a running
+portable build holds its own file open and cannot be overwritten (measured: both
+a rename and an exclusive write are refused while it runs); the new file cannot
+take the old one's name, because every release carries its version in its
+filename; and any shortcut the reader pinned still points at the old file, which
+will keep offering the update until they launch the new one. A portable app has no
+install location and no shortcut an updater can repoint.
+
+Self-update on Android only works while releases keep being signed with the same
+key. The APK is debug-signed from `.cache/android-toolchain/user/debug.keystore`,
+and `.gitignore` excludes `.cache/`, `*.jks` and `*.keystore`, so that key lives on
+one machine. A build from a different key cannot replace an installed Pulse --
+verified, `INSTALL_FAILED_UPDATE_INCOMPATIBLE` -- and the reader would have to
+uninstall first, losing their watchlist. Back that key up, or move to a release
+key, before this feature is in anyone's hands.
 The decisions are made twice -- the Android run happens with no WebView alive, so
 Java makes them -- and `shared/update-cases.json` is one truth table that both
 `tests/updates.test.js` and `PulseUpdateTest.java` are asserted against. Since

@@ -58,7 +58,9 @@ import {
 } from "../shared/incidents";
 import { explainIndustry } from "../shared/insights";
 import BackgroundSettings, {
+  updateAction,
   useBackgroundSync,
+  useDownloadProgress,
   useUpdateIntent,
   useUpdateNotice,
 } from "./BackgroundSettings";
@@ -69,6 +71,7 @@ import FilterMenu from "./FilterMenu";
 import PulseMark from "./PulseMark";
 import ProviderLogo from "./ProviderLogo";
 import { downloads } from "../shared/downloads";
+import { describeDownload } from "../shared/updates";
 import { gsap, hoverMotionEnabled, motionEnabled } from "./motion";
 import {
   dismiss,
@@ -640,6 +643,33 @@ export default function App() {
   const update = useUpdateNotice();
   const showUpdate = useCallback(() => setMobileNav(true), []);
   useUpdateIntent(showUpdate);
+  // Android pushes progress as the bytes arrive; the EXE reports it inside the
+  // same bridge state the notice itself comes from, so either may be the fresher.
+  const pushed = useDownloadProgress();
+  const download =
+    pushed && update && pushed.version === update.version
+      ? pushed
+      : update?.download || null;
+  // What the install call last said, which outranks the download record while the
+  // system sheet is up -- the reader tapped Install and should see that, not the
+  // "ready" the download left behind.
+  const [installing, setInstalling] = useState(null);
+  const reported =
+    installing && installing.state !== "ready" ? installing : download;
+  const notice = describeDownload(reported, update);
+  const state = reported?.state || "idle";
+  async function tapUpdate() {
+    if (
+      state === "downloading" ||
+      state === "verifying" ||
+      state === "installing"
+    )
+      return;
+    const answer = await updateAction(
+      state === "ready" ? "install" : "download",
+    );
+    if (answer && answer.state) setInstalling(answer);
+  }
   // The tray's "Watchlist" item and the Android notifications both arrive here.
   // A real push now, so back returns the reader to whatever the interruption
   // took them away from instead of ejecting them. The cold path needs nothing:
@@ -949,7 +979,16 @@ export default function App() {
         role={mobileNav ? "dialog" : undefined}
         aria-modal={mobileNav || undefined}
         onClickCapture={(e) => {
-          if (mobileNav && e.target.closest("button, a")) dismiss();
+          // Everything in this sheet takes the reader somewhere, so touching it
+          // closes the sheet -- except the update row, which starts a download
+          // they asked for and then want to watch. Closing on that tap hid the
+          // progress bar one frame after it appeared.
+          if (
+            mobileNav &&
+            e.target.closest("button, a") &&
+            !e.target.closest(".nav-upgrade")
+          )
+            dismiss();
         }}
         onKeyDown={(e) => {
           if (!mobileNav || e.key !== "Tab") return;
@@ -1044,19 +1083,33 @@ export default function App() {
               because it is not a destination. The website never reaches this: the
               notice comes from the native bridge, and there isn't one. */}
           {update && (
-            <a
+            <button
               className="nav-item nav-upgrade"
-              href={update.url}
-              target="_blank"
-              rel="noreferrer"
+              onClick={tapUpdate}
+              aria-busy={notice.busy || undefined}
+              aria-label={`${notice.label}. ${notice.detail}`}
             >
               <Download size={20} />
               <span>
-                Update to {update.version}
-                <small>{megabytes(update.bytes)} MB · opens your browser</small>
+                {notice.label}
+                <small>{notice.detail}</small>
+                {/* The bar is the only new chrome, and it is only drawn while
+                    something is actually arriving -- a progress track that sits
+                    at zero is a promise the row is not keeping. */}
+                {notice.percent !== undefined && (
+                  <i
+                    className="nav-upgrade-bar"
+                    style={{ "--at": `${notice.percent}%` }}
+                    aria-hidden="true"
+                  />
+                )}
               </span>
-              <ArrowUpRight size={16} />
-            </a>
+              {state === "ready" ? (
+                <ArrowRight size={16} />
+              ) : state === "idle" ? (
+                <ArrowUpRight size={16} />
+              ) : null}
+            </button>
           )}
           {!compact && (
             <>

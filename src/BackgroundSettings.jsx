@@ -49,13 +49,48 @@ function rememberAlertsOffered() {
 // arrives with the configure call the app already makes on every boot rather than
 // needing a bridge call of its own -- and the website has no `native`, so it is
 // null there and the row never renders.
+// Ask the native side to fetch the update, or to install what it fetched. Both
+// are reader-initiated: a download spends their bandwidth and an install loses
+// what is on screen, so neither ever happens on a schedule.
+export async function updateAction(action) {
+  if (!native) return null;
+  if (android) {
+    const call =
+      action === "install" ? native.installUpdate : native.downloadUpdate;
+    return call ? call.call(native, {}) : null;
+  }
+  return native.update ? native.update(action) : null;
+}
+
 export function useUpdateNotice() {
   const [state, setState] = useState(bridgeState);
   useEffect(() => {
     subscribers.add(setState);
     return () => subscribers.delete(setState);
   }, []);
-  return state.update || null;
+  return state.update
+    ? {
+        ...state.update,
+        download: state.download || null,
+        canInstall: state.canInstall !== false,
+      }
+    : null;
+}
+
+// Progress, pushed from Android as the bytes arrive. The EXE reports through the
+// same bridge state instead, so this listener is Android-only.
+export function useDownloadProgress() {
+  const [at, setAt] = useState(null);
+  useEffect(() => {
+    if (!android) return;
+    const listener = native.addListener("updateDownload", (event) =>
+      setAt(event),
+    );
+    return () => {
+      listener.then((handle) => handle.remove());
+    };
+  }, []);
+  return at;
 }
 
 // Tapping the update notification asks for the sheet the notice lives in, because

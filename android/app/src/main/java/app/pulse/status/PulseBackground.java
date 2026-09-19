@@ -47,6 +47,48 @@ public class PulseBackground extends Plugin {
         withActivity(activity->activity.syncBack(available));
         call.resolve();
     }
+    /**
+     * Fetch the offered update inside Pulse. Progress is pushed to the web layer as
+     * it arrives so the row can show it; the install is a separate, deliberate
+     * second call, because committing a session raises a system sheet and that has
+     * to follow a tap rather than a download finishing.
+     */
+    @PluginMethod public void downloadUpdate(PluginCall call) {
+        JSONObject update=PulseUpdate.offered(getContext());
+        if(update==null) { call.reject("No update is offered"); return; }
+        if(PulseDownload.running()) { call.resolve(); return; }
+        feeds.execute(()->{
+            java.io.File got=PulseDownload.fetch(getContext(),update,(received,total)->{
+                JSObject at=new JSObject().put("state","downloading").put("version",update.optString("version",""));
+                at.put("progress",total>0?(double)received/(double)total:0d);
+                notifyListeners("updateDownload",at,false);
+            });
+            notifyListeners("updateDownload",new JSObject().put("version",update.optString("version","")).put("state",got==null?"failed":"ready"),false);
+        });
+        call.resolve();
+    }
+    /**
+     * Hand the verified file to the platform installer. Only ever called from a tap
+     * while Pulse is on screen: the sheet is an Activity, and an Activity started
+     * from the background is refused on API 36.
+     */
+    @PluginMethod public void installUpdate(PluginCall call) {
+        JSONObject update=PulseUpdate.offered(getContext());
+        if(update==null) { call.reject("No update is offered"); return; }
+        if(!PulseInstaller.allowed(getContext())) {
+            getActivity().startActivity(PulseInstaller.permissionIntent(getContext()));
+            call.resolve(new JSObject().put("state","blocked"));
+            return;
+        }
+        java.io.File apk=PulseDownload.file(getContext(),update.optString("version",""));
+        String failure=PulseInstaller.install(getContext(),update,apk);
+        if(failure!=null) {
+            PulseDownload.record(getContext(),update.optString("version",""),"failed",failure);
+            call.resolve(new JSObject().put("state","failed").put("error",failure));
+            return;
+        }
+        call.resolve(new JSObject().put("state","installing"));
+    }
     /** The web layer found nothing left to unwind. Backgrounds the task, or asks first. */
     @PluginMethod public void leaveApp(PluginCall call) {
         withActivity(MainActivity::leave);
@@ -62,7 +104,13 @@ public class PulseBackground extends Plugin {
     private JSObject state() {
         JSObject state=new JSObject().put("enabled",PulseStore.prefs(getContext()).getBoolean("enabled",false)).put("permission",PulseStore.permission(getContext())?"granted":"denied").put("lastCheckedAt",PulseStore.prefs(getContext()).getString("lastCheckedAt",null)).put("intervalSeconds",PulseStore.continuousInterval(getContext())/1000).put("continuous",PulseStore.continuous(getContext()));
         org.json.JSONObject update=PulseUpdate.offered(getContext());
-        return update==null?state:state.put("update",(Object)update);
+        if(update==null) return state;
+        state.put("update",(Object)update);
+        org.json.JSONObject download=PulseDownload.state(getContext());
+        if(download!=null) state.put("download",(Object)download);
+        // Whether the reader has allowed Pulse to install, so the row can ask before
+        // it spends their data rather than after.
+        return state.put("canInstall",PulseInstaller.allowed(getContext()));
     }
     @PluginMethod public void requestAlerts(PluginCall call) {
         if(Build.VERSION.SDK_INT>=33 && getPermissionState("notifications")!=PermissionState.GRANTED) requestPermissionForAlias("notifications",call,"permissionResult");

@@ -301,12 +301,16 @@ test("both natives report the update in the state every bridge reply carries", (
     (plugin.match(/call\.resolve\(state\(\)\)/g) || []).length >= 3,
     "status, configure and the permission callback all resolve it",
   );
-  // And the preload surface is unchanged: this needed no new IPC channel.
+  // The notice itself needed no IPC. Downloading does, because the row asks for
+  // it: one channel, behind the same trusted-sender check as the other two.
   assert.equal(
     read("desktop/preload.cjs").match(/ipcRenderer\.invoke/g).length,
-    2,
+    3,
   );
-  assert.ok(!/pulse:update/.test(read("desktop/main.cjs")));
+  const main = read("desktop/main.cjs");
+  assert.match(main, /ipcMain\.handle\("pulse:update"/);
+  const handler = main.slice(main.indexOf('ipcMain.handle("pulse:update"'));
+  assert.match(handler.slice(0, 220), /trusted\(event\)/);
 });
 
 test("the daily Android check is armed for every reader, not only those with alerts on", () => {
@@ -352,16 +356,56 @@ test("the daily Android check is armed for every reader, not only those with ale
   assert.match(worker, /setInstanceFollowRedirects\(false\)/);
 });
 
-test("no new Android permission, and no silent installer", () => {
+test("the Android permission set is a whitelist, and the install permission is on it deliberately", () => {
   const manifest = read("android/app/src/main/AndroidManifest.xml");
-  // Installing an APK from inside the app would need REQUEST_INSTALL_PACKAGES,
-  // which is a large ask for a notice. The row opens the download in the browser.
-  assert.ok(!/REQUEST_INSTALL_PACKAGES/.test(manifest));
+  // REQUEST_INSTALL_PACKAGES was deliberately avoided while the row only opened a
+  // browser. It is here now because the row downloads and installs in place, which
+  // is what was asked for. A whitelist rather than a count, so the eighth
+  // permission is also somebody's decision rather than a number going up.
+  const permissions = (
+    manifest.match(/uses-permission android:name="([^"]+)"/g) || []
+  ).map((line) =>
+    line.replace(/.*android\.permission\./, "").replace(/"$/, ""),
+  );
+  assert.deepEqual(permissions.sort(), [
+    "FOREGROUND_SERVICE",
+    "FOREGROUND_SERVICE_DATA_SYNC",
+    "INTERNET",
+    "POST_NOTIFICATIONS",
+    "RECEIVE_BOOT_COMPLETED",
+    "REQUEST_INSTALL_PACKAGES",
+    "WAKE_LOCK",
+  ]);
+  // It can only ever install Pulse: the session names this package, and the
+  // archive is refused unless its signing certificate matches the installed one.
+  const installer = read(
+    "android/app/src/main/java/app/pulse/status/PulseInstaller.java",
+  );
+  assert.match(installer, /setAppPackageName\(c\.getPackageName\(\)\)/);
+  assert.match(installer, /sameSigner/);
+  // Nothing may be committed that was not just hashed: the digest is computed
+  // over the bytes written into the session, and the check sits before the commit.
+  assert.ok(
+    installer.indexOf("sha.digest()") < installer.indexOf("session.commit("),
+    "the digest must be computed before the commit",
+  );
+  assert.ok(
+    installer.indexOf("session.abandon()") <
+      installer.indexOf("session.commit("),
+    "a mismatch must abandon the session rather than commit it",
+  );
+  // And the download refuses anything whose size or digest disagrees, renaming to
+  // the final name only after both match.
+  const download = read(
+    "android/app/src/main/java/app/pulse/status/PulseDownload.java",
+  );
+  assert.ok(
+    download.indexOf("hex.toString().equals") <
+      download.indexOf("renameTo(done)"),
+    "the digest must be checked before the file gets its final name",
+  );
+  // Still no scanning of other apps, and still no updater framework.
   assert.ok(!/QUERY_ALL_PACKAGES/.test(manifest));
-  const permissions =
-    manifest.match(/uses-permission android:name="([^"]+)"/g) || [];
-  assert.equal(permissions.length, 6, "the permission set is unchanged");
-  // And no updater framework was added.
   const pkg = JSON.parse(read("package.json"));
   for (const dep of Object.keys({
     ...pkg.dependencies,

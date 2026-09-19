@@ -50,6 +50,7 @@
         <service android:name=".PulseListService" android:permission="android.permission.BIND_REMOTEVIEWS" android:exported="false" />
         <service android:name=".PulseIconService" android:permission="android.permission.BIND_REMOTEVIEWS" android:exported="false" />
         <receiver android:name=".PulseAlarm" android:exported="false" />
+        <receiver android:name=".PulseInstalled" android:exported="false" />
         <receiver android:name=".PulseBoot" android:exported="false">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
@@ -62,6 +63,14 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Pulse downloads its own update and hands it to the platform installer
+         rather than sending the reader to a browser. This is a Settings toggle
+         the reader grants per app ("Install unknown apps"), not a runtime
+         dialog, and Pulse asks before it downloads rather than after. It can
+         only ever install itself: the session sets setAppPackageName to this
+         package and the archive is refused unless its signing certificate
+         matches the installed one. -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />

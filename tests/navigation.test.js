@@ -189,11 +189,14 @@ test("the EXE picks up the mouse's own back button and adds no menu", () => {
   // risking a visible menu bar that moves the viewport every gate measures.
   assert.ok(!/setApplicationMenu/.test(main));
   assert.match(main, /autoHideMenuBar: true/);
-  // The preload's surface is unchanged: the back wiring needs no new IPC.
+  // The back wiring itself needed no IPC. The preload carries a third method now,
+  // for the in-app update download, and the exact count is kept so a fourth is
+  // also somebody's decision.
   assert.equal(
     read("desktop/preload.cjs").match(/ipcRenderer\.invoke/g).length,
-    2,
+    3,
   );
+  assert.ok(!/pulse:back|pulse:navigate/.test(read("desktop/preload.cjs")));
 });
 
 test("no overlay is ever named in a URL", () => {

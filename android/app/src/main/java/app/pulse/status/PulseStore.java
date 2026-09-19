@@ -131,6 +131,15 @@ final class PulseStore {
         NotificationCompat.Builder alert=new NotificationCompat.Builder(c,UPDATE_CHANNEL).setSmallIcon(R.drawable.ic_pulse_notification_logo).setLargeIcon(notificationLogo(c)).setContentTitle(c.getString(R.string.update_title,version)).setContentText(body).setStyle(new NotificationCompat.BigTextStyle().bigText(body)).setContentIntent(open).setAutoCancel(true);
         NotificationManagerCompat.from(c).notify(("pulse-update-"+version).hashCode(),alert.build());
     }
+    /** Pulse has just replaced itself. One tap is the only way back; see PulseInstalled. */
+    static void announceInstalled(Context c,String version) {
+        channel(c);
+        Intent intent=new Intent(c,MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        PendingIntent open=PendingIntent.getActivity(c,106,intent,PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);
+        String body=c.getString(R.string.installed_body);
+        NotificationCompat.Builder alert=new NotificationCompat.Builder(c,UPDATE_CHANNEL).setSmallIcon(R.drawable.ic_pulse_notification_logo).setLargeIcon(notificationLogo(c)).setContentTitle(c.getString(R.string.installed_title,version)).setContentText(body).setContentIntent(open).setAutoCancel(true);
+        NotificationManagerCompat.from(c).notify(("pulse-installed-"+version).hashCode(),alert.build());
+    }
     private static void alert(Context c,String id,String title,String body) {
         channel(c);
         NotificationCompat.Builder alert=new NotificationCompat.Builder(c,CHANNEL).setSmallIcon(R.drawable.ic_pulse_notification_logo).setLargeIcon(notificationLogo(c)).setContentTitle(title).setContentText(body).setStyle(new NotificationCompat.BigTextStyle().bigText(body)).setContentIntent(open(c)).setAutoCancel(true);

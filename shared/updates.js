@@ -174,3 +174,113 @@ export function nextRunAt(now, hour = CHECK_HOUR) {
     0,
   ).getTime();
 }
+
+// ---- Fetching the update, rather than sending the reader to a browser --------
+//
+// The states the row can be in. Pure, shared, and named once so the two natives
+// and the renderer cannot disagree about what "ready" means.
+//
+//   idle        nothing started
+//   downloading bytes arriving; `progress` is 0..1
+//   verifying   all bytes in, digest being computed
+//   ready       digest matched; on Android waiting for the install sheet, on
+//               Windows waiting for the reader to say restart
+//   installing  handed to the platform installer
+//   blocked     Android only: the reader has not allowed installs from Pulse
+//   failed      anything else; `error` says which
+export const DOWNLOAD_STATES = [
+  "idle",
+  "downloading",
+  "verifying",
+  "ready",
+  "installing",
+  "blocked",
+  "failed",
+];
+
+/**
+ * Digest comparison, case-insensitive and length-checked before content. The
+ * only thing standing between the reader and running a binary this app fetched,
+ * so it refuses anything that is not exactly 64 hex characters rather than
+ * treating a short or absent digest as a pass.
+ */
+export function digestMatches(actual, expected) {
+  if (typeof actual !== "string" || typeof expected !== "string") return false;
+  const a = actual.trim().toLowerCase();
+  const b = expected.trim().toLowerCase();
+  if (!/^[0-9a-f]{64}$/.test(a) || !/^[0-9a-f]{64}$/.test(b)) return false;
+  return a === b;
+}
+
+/**
+ * Whether a downloaded file can be handed to an installer. Both conditions, and
+ * in this order: the byte count the manifest promised, then the digest. A file
+ * that is the right length and the wrong content is the interesting case, so the
+ * size check is a cheap gate rather than the answer.
+ */
+export function acceptable(update, bytes, digest) {
+  if (!update) return false;
+  if (!Number.isSafeInteger(bytes) || bytes !== update.bytes) return false;
+  return digestMatches(digest, update.sha256);
+}
+
+/**
+ * What the row should say. Kept here so the APK, the EXE and the tests all read
+ * the same words, and so the wording is reviewable without running anything.
+ */
+export function describeDownload(download, update) {
+  const state = download && download.state ? download.state : "idle";
+  const version = update && update.version ? update.version : "";
+  const size = update && update.bytes ? update.bytes / (1024 * 1024) : 0;
+  switch (state) {
+    case "downloading": {
+      const pct = Math.max(
+        0,
+        Math.min(100, Math.round((download.progress || 0) * 100)),
+      );
+      return {
+        label: `Downloading ${version}`,
+        detail: `${pct}%`,
+        busy: true,
+        percent: pct,
+      };
+    }
+    case "verifying":
+      return {
+        label: `Checking ${version}`,
+        detail: "Verifying the download",
+        busy: true,
+        percent: 100,
+      };
+    case "ready":
+      return {
+        label: `Install ${version}`,
+        detail: "Downloaded and verified",
+        busy: false,
+      };
+    case "installing":
+      return {
+        label: `Installing ${version}`,
+        detail: "Follow the prompt",
+        busy: true,
+      };
+    case "blocked":
+      return {
+        label: `Allow installs to update`,
+        detail: "Opens Android settings",
+        busy: false,
+      };
+    case "failed":
+      return {
+        label: `Retry ${version}`,
+        detail: download && download.error ? download.error : "Download failed",
+        busy: false,
+      };
+    default:
+      return {
+        label: `Update to ${version}`,
+        detail: size ? `${size.toFixed(1)} MB` : "",
+        busy: false,
+      };
+  }
+}

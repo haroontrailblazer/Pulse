@@ -147,6 +147,10 @@ async function surface({
           window.pulseDesktop = {
             configure: () => Promise.resolve(state),
             status: () => Promise.resolve(state),
+            update: (action) =>
+              Promise.resolve(
+                action === "install" ? { state: "installing" } : state,
+              ),
           };
         }
         if (!android) return;
@@ -891,15 +895,8 @@ async function surface({
       check(
         name,
         "N",
-        "it is a link to the installer",
-        where?.tag === "A" && /^https:\/\//.test(where?.href || ""),
-        where,
-      );
-      check(
-        name,
-        "N",
-        "opened outside the app",
-        where?.target === "_blank",
+        "it is a button that downloads in place, not a link to a browser",
+        where?.tag === "BUTTON" && !where?.href,
         where,
       );
       check(

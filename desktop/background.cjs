@@ -28,6 +28,10 @@ module.exports = async function background({
   // updateCheckedDay is the reader's local day, so "once a day" means a day they
   // would recognise. updateNotified is the version already announced, so the
   // notification arrives once per release rather than once per morning.
+  // What the in-app download is doing. Deliberately not persisted: a download
+  // does not survive the process, and a stored "downloading" with nothing
+  // running is how a row ends up frozen at a percentage.
+  let download = { state: "idle" };
   let state = {
     enabled: false,
     watchlist: [],
@@ -66,6 +70,7 @@ module.exports = async function background({
     update: updates.newerVersion(state.update?.version, running)
       ? state.update
       : null,
+    download,
   });
   function accept(reading) {
     if (!state.enabled || !state.watchlist.includes(reading.id)) return;
@@ -221,6 +226,13 @@ module.exports = async function background({
     void checkUpdate().catch(() => {});
     armUpdate();
   });
+  const downloader = require("./download.cjs")({
+    app,
+    updates,
+    report(next) {
+      download = { ...next };
+    },
+  });
   schedule();
   void sweep().catch(() => {});
   // On start too, for the machine that was simply switched off this morning.
@@ -248,10 +260,24 @@ module.exports = async function background({
       if (enabling || state.watchlist.some((id) => !before.has(id))) void sweep().catch(() => {});
       return status();
     },
+    // The row asks for these; nothing happens on a schedule. A download is the
+    // reader deciding to spend their bandwidth, and a restart is the reader
+    // deciding to lose what is on screen.
+    download() {
+      const offered = updates.newerVersion(state.update?.version, running)
+        ? state.update
+        : null;
+      downloader.start(offered);
+      return status();
+    },
+    install() {
+      return downloader.restart();
+    },
     stop() {
       stopped = true;
       clearInterval(timer);
       clearTimeout(updateTimer);
+      downloader.stop();
       detach();
     },
   };

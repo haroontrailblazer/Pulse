@@ -224,6 +224,27 @@ select {
   font-weight: 400;
   margin-top: 3px;
 }
+/* The progress track, drawn only while bytes are arriving. A hairline under the
+   two lines of text rather than a bar beside them, because the row is already a
+   fixed shape and a second column would move the label every time the percentage
+   changed width. --at is set inline by the only thing that knows it. */
+.nav-upgrade-bar {
+  display: block;
+  height: 2px;
+  margin-top: 6px;
+  border-radius: 1px;
+  background: var(--line);
+  overflow: hidden;
+}
+.nav-upgrade-bar::after {
+  content: "";
+  display: block;
+  width: var(--at, 0%);
+  height: 100%;
+  border-radius: 1px;
+  background: var(--text-secondary);
+  transition: width var(--duration-fast, 0.15s) linear;
+}
 /* The one rule the update row needs. Everything else it wants -- the 44px floor,
    the flexed label, the muted second line -- it inherits from .nav-item and the
    global anchor reset, but a <small> nested inside the label is inline by

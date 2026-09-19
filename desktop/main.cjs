@@ -116,6 +116,14 @@ if (hasLock)
         trusted(event);
         return background.configure(options);
       });
+      // One channel rather than two, and behind the same sender check: the row
+      // asks to download, then asks to restart. Nothing here happens on a timer.
+      ipcMain.handle("pulse:update", (event, action) => {
+        trusted(event);
+        if (action === "download") return background.download();
+        if (action === "install") return background.install();
+        return background.status();
+      });
       tray = new Tray(path.join(__dirname, "icon.ico"));
       tray.setToolTip("Pulse · watchlist monitor");
       tray.setContextMenu(
