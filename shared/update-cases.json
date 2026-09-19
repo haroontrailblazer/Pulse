@@ -1,0 +1,313 @@
+{
+  "note": "One truth table for the two implementations of the update decisions. tests/updates.test.js reads it, and so does android/app/src/test/java/app/pulse/status/PulseUpdateTest.java, which npm run build:android runs. A disagreement between the JavaScript and the Java is therefore a failed build rather than a bug report a reader has to find. Only decisions that are expressible without a timezone belong here; the calendar arithmetic for the next 08:00 is tested per platform, against that platform's own calendar.",
+  "newer": [
+    {
+      "candidate": "1.0.21",
+      "running": "1.0.20",
+      "newer": true,
+      "why": "the ordinary case"
+    },
+    {
+      "candidate": "1.1.0",
+      "running": "1.0.20",
+      "newer": true,
+      "why": "a minor bump outranks a larger patch number"
+    },
+    {
+      "candidate": "2.0.0",
+      "running": "1.9.9",
+      "newer": true,
+      "why": "major wins"
+    },
+    {
+      "candidate": "1.0.20",
+      "running": "1.0.20",
+      "newer": false,
+      "why": "same version is not an update"
+    },
+    {
+      "candidate": "1.0.19",
+      "running": "1.0.20",
+      "newer": false,
+      "why": "never offer a downgrade"
+    },
+    {
+      "candidate": "1.0.9",
+      "running": "1.0.20",
+      "newer": false,
+      "why": "numeric, not lexical: 9 < 20"
+    },
+    {
+      "candidate": "1.0",
+      "running": "1.0.20",
+      "newer": false,
+      "why": "a missing segment counts as zero"
+    },
+    {
+      "candidate": "1.0.20.1",
+      "running": "1.0.20",
+      "newer": true,
+      "why": "a fourth segment can only add"
+    },
+    {
+      "candidate": "1.0.20",
+      "running": "1.0.20.1",
+      "newer": false,
+      "why": "and the same in reverse"
+    },
+    {
+      "candidate": "v1.0.21",
+      "running": "1.0.20",
+      "newer": false,
+      "why": "a prefix this side cannot order is not acted on"
+    },
+    {
+      "candidate": "1.0.21-beta",
+      "running": "1.0.20",
+      "newer": false,
+      "why": "nor a suffix"
+    },
+    {
+      "candidate": "",
+      "running": "1.0.20",
+      "newer": false,
+      "why": "empty is not a version"
+    },
+    {
+      "candidate": "1.0.21",
+      "running": "",
+      "newer": false,
+      "why": "an unknown running version cannot be compared"
+    },
+    {
+      "candidate": "1.0.-1",
+      "running": "1.0.20",
+      "newer": false,
+      "why": "negative segments are rejected"
+    },
+    {
+      "candidate": "01.0.21",
+      "running": "1.0.20",
+      "newer": true,
+      "why": "leading zeroes are still numbers"
+    }
+  ],
+  "due": [
+    {
+      "last": "2026-09-18",
+      "today": "2026-09-19",
+      "hourNow": 8,
+      "due": true,
+      "why": "08:00 on a new day is the whole point"
+    },
+    {
+      "last": "2026-09-18",
+      "today": "2026-09-19",
+      "hourNow": 7,
+      "due": false,
+      "why": "before the hour, wait for it"
+    },
+    {
+      "last": "2026-09-18",
+      "today": "2026-09-19",
+      "hourNow": 23,
+      "due": true,
+      "why": "a device asleep at 08:00 checks when it wakes"
+    },
+    {
+      "last": "2026-09-19",
+      "today": "2026-09-19",
+      "hourNow": 20,
+      "due": false,
+      "why": "once a day, not once a wake"
+    },
+    {
+      "last": "2026-09-01",
+      "today": "2026-09-19",
+      "hourNow": 9,
+      "due": true,
+      "why": "off for weeks: one check, not eighteen"
+    },
+    {
+      "last": "",
+      "today": "2026-09-19",
+      "hourNow": 9,
+      "due": true,
+      "why": "no record and past the hour"
+    },
+    {
+      "last": "",
+      "today": "2026-09-19",
+      "hourNow": 3,
+      "due": false,
+      "why": "a fresh install waits for its first 08:00 rather than nagging on launch"
+    },
+    {
+      "last": "2026-09-20",
+      "today": "2026-09-19",
+      "hourNow": 9,
+      "due": false,
+      "why": "a clock moved backwards must not re-check every wake"
+    },
+    {
+      "last": "2026-09-18",
+      "today": "2026-09-19",
+      "hourNow": 0,
+      "due": false,
+      "why": "midnight is not morning"
+    }
+  ],
+  "manifests": [
+    {
+      "running": "1.0.20",
+      "platform": "android",
+      "manifest": {
+        "version": "1.0.21",
+        "checksums": "https://pulse-status-zeta.vercel.app/downloads/v1.0.21/SHA256SUMS.txt",
+        "assets": {
+          "android": {
+            "name": "Pulse-1.0.21-Android.apk",
+            "bytes": 6099879,
+            "sha256": "a6b6c69934b86187714bcce9982d5da737ce587f9a462ed276443dcdb8e72ba6",
+            "url": "https://pulse-status-zeta.vercel.app/downloads/v1.0.21/Pulse-1.0.21-Android.apk"
+          }
+        }
+      },
+      "accepted": true,
+      "why": "a complete, newer, https entry for this platform"
+    },
+    {
+      "running": "1.0.21",
+      "platform": "android",
+      "manifest": {
+        "version": "1.0.21",
+        "assets": {
+          "android": {
+            "name": "Pulse-1.0.21-Android.apk",
+            "bytes": 6099879,
+            "sha256": "a6b6c69934b86187714bcce9982d5da737ce587f9a462ed276443dcdb8e72ba6",
+            "url": "https://pulse-status-zeta.vercel.app/downloads/v1.0.21/Pulse-1.0.21-Android.apk"
+          }
+        }
+      },
+      "accepted": false,
+      "why": "already running it"
+    },
+    {
+      "running": "1.0.20",
+      "platform": "windows",
+      "manifest": {
+        "version": "1.0.21",
+        "assets": {
+          "android": {
+            "name": "Pulse-1.0.21-Android.apk",
+            "bytes": 6099879,
+            "sha256": "a6b6c69934b86187714bcce9982d5da737ce587f9a462ed276443dcdb8e72ba6",
+            "url": "https://pulse-status-zeta.vercel.app/downloads/v1.0.21/Pulse-1.0.21-Android.apk"
+          }
+        }
+      },
+      "accepted": false,
+      "why": "no entry for this platform, and the APK must never be offered to Windows"
+    },
+    {
+      "running": "1.0.20",
+      "platform": "android",
+      "manifest": {
+        "version": "1.0.21",
+        "assets": {
+          "android": {
+            "name": "Pulse-1.0.21-Android.apk",
+            "bytes": 6099879,
+            "sha256": "a6b6c69934b86187714bcce9982d5da737ce587f9a462ed276443dcdb8e72ba6",
+            "url": "http://pulse-status-zeta.vercel.app/downloads/v1.0.21/Pulse-1.0.21-Android.apk"
+          }
+        }
+      },
+      "accepted": false,
+      "why": "plain http is refused"
+    },
+    {
+      "running": "1.0.20",
+      "platform": "android",
+      "manifest": {
+        "version": "1.0.21",
+        "assets": {
+          "android": {
+            "name": "Pulse-1.0.21-Android.apk",
+            "bytes": 0,
+            "sha256": "a6b6c69934b86187714bcce9982d5da737ce587f9a462ed276443dcdb8e72ba6",
+            "url": "https://pulse-status-zeta.vercel.app/downloads/v1.0.21/Pulse-1.0.21-Android.apk"
+          }
+        }
+      },
+      "accepted": false,
+      "why": "a size the reader is shown has to be a real size"
+    },
+    {
+      "running": "1.0.20",
+      "platform": "android",
+      "manifest": {
+        "version": "1.0.21",
+        "assets": {
+          "android": {
+            "name": "Pulse-1.0.21-Android.apk",
+            "bytes": 1.5,
+            "sha256": "a6b6c69934b86187714bcce9982d5da737ce587f9a462ed276443dcdb8e72ba6",
+            "url": "https://pulse-status-zeta.vercel.app/downloads/v1.0.21/Pulse-1.0.21-Android.apk"
+          }
+        }
+      },
+      "accepted": false,
+      "why": "a fractional byte count is malformed, and org.json would quietly coerce it to 1"
+    },
+    {
+      "running": "1.0.20",
+      "platform": "android",
+      "manifest": {
+        "version": "1.0.21",
+        "assets": {
+          "android": {
+            "name": "Pulse-1.0.21-Android.apk",
+            "bytes": 6099879,
+            "sha256": "NOTAHASH",
+            "url": "https://pulse-status-zeta.vercel.app/downloads/v1.0.21/Pulse-1.0.21-Android.apk"
+          }
+        }
+      },
+      "accepted": false,
+      "why": "the digest has to look like a digest"
+    },
+    {
+      "running": "1.0.20",
+      "platform": "android",
+      "manifest": {
+        "version": "1.0.21",
+        "assets": {
+          "android": {
+            "name": "Pulse-1.0.20-Android.apk",
+            "bytes": 6099879,
+            "sha256": "a6b6c69934b86187714bcce9982d5da737ce587f9a462ed276443dcdb8e72ba6",
+            "url": "https://pulse-status-zeta.vercel.app/downloads/v1.0.20/Pulse-1.0.20-Android.apk"
+          }
+        }
+      },
+      "accepted": false,
+      "why": "the filename names a different version than the manifest claims"
+    },
+    {
+      "running": "1.0.20",
+      "platform": "android",
+      "manifest": { "version": "1.0.21" },
+      "accepted": false,
+      "why": "no assets at all"
+    },
+    {
+      "running": "1.0.20",
+      "platform": "android",
+      "manifest": null,
+      "accepted": false,
+      "why": "nothing fetched, or unparseable"
+    }
+  ]
+}

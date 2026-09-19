@@ -13,7 +13,8 @@ import { join, resolve } from "node:path";
 import { Readable, Transform } from "node:stream";
 import { pipeline } from "node:stream/promises";
 import { pathToFileURL } from "node:url";
-import { releaseVersion } from "../shared/downloads.js";
+import { downloads, releaseVersion } from "../shared/downloads.js";
+import { latestManifest } from "../shared/updates.js";
 import { buildIdentity } from "./build-identity.mjs";
 
 // GitHub's large-asset response can be slow to start or stream during a
@@ -116,6 +117,29 @@ async function main() {
       .map((a) => `${a.sha256.toUpperCase()}  ${a.name}\n`)
       .join(""),
   );
+  // The one thing that tells a running APK or EXE that a newer Pulse exists, and
+  // it is written HERE, as the last thing this script does, for a reason worth
+  // stating. By this line every installer named in it has been downloaded,
+  // size-checked and SHA-256 verified into the same dist/ that is about to be
+  // deployed as one unit -- and the two guards at the top of main() have already
+  // refused to run unless the release metadata matches both the app version and
+  // the current source. So the manifest cannot go live announcing a version whose
+  // installers are not yet downloadable at the URLs it prints. That ordering is
+  // the only real hazard in the release sequence, and closing it by structure
+  // beats remembering to.
+  //
+  // Into dist/ rather than public/, which matters twice. public/ is copied into
+  // every build, so the APK and the Electron asar would each carry a stale copy
+  // that a relative fetch would read instead of the network -- and public/ is
+  // inside buildIdentity()'s fingerprint, so a release writing its own checksums
+  // there would invalidate the sourceHash guard that let it start. This script
+  // runs only from `npm run build:deploy`, never from the `npm run build` the two
+  // native packages are built from, so neither can contain this file at all.
+  await writeFile(
+    resolve("dist/latest.json"),
+    `${JSON.stringify(latestManifest(manifest, downloads), null, 2)}\n`,
+  );
+  console.log(`Published latest.json for v${manifest.version}`);
 }
 
 if (

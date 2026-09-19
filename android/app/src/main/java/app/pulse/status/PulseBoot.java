@@ -8,6 +8,12 @@ public final class PulseBoot extends BroadcastReceiver {
         // replacement. Remove legacy artwork before recreating the monitor.
         if(Intent.ACTION_MY_PACKAGE_REPLACED.equals(intent.getAction()))
             androidx.core.app.NotificationManagerCompat.from(context).cancelAll();
+        // The replacement may well BE the version the stored notice was offering, so
+        // clear it and let the next morning decide again. Without this the sidebar
+        // row would keep pointing at a download the reader has already installed
+        // until that check ran.
+        if(Intent.ACTION_MY_PACKAGE_REPLACED.equals(intent.getAction()))
+            PulseStore.prefs(context).edit().remove("update").remove("updateNotified").remove("updateCheckedDay").apply();
         // Hosts re-inflate the initial layout after a reboot or a package
         // replacement, so both widgets have to be repainted from the stored
         // readings before anything else is arranged.

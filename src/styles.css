@@ -224,6 +224,16 @@ select {
   font-weight: 400;
   margin-top: 3px;
 }
+/* The one rule the update row needs. Everything else it wants -- the 44px floor,
+   the flexed label, the muted second line -- it inherits from .nav-item and the
+   global anchor reset, but a <small> nested inside the label is inline by
+   default, so without this it reads "Update to 1.0.215.8 MB". Same shape as the
+   two rows above and below it in the sidebar. */
+.nav-upgrade small {
+  display: block;
+  font-weight: 400;
+  margin-top: 3px;
+}
 .nav-label {
   margin: 20px 12px 8px;
   font-weight: 600;

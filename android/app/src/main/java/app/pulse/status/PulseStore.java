@@ -17,7 +17,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.TimeUnit;
 
 final class PulseStore {
-    static final String CHANNEL="pulse-watchlist", MONITOR_CHANNEL="pulse-background-monitor", PERIODIC="pulse-periodic", ONCE="pulse-once";
+    static final String CHANNEL="pulse-watchlist", MONITOR_CHANNEL="pulse-background-monitor", UPDATE_CHANNEL="pulse-updates", PERIODIC="pulse-periodic", ONCE="pulse-once";
     static final long FRESH_REUSE_MS=30_000, MIN_CONTINUOUS_MS=30_000, MAX_CONTINUOUS_MS=300_000;
     private static final AtomicBoolean SWEEP_RUNNING=new AtomicBoolean(false);
     interface Cancellation { boolean cancelled(); }
@@ -38,6 +38,10 @@ final class PulseStore {
             NotificationManager manager=c.getSystemService(NotificationManager.class);
             manager.createNotificationChannel(new NotificationChannel(CHANNEL,"Watched service issues",NotificationManager.IMPORTANCE_DEFAULT));
             manager.createNotificationChannel(new NotificationChannel(MONITOR_CHANNEL,"Pulse background monitoring",NotificationManager.IMPORTANCE_MIN));
+            // Its own channel, so a reader who wants to know about a new version but
+            // not about every watched service -- or the reverse -- can have that
+            // without losing the other. LOW because a release is news, not an alarm.
+            manager.createNotificationChannel(new NotificationChannel(UPDATE_CHANNEL,"Pulse updates",NotificationManager.IMPORTANCE_LOW));
         }
     }
     static boolean permission(Context c) {
@@ -52,6 +56,11 @@ final class PulseStore {
         // The alarm is what survives the screen going off; WorkManager is the
         // floor that survives process death.
         PulseAlarm.schedule(c);
+        // Above the gate below, deliberately: whether a reader wants watchlist
+        // alerts has nothing to do with whether they want to know a newer Pulse
+        // exists, so the daily update look is armed for everyone and on its own
+        // unique name.
+        try { PulseUpdateWorker.arm(c); } catch(Throwable ignored) {}
         if(!needed(c)||watchlist(c).isEmpty()) { manager.cancelUniqueWork(PERIODIC); manager.cancelUniqueWork(ONCE); return; }
         manager.enqueueUniquePeriodicWork(PERIODIC,ExistingPeriodicWorkPolicy.UPDATE,new PeriodicWorkRequest.Builder(PulseWorker.class,15,TimeUnit.MINUTES).setConstraints(periodicConstraints()).build());
     }
@@ -109,6 +118,18 @@ final class PulseStore {
             prefs(c).edit().putLong("lastSweep",System.currentTimeMillis()).apply();
             PulseWidgets.updateAll(c);
         } finally { if(workers!=null) workers.shutdownNow();SWEEP_RUNNING.set(false); }
+    }
+    /** A newer Pulse exists. Its own channel and its own request code, so it neither
+     *  replaces a watchlist alert nor inherits one's content intent. The extra asks
+     *  the app to open the navigation sheet, because that is where the row lives and
+     *  landing on an unchanged screen would be a dead end. */
+    static void announceUpdate(Context c,String version) {
+        channel(c);
+        Intent intent=new Intent(c,MainActivity.class).putExtra("pulseUpdate",true).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        PendingIntent open=PendingIntent.getActivity(c,102,intent,PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);
+        String body=c.getString(R.string.update_body);
+        NotificationCompat.Builder alert=new NotificationCompat.Builder(c,UPDATE_CHANNEL).setSmallIcon(R.drawable.ic_pulse_notification_logo).setLargeIcon(notificationLogo(c)).setContentTitle(c.getString(R.string.update_title,version)).setContentText(body).setStyle(new NotificationCompat.BigTextStyle().bigText(body)).setContentIntent(open).setAutoCancel(true);
+        NotificationManagerCompat.from(c).notify(("pulse-update-"+version).hashCode(),alert.build());
     }
     private static void alert(Context c,String id,String title,String body) {
         channel(c);

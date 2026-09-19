@@ -113,6 +113,7 @@ async function surface({
   base,
   android,
   desktop,
+  update,
   width,
   height,
 }) {
@@ -129,7 +130,7 @@ async function surface({
       reducedMotion: "reduce",
     });
     await ctx.addInitScript(
-      ({ android, desktop }) => {
+      ({ android, desktop, update }) => {
         localStorage.setItem("pulse-theme", "light");
         localStorage.setItem(
           "pulse-watchlist",
@@ -137,11 +138,17 @@ async function surface({
         );
         // The EXE's only tell is the preload's bridge, so the gate defines the
         // same shape rather than a truthy stand-in.
-        if (desktop)
-          window.pulseDesktop = {
-            configure: () => Promise.resolve({}),
-            status: () => Promise.resolve({ enabled: false }),
+        if (desktop) {
+          const state = {
+            enabled: false,
+            permission: "granted",
+            ...(update ? { update } : {}),
           };
+          window.pulseDesktop = {
+            configure: () => Promise.resolve(state),
+            status: () => Promise.resolve(state),
+          };
+        }
         if (!android) return;
         const pin = () => {
           const r = document.documentElement;
@@ -156,7 +163,7 @@ async function surface({
         }
         setInterval(pin, 200);
       },
-      { android, desktop },
+      { android, desktop, update },
     );
     await ctx.route("**/api/status**", (route) =>
       route.request().url().includes("stream")
@@ -829,6 +836,97 @@ async function surface({
     await ctx.close();
   }
 
+  // ---- N. the update notice, below Dependency insights ---------------------
+  {
+    const { ctx, page } = await boot();
+    const row = page.locator(".nav-upgrade");
+    if (width < 760) {
+      await page
+        .getByRole("button", { name: /More destinations/ })
+        .first()
+        .click();
+      await page.waitForTimeout(350);
+    }
+    const shown = await row.count();
+    if (desktop) {
+      check(name, "N", "the update notice is offered", shown === 1, { shown });
+      // Below Dependency insights means exactly that: after the last destination
+      // in the list, and outside the nav landmark, because it is not a place.
+      const where = await page.evaluate(() => {
+        const at = document.querySelector(".nav-upgrade");
+        if (!at) return null;
+        const nav = at.closest(".sidebar")?.querySelector("nav");
+        const last = nav?.querySelector("button:last-of-type");
+        return {
+          insideNav: !!at.closest("nav"),
+          afterNav: !!nav && nav.compareDocumentPosition(at) === 4,
+          lastDestination: last?.textContent?.trim() || null,
+          href: at.getAttribute("href"),
+          target: at.getAttribute("target"),
+          tag: at.tagName,
+          reach: Math.round(at.getBoundingClientRect().height),
+        };
+      });
+      check(
+        name,
+        "N",
+        "it sits after the destination list",
+        where?.afterNav,
+        where,
+      );
+      check(
+        name,
+        "N",
+        "and outside the nav landmark",
+        where && !where.insideNav,
+        where,
+      );
+      check(
+        name,
+        "N",
+        "the destination above it is Dependency insights",
+        /Dependency insights/.test(where?.lastDestination || ""),
+        where,
+      );
+      check(
+        name,
+        "N",
+        "it is a link to the installer",
+        where?.tag === "A" && /^https:\/\//.test(where?.href || ""),
+        where,
+      );
+      check(
+        name,
+        "N",
+        "opened outside the app",
+        where?.target === "_blank",
+        where,
+      );
+      check(
+        name,
+        "N",
+        "and clears the touch floor",
+        (where?.reach ?? 0) >= 44,
+        where,
+      );
+      check(
+        name,
+        "N",
+        "it names the version and the size",
+        /Update to 9\.9\.9/.test(await row.innerText()) &&
+          /MB/.test(await row.innerText()),
+        { text: (await row.innerText()).replace(/\n/g, " ") },
+      );
+    } else
+      // The website has no native bridge, so it can never learn of an update --
+      // and this is the assertion that proves the request's "in site no need to
+      // show the update" rather than assuming it.
+      check(name, "N", "the website never offers an update", shown === 0, {
+        shown,
+      });
+    await ctx.close();
+  }
+
   // ---- K. a traversal restores where the reader was -----------------------
   {
     const { ctx, page } = await boot();
@@ -876,6 +974,16 @@ const PROFILES = [
     origin: DEV,
     base: "/",
     desktop: true,
+    // A release newer than anything this tree could be, so the check is about the
+    // wiring rather than about today's version number.
+    update: {
+      version: "9.9.9",
+      name: "Pulse-9.9.9-Windows.exe",
+      bytes: 105191649,
+      sha256:
+        "d75232f4226c7727deffdae217c70d5dc1e64d8a5a8b1f95c28ee5b6f68c9b7d",
+      url: "https://pulse-status-zeta.vercel.app/downloads/v9.9.9/Pulse-9.9.9-Windows.exe",
+    },
     width: 390,
     height: 844,
   },

@@ -57,7 +57,11 @@ import {
   latestIncident,
 } from "../shared/incidents";
 import { explainIndustry } from "../shared/insights";
-import BackgroundSettings, { useBackgroundSync } from "./BackgroundSettings";
+import BackgroundSettings, {
+  useBackgroundSync,
+  useUpdateIntent,
+  useUpdateNotice,
+} from "./BackgroundSettings";
 import { isFresh } from "../shared/monitor";
 import { providers, categories, statusLabels } from "../shared/providers";
 import WorldMap from "./WorldMap";
@@ -102,6 +106,11 @@ function saved(key, fallback) {
   } catch {
     return fallback;
   }
+}
+// Shown before the reader spends mobile data on it: 6,099,879 bytes reads as
+// "5.8 MB", which is what their download manager will say too.
+function megabytes(bytes) {
+  return (bytes / (1024 * 1024)).toFixed(1);
 }
 function age(date) {
   if (!date) return "Not checked";
@@ -626,6 +635,11 @@ export default function App() {
     monitorData,
   } = useLiveStatus(autoRefresh);
   useBackgroundSync(watchlist, monitorData);
+  // Only the APK and the EXE ever have this: it comes from the native bridge,
+  // which the website does not have, so the row below cannot appear there.
+  const update = useUpdateNotice();
+  const showUpdate = useCallback(() => setMobileNav(true), []);
+  useUpdateIntent(showUpdate);
   // The tray's "Watchlist" item and the Android notifications both arrive here.
   // A real push now, so back returns the reader to whatever the interruption
   // took them away from instead of ejecting them. The cold path needs nothing:
@@ -1023,6 +1037,27 @@ export default function App() {
               ),
             )}
           </nav>
+          {/* Below Dependency insights, which is the last destination in both
+              lists -- so this one place is the phone's More sheet and the EXE's
+              sidebar at once. An anchor rather than a nav item, because it leaves
+              for a download instead of going to a screen, and outside the <nav>
+              because it is not a destination. The website never reaches this: the
+              notice comes from the native bridge, and there isn't one. */}
+          {update && (
+            <a
+              className="nav-item nav-upgrade"
+              href={update.url}
+              target="_blank"
+              rel="noreferrer"
+            >
+              <Download size={20} />
+              <span>
+                Update to {update.version}
+                <small>{megabytes(update.bytes)} MB · opens your browser</small>
+              </span>
+              <ArrowUpRight size={16} />
+            </a>
+          )}
           {!compact && (
             <>
               <div className="nav-label following-label">

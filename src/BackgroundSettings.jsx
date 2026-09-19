@@ -44,6 +44,33 @@ function rememberAlertsOffered() {
     localStorage.setItem(FIRST_RUN_KEY, "done");
   } catch {}
 }
+// The newer release the native side found this morning, or null. Both natives
+// report it inside the same state object status() and configure() resolve, so it
+// arrives with the configure call the app already makes on every boot rather than
+// needing a bridge call of its own -- and the website has no `native`, so it is
+// null there and the row never renders.
+export function useUpdateNotice() {
+  const [state, setState] = useState(bridgeState);
+  useEffect(() => {
+    subscribers.add(setState);
+    return () => subscribers.delete(setState);
+  }, []);
+  return state.update || null;
+}
+
+// Tapping the update notification asks for the sheet the notice lives in, because
+// on a phone the row is behind the More button and opening the app alone would
+// show an unchanged screen.
+export function useUpdateIntent(onOpen) {
+  useEffect(() => {
+    if (!android) return;
+    const listener = native.addListener("openUpdate", () => onOpen());
+    return () => {
+      listener.then((handle) => handle.remove());
+    };
+  }, [onOpen]);
+}
+
 export function useBackgroundSync(watchlist, data) {
   const ids = JSON.stringify(watchlist);
   useEffect(() => {

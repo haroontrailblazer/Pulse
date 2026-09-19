@@ -238,6 +238,60 @@ Gates: `npm run qa:nav` drives real back and forward gestures over four profiles
 on a connected device or emulator over the WebView's own devtools socket and
 writes `test-results/navigation-apk.json`.
 
+## Update notices on the APK and the EXE
+
+The two installed surfaces look once each morning to see whether a newer Pulse has
+been published, and say so in two places: a native notification, and a row in the
+navigation list directly below Dependency insights -- the More sheet on a phone,
+the sidebar in the EXE. The website shows none of it, because a browser tab is
+already running the newest version by definition.
+
+Once a day, not a poll. The check is due when the reader's local day has changed
+and their clock has reached 08:00, which is also what makes it survive a device
+that was asleep or switched off at the time: it runs at the first moment after
+08:00 instead of being skipped. A release is not a thing that changes between
+breakfast and lunch.
+
+Version truth is `https://pulse-status-zeta.vercel.app/latest.json`, written by
+`scripts/prepare-downloads.mjs` as the last thing it does. That placement is the
+point: by then every installer named in the manifest has been downloaded,
+size-checked and SHA-256 verified into the same `dist/` that deploys as one unit,
+and the script has already refused to start unless the release metadata matches
+both the app version and the current source. So the manifest cannot announce a
+version whose installers are not yet downloadable. It is written into `dist/`
+rather than `public/`, which keeps it out of the APK and the asar -- and the URL
+the apps fetch is absolute for the same reason: both packages carry a copy of the
+site's own build metadata, so a relative URL would compare a build against itself
+and report "up to date" forever.
+
+- **Android** arms a `PeriodicWorkRequest` whose next run is placed at the next
+  local 08:00 with `setNextScheduleTimeOverride`, re-applied after each run so a
+  timezone change moves 08:00 with the reader. It is armed for everyone, above the
+  gate the watchlist monitor sits behind, because wanting to know about a new
+  version has nothing to do with wanting watchlist alerts. Its own notification
+  channel, "Pulse updates", at low importance. Tapping the notification opens the
+  sheet the row lives in.
+- **Windows** computes the same moment and waits with a timer, and re-derives the
+  decision on start and on wake, because Windows does not advance a pending timer
+  across sleep. Monitoring is on by default after the first run, so the process is
+  tray-resident and the morning check happens; a reader who turned it off gets the
+  check on their next launch after 08:00 instead.
+
+Nothing is downloaded or installed for the reader. The row is a link that opens
+the installer in their browser, which is why the APK needs no
+`REQUEST_INSTALL_PACKAGES` and the EXE needs no updater framework -- the portable
+EXE is unsigned and there is nothing an in-app updater could safely do with it.
+
+What leaves the device is one HTTPS GET of a static JSON file, carrying no
+identifier of any kind. It is the app's own CDN, which the download links already
+point at.
+
+The decisions are made twice -- the Android run happens with no WebView alive, so
+Java makes them -- and `shared/update-cases.json` is one truth table that both
+`tests/updates.test.js` and `PulseUpdateTest.java` are asserted against. Since
+`npm run build:android` runs the JVM tests, a disagreement between the two is a
+failed build rather than something a reader discovers.
+
 ## Public website and Vercel
 
 The public entry point is a marketing page explaining Pulse, with actual app screenshots, an interactive feature tour, and web-first platform choices. On Vercel, / serves the marketing index and /app serves dashboard.html. The web build promotes landing.html to dist/index.html and preserves the dashboard as dist/dashboard.html. Preview the landing locally at /landing.html. Run npm run build:web for the hosted build; regular npm run build remains the native dashboard build and excludes marketing images.

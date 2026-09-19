@@ -27,7 +27,7 @@ public class PulseBackground extends Plugin {
         });
     }
     @Override protected void handleOnDestroy() { feeds.shutdownNow(); }
-    @Override public void load() { current=this; PulseStore.channel(getContext()); PulseStore.schedule(getContext()); if(PulseStore.continuous(getContext())) PulseStore.startContinuousMonitor(getContext()); }
+    @Override public void load() { current=this; try { PulseUpdateWorker.arm(getContext()); PulseUpdateWorker.catchUp(getContext()); } catch(Throwable ignored) {} PulseStore.channel(getContext()); PulseStore.schedule(getContext()); if(PulseStore.continuous(getContext())) PulseStore.startContinuousMonitor(getContext()); }
     /** The one live instance, so the Activity back callback can reach the web layer. */
     private static PulseBackground current;
     /** Ask the web layer to take one step back. It owns the stack; see PulseBack. */
@@ -53,7 +53,17 @@ public class PulseBackground extends Plugin {
         call.resolve();
     }
     @PluginMethod public void status(PluginCall call) { call.resolve(state()); }
-    private JSObject state() { return new JSObject().put("enabled",PulseStore.prefs(getContext()).getBoolean("enabled",false)).put("permission",PulseStore.permission(getContext())?"granted":"denied").put("lastCheckedAt",PulseStore.prefs(getContext()).getString("lastCheckedAt",null)).put("intervalSeconds",PulseStore.continuousInterval(getContext())/1000).put("continuous",PulseStore.continuous(getContext())); }
+    // Every reply the bridge makes carries the offered update, and that is the one
+    // wiring detail in this feature worth stating: the web layer calls configure()
+    // on every boot and status() only when the settings sheet mounts, so a field
+    // added anywhere but here would be missing until the reader opened Settings and
+    // would be wiped again by the next watchlist edit. status(), configure() and
+    // the permission callback all resolve this same object.
+    private JSObject state() {
+        JSObject state=new JSObject().put("enabled",PulseStore.prefs(getContext()).getBoolean("enabled",false)).put("permission",PulseStore.permission(getContext())?"granted":"denied").put("lastCheckedAt",PulseStore.prefs(getContext()).getString("lastCheckedAt",null)).put("intervalSeconds",PulseStore.continuousInterval(getContext())/1000).put("continuous",PulseStore.continuous(getContext()));
+        org.json.JSONObject update=PulseUpdate.offered(getContext());
+        return update==null?state:state.put("update",(Object)update);
+    }
     @PluginMethod public void requestAlerts(PluginCall call) {
         if(Build.VERSION.SDK_INT>=33 && getPermissionState("notifications")!=PermissionState.GRANTED) requestPermissionForAlias("notifications",call,"permissionResult");
         else call.resolve(state());
@@ -107,8 +117,18 @@ public class PulseBackground extends Plugin {
         PulseStore.refresh(getContext());
         Intent intent=getActivity().getIntent();
         if(intent.getBooleanExtra("pulseWatchlist",false)) { intent.removeExtra("pulseWatchlist");notifyListeners("openWatchlist",new JSObject(),true); }
+        // Tapping the update notification has to land somewhere the notice is
+        // visible. On a phone the row lives behind the More button, so opening the
+        // app alone would show an unchanged screen; this asks the web layer to open
+        // the navigation sheet where the row is.
+        if(intent.getBooleanExtra("pulseUpdate",false)) { intent.removeExtra("pulseUpdate");notifyListeners("openUpdate",new JSObject(),true); }
     }
     @Override protected void handleOnNewIntent(Intent intent) {
         if(intent.getBooleanExtra("pulseWatchlist",false)) { intent.removeExtra("pulseWatchlist");notifyListeners("openWatchlist",new JSObject(),true); }
+        // Tapping the update notification has to land somewhere the notice is
+        // visible. On a phone the row lives behind the More button, so opening the
+        // app alone would show an unchanged screen; this asks the web layer to open
+        // the navigation sheet where the row is.
+        if(intent.getBooleanExtra("pulseUpdate",false)) { intent.removeExtra("pulseUpdate");notifyListeners("openUpdate",new JSObject(),true); }
     }
 }
