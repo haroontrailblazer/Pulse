@@ -60,6 +60,24 @@ if (hasLock)
               if (url.startsWith("https://")) shell.openExternal(url);
             }
           });
+          // Windows delivers a mouse's own back and forward buttons as app
+          // commands rather than as keys, so they have to be picked up here.
+          // Alt+Left and Alt+Right are bound in the renderer instead, because
+          // only that side can tell that the reader is typing in a field and
+          // leave the keystroke alone.
+          //
+          // The main process deliberately knows nothing about what is on screen.
+          // It does not need to: in Pulse a sheet is a history entry too, so one
+          // step back closes the sheet when one is open and changes the place
+          // when none is. That is the whole reason this needs no new IPC channel
+          // and no change to preload.cjs or its trusted-sender check.
+          win.on("app-command", (event, command) => {
+            const history = win.webContents.navigationHistory;
+            if (command === "browser-backward" && history.canGoBack())
+              history.goBack();
+            if (command === "browser-forward" && history.canGoForward())
+              history.goForward();
+          });
           win.on("close", (event) => {
             if (!quitting && background?.status().enabled) {
               event.preventDefault();

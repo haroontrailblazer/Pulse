@@ -7,6 +7,7 @@ import React, {
 } from "react";
 import { createPortal } from "react-dom";
 import { Check } from "./icons";
+import { useDismissible } from "./navigation";
 
 // A native <select> hands a phone its full-screen OS picker, which takes over
 // the screen for a handful of options and looks nothing like the rest of the
@@ -40,6 +41,12 @@ export default function FilterMenu({
 }) {
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState(null);
+  // An open list is one history entry, so a back press closes it instead of
+  // leaving the page -- and on the APK, where this control is how the reader
+  // moves between the six developer tools, that is the difference between a
+  // picker and a trapdoor. Keyed on the label because three of these are mounted
+  // at once: a shared id would let one instance's entry close another's list.
+  useDismissible(open, () => setOpen(false), `picker:${label}`);
   const listRef = useRef();
   const buttonRef = useRef();
   const focused = useRef(false);

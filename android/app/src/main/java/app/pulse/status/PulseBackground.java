@@ -27,7 +27,31 @@ public class PulseBackground extends Plugin {
         });
     }
     @Override protected void handleOnDestroy() { feeds.shutdownNow(); }
-    @Override public void load() { PulseStore.channel(getContext()); PulseStore.schedule(getContext()); if(PulseStore.continuous(getContext())) PulseStore.startContinuousMonitor(getContext()); }
+    @Override public void load() { current=this; PulseStore.channel(getContext()); PulseStore.schedule(getContext()); if(PulseStore.continuous(getContext())) PulseStore.startContinuousMonitor(getContext()); }
+    /** The one live instance, so the Activity back callback can reach the web layer. */
+    private static PulseBackground current;
+    /** Ask the web layer to take one step back. It owns the stack; see PulseBack. */
+    static void dispatchBack() { if(current!=null) current.notifyListeners("backPressed",new JSObject(),false); }
+    private void withActivity(java.util.function.Consumer<MainActivity> action) {
+        android.app.Activity activity=getActivity();
+        if(activity instanceof MainActivity) activity.runOnUiThread(()->action.accept((MainActivity)activity));
+    }
+    /**
+     * Pulse gives every destination and every open sheet a history.pushState entry, and
+     * WebView.canGoBack() does not see those. Measured on API 36: it reported false while
+     * the page reported history.length 2. So the web layer reports this whenever its
+     * history changes, and it is the only source the Activity trusts.
+     */
+    @PluginMethod public void setBackAvailable(PluginCall call) {
+        boolean available=Boolean.TRUE.equals(call.getBoolean("available",false));
+        withActivity(activity->activity.syncBack(available));
+        call.resolve();
+    }
+    /** The web layer found nothing left to unwind. Backgrounds the task, or asks first. */
+    @PluginMethod public void leaveApp(PluginCall call) {
+        withActivity(MainActivity::leave);
+        call.resolve();
+    }
     @PluginMethod public void status(PluginCall call) { call.resolve(state()); }
     private JSObject state() { return new JSObject().put("enabled",PulseStore.prefs(getContext()).getBoolean("enabled",false)).put("permission",PulseStore.permission(getContext())?"granted":"denied").put("lastCheckedAt",PulseStore.prefs(getContext()).getString("lastCheckedAt",null)).put("intervalSeconds",PulseStore.continuousInterval(getContext())/1000).put("continuous",PulseStore.continuous(getContext())); }
     @PluginMethod public void requestAlerts(PluginCall call) {

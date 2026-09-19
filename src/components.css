@@ -132,6 +132,32 @@ small {
   margin-left: auto;
   margin-top: -2px;
 }
+/* The EXE alone draws a back control. The website has the browser's own chrome
+   and Android has a system gesture; an Electron BrowserWindow has neither, so
+   without this the EXE's back is reachable only by Alt+Left and the mouse's
+   fourth button — real, but invisible. Gated in JavaScript on the preload's
+   bridge, which exists in no other surface and which Playwright never defines,
+   so nothing here can move the site's or the APK's geometry.
+
+   Always rendered, and dimmed rather than removed when there is nowhere to go:
+   a control that appears and disappears would reflow the headline beside it on
+   every navigation. `aria-disabled` rather than `disabled` keeps the tab stop,
+   so a keyboard reader still finds it and hears that it is unavailable. The
+   -2px matches the notification button above: both are optically aligned to the
+   headline's cap height rather than to its line box. */
+.page-title-row .desktop-back {
+  margin-top: -2px;
+  margin-left: calc(-1 * var(--space-2));
+}
+.page-title-row .desktop-back[aria-disabled="true"] {
+  color: var(--text-muted);
+  cursor: default;
+}
+@media (hover: hover) {
+  .page-title-row .desktop-back[aria-disabled="true"]:hover {
+    background: none;
+  }
+}
 
 /* ========================================================================
    3. Bottom navigation (phones only)

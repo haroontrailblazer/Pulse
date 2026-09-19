@@ -8,6 +8,7 @@ import {
 } from "../shared/providers.js";
 import { fetchProvider } from "../server/status.js";
 import { createServer } from "../server/index.js";
+import { PLACES } from "../shared/navigation.js";
 const provider = providers[0];
 test("invalid or missing upstream status must never become healthy", () => {
   for (const body of [
@@ -100,6 +101,20 @@ test("production server serves the built app, assets, and missing file responses
     assert.equal(missing.status, 404);
     const traversal = await fetch(`${base}/..%5cpackage.json`);
     assert.equal(traversal.status, 403);
+    // Every destination now has a URL, and inside the EXE those URLs are served
+    // by this server. Nothing tested the extension-less fallback the deep links
+    // depend on, so a change to it would have silently broken Alt+Left, the
+    // mouse's back button and any reload away from the root.
+    for (const slug of PLACES.map((place) => place.slug).filter(Boolean)) {
+      const deep = await fetch(`${base}/${slug}`);
+      assert.equal(deep.status, 200, `/${slug} must serve the app`);
+      assert.match(deep.headers.get("content-type"), /text\/html/, slug);
+      assert.match(await deep.text(), /Pulse/, slug);
+    }
+    // And the fallback is still only for paths that could be a route: a missing
+    // asset must stay a 404 rather than quietly returning the app's HTML.
+    const asset = await fetch(`${base}/incidents.js`);
+    assert.equal(asset.status, 404);
   } finally {
     await new Promise((resolve) => server.close(resolve));
   }

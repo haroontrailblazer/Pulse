@@ -1,6 +1,9 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
     <string name="app_name">Pulse</string>
+    <!-- Shown only below API 34, where the platform draws no preview of the
+         launcher on the press that leaves and nothing else would warn. -->
+    <string name="back_confirm">Press back again to leave Pulse</string>
     <string name="title_activity_main">Pulse</string>
     <string name="package_name">app.pulse.status</string>
     <string name="custom_url_scheme">app.pulse.status</string>

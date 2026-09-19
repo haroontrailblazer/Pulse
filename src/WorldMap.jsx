@@ -31,6 +31,7 @@ import StatusGlyph, { StatusShape } from "./StatusGlyph";
 import mapData from "./map-data.json";
 import { arrangeMapPins } from "../shared/map-layout";
 import { gsap, motionEnabled } from "./motion";
+import { dismiss, useDismissible } from "./navigation";
 import FilterMenu from "./FilterMenu";
 import "./map.css";
 
@@ -166,11 +167,26 @@ export default function WorldMap({
     setEvidenceLimit(6);
     setPanel(next);
   };
+  // What the stack calls when the inspector's entry is popped: state and focus
+  // only. Everything a reader can touch calls dismiss() instead, so the entry
+  // leaves with the panel.
   const closePanel = () => {
     setPanel(null);
     setService(null);
     triggerRef.current?.focus({ preventScroll: true });
   };
+  const clearService = () => {
+    setService(null);
+    setEvidenceLimit(6);
+  };
+  // Two levels, so two entries: the map, then the inspector, then the one
+  // provider inside it. A back press unwinds exactly one of them, which is what
+  // the inspector's own ArrowLeft already promised and nothing delivered.
+  // Registered only while this instance is the Map destination -- the Overview
+  // mounts the same component as a preview, and a preview never has an
+  // inspector.
+  useDismissible(expanded && !!panel, closePanel, "map-panel");
+  useDismissible(expanded && !!service, clearService, "map-service");
   const chooseHub = (index, event) => {
     if (motionEnabled() && event?.currentTarget)
       gsap.fromTo(
@@ -625,13 +641,7 @@ export default function WorldMap({
           <header className="atlas-inspector-header">
             <div>
               {focused && (
-                <button
-                  className="atlas-back"
-                  onClick={() => {
-                    setService(null);
-                    setEvidenceLimit(6);
-                  }}
-                >
+                <button className="atlas-back" onClick={dismiss}>
                   <ArrowLeft size={16} />
                   {panel === "region" ? hub?.name : "All matching services"}
                 </button>
@@ -653,7 +663,7 @@ export default function WorldMap({
               ref={closeRef}
               className="atlas-close"
               aria-label="Close map insights"
-              onClick={closePanel}
+              onClick={dismiss}
             >
               <X size={20} />
             </button>

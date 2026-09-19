@@ -13,6 +13,7 @@ import {
   Radio,
   Network,
   Star,
+  ArrowLeft,
   ArrowUpRight,
   ArrowRight,
   Search,
@@ -65,6 +66,15 @@ import PulseMark from "./PulseMark";
 import ProviderLogo from "./ProviderLogo";
 import { downloads } from "../shared/downloads";
 import { gsap, hoverMotionEnabled, motionEnabled } from "./motion";
+import {
+  dismiss,
+  navigate,
+  onDesktop,
+  setScrollPort,
+  useDesktopShortcuts,
+  useDismissible,
+  useNavigation,
+} from "./navigation";
 
 // `primary` destinations get a slot in the phone's bottom navigation bar; the
 // rest live behind "More", which opens the same list as a sheet. The sidebar
@@ -314,7 +324,12 @@ function Modal({ title, children, onClose, wide = false, actions = null }) {
     return () => {
       document.removeEventListener("keydown", handler);
       document.body.style.overflow = "";
-      previous?.focus();
+      // A back press can pop this sheet after whatever opened it has already
+      // been re-rendered away -- a provider row a refresh replaced, say.
+      // Focusing a detached node silently drops focus to <body>, so this guard
+      // is the difference between returning the reader to their place and
+      // losing them.
+      if (previous?.isConnected) previous.focus();
     };
   }, [onClose]);
   return (
@@ -400,7 +415,12 @@ export default function App() {
       localStorage.setItem("pulse-theme", next);
     } catch {}
   }
-  const [page, setPage] = useState("Overview");
+  // The place the reader is at now lives in the history stack rather than in
+  // component state, which is what lets a back gesture on all three surfaces
+  // mean something. src/navigation.js owns it; this is all App needs of it.
+  const nav = useNavigation();
+  const page = nav.page;
+  useDesktopShortcuts();
   const [compact, setCompact] = useState(
     () => window.matchMedia("(max-width: 760px)").matches,
   );
@@ -411,13 +431,6 @@ export default function App() {
     update();
     return () => media.removeEventListener("change", update);
   }, []);
-  useEffect(() => {
-    window.scrollTo(0, 0);
-    document.title =
-      page === "Overview"
-        ? "Pulse — Internet health, in view."
-        : `${page} · Pulse`;
-  }, [page]);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("All services");
   const [category, setCategory] = useState("All categories");
@@ -452,12 +465,54 @@ export default function App() {
   // keeps owning the selection and reports it up; App only uses it as a key,
   // which leaves the website's behaviour exactly as it was.
   const toolsListRef = useRef(null);
+  // On the APK every locked page scrolls its own panel and the document never
+  // moves, so window.scrollY is always 0 there and restoring it would restore
+  // nothing the reader can see. The stack records whichever panel the current
+  // place scrolls, and the same offset comes back on a traversal.
+  const panelFor = () =>
+    ({
+      Incidents: incidentFeedRef,
+      Watchlist: watchWrapRef,
+      "Dependency insights": insightListRef,
+      "Developer tools": toolsListRef,
+    })[page]?.current ?? null;
+  const panelRef = useRef(panelFor);
+  panelRef.current = panelFor;
+  useEffect(() => {
+    setScrollPort(() => panelRef.current()?.scrollTop ?? 0);
+  }, []);
+  // A layout effect, and placed before the entry animation below, so a restored
+  // offset is applied before the first paint of the new place. A tap carries
+  // y: 0 and still lands at the top exactly as it always did; only a traversal
+  // restores, which is what makes back feel like back rather than like arriving
+  // somewhere for the first time.
+  useLayoutEffect(() => {
+    const back = nav.cause === "pop";
+    window.scrollTo(0, back ? nav.scrollY : 0);
+    const panel = panelFor();
+    if (panel) panel.scrollTop = back ? nav.scrollPanel : 0;
+    document.title =
+      page === "Overview"
+        ? "Pulse — Internet health, in view."
+        : `${page} · Pulse`;
+  }, [page]);
   const [toolView, setToolView] = useState("My stack");
   const toolsHint = useScrollHint(toolsListRef, `${page}:${toolView}`);
-  const [modal, setModal] = useState(null);
+  // Sheets nest in exactly two places in this product: a provider row tapped
+  // inside the incident inbox, and "edit your watchlist" offered by an empty
+  // inbox. So this is a stack rather than a slot, and back returns the reader to
+  // the sheet they came from instead of dropping them to the page. Three slots
+  // is one more than anything reachable today.
+  const [modals, setModals] = useState([]);
+  const modal = modals[modals.length - 1] ?? null;
   const [selected, setSelected] = useState(null);
   const [mobileNav, setMobileNav] = useState(false);
   const [toast, setToast] = useState("");
+  // What the stack calls when a sheet's entry is popped: state only, never
+  // history, or closing would try to close itself.
+  const closeModalLayer = useCallback(() => {
+    setModals((open) => open.slice(0, -1));
+  }, []);
   const [monitorSearch, setMonitorSearch] = useState("");
   const [readIncidents, setReadIncidents] = useState(() => {
     const value = saved("pulse-inbox-read", {});
@@ -502,14 +557,32 @@ export default function App() {
     });
   }
   const searchRef = useRef();
+  // One entry per open sheet, at fixed ids so the hook count never varies. The
+  // closer is the raw pop; everything a reader can touch calls dismiss().
+  useDismissible(modals.length > 0, closeModalLayer, "sheet-0");
+  useDismissible(modals.length > 1, closeModalLayer, "sheet-1");
+  useDismissible(modals.length > 2, closeModalLayer, "sheet-2");
+  // Which provider the sheet is about outlives the sheet by one render, so it is
+  // cleared once nothing is open rather than inside the updater above.
+  useEffect(() => {
+    if (!modals.length) setSelected(null);
+  }, [modals.length]);
   const sidebarRef = useRef();
   const menuRef = useRef();
   const pageStageRef = useRef();
+  const headingRef = useRef(null);
+  const [announced, setAnnounced] = useState("");
   const scrimRef = useRef();
+  // Two halves, deliberately not one function. `closeNavigation` is what the
+  // stack calls when this sheet's entry is popped: it mutates state and returns
+  // focus, nothing more. Everything a reader can touch calls `dismiss()`
+  // instead, so the entry leaves with the sheet. Collapsing the two would be
+  // mutual recursion.
   const closeNavigation = () => {
     setMobileNav(false);
     menuRef.current?.focus();
   };
+  useDismissible(mobileNav, closeNavigation, "nav");
   useEffect(() => {
     if (!mobileNav) return;
     const previousOverflow = document.body.style.overflow;
@@ -519,12 +592,27 @@ export default function App() {
     sidebarRef.current?.querySelector(".sidebar-close")?.focus();
     const viewport = window.matchMedia("(max-width: 760px)");
     const resize = () => {
-      if (!viewport.matches) setMobileNav(false);
+      // Through dismiss, not setMobileNav: this sheet holds a history entry, and
+      // on the APK `configChanges` means the Activity is never recreated, so a
+      // fold or a split-screen resize flips this media query inside a live
+      // WebView with a live stack. Dropping the state alone would strand the
+      // entry and leave the reader a dead back press.
+      if (!viewport.matches) nav.dismiss();
     };
     viewport.addEventListener("change", resize);
     return () => {
       document.body.style.overflow = previousOverflow;
       viewport.removeEventListener("change", resize);
+      // Unlike a modal, this sheet is class-toggled and never unmounts, so a
+      // drag cut short by a back press, a gesture the system swallowed, or a
+      // resize would leave `translateY(...)` on a live element and the sheet
+      // would open off-screen the next time. The drag's own cleanup only runs on
+      // pointerup, which is exactly what those cases do not deliver.
+      const node = sidebarRef.current;
+      if (node) {
+        node.style.transition = "";
+        node.style.transform = "";
+      }
     };
   }, [mobileNav]);
   const {
@@ -538,10 +626,15 @@ export default function App() {
     monitorData,
   } = useLiveStatus(autoRefresh);
   useBackgroundSync(watchlist, monitorData);
+  // The tray's "Watchlist" item and the Android notifications both arrive here.
+  // A real push now, so back returns the reader to whatever the interruption
+  // took them away from instead of ejecting them. The cold path needs nothing:
+  // boot already resolves ?watchlist=1 to the Watchlist place and canonicalises
+  // the URL, and both spellings are frozen because they ship inside executables
+  // and APKs that readers keep.
   useEffect(() => {
-    const open = () => setPage("Watchlist");
+    const open = () => navigate("Watchlist");
     window.addEventListener("pulse-open-watchlist", open);
-    if (new URLSearchParams(location.search).has("watchlist")) open();
     return () => window.removeEventListener("pulse-open-watchlist", open);
   }, []);
   useEffect(() => {
@@ -556,7 +649,7 @@ export default function App() {
   }, [autoRefresh]);
   useEffect(() => {
     const key = (e) => {
-      if (e.key === "Escape" && mobileNav) closeNavigation();
+      if (e.key === "Escape" && mobileNav) nav.dismiss();
       if (
         e.key === "/" &&
         !mobileNav &&
@@ -581,14 +674,42 @@ export default function App() {
     setWatchlist((w) =>
       w.includes(id) ? w.filter((x) => x !== id) : [...w, id],
     );
+  // Same signature and the same synchronous resets as before, because two call
+  // sites set a value immediately after calling this and depend on that
+  // ordering. Only the first line changed: the destination is pushed onto the
+  // stack, and the More sheet is closed by that push rather than beside it.
   const go = (name) => {
-    setPage(name);
-    setMobileNav(false);
+    nav.go(name);
     setSearch("");
     setFilter("All services");
     setCategory("All categories");
     setMapView(null);
   };
+  // A traversal is not a click: nothing on screen moved focus, so a keyboard
+  // reader's next Tab would resume from a control that no longer exists and a
+  // screen reader would announce nothing at all. Only when the place itself
+  // changed -- closing a sheet has already returned focus to whatever opened it.
+  const lastPlace = useRef(page);
+  useEffect(() => {
+    if (lastPlace.current === page) return;
+    lastPlace.current = page;
+    if (nav.cause !== "pop") return;
+    headingRef.current?.focus({ preventScroll: true });
+    setAnnounced(page);
+  }, [page, nav.cause]);
+  // A back press lands on a place, not on the filtered view of it the reader
+  // left behind, so a traversal runs the same resets a tap does. Keyed on the
+  // stack's own version so it fires once per move and never on a re-render.
+  const settledMove = useRef(0);
+  useEffect(() => {
+    if (settledMove.current === nav.version) return;
+    settledMove.current = nav.version;
+    if (nav.cause !== "pop") return;
+    setSearch("");
+    setFilter("All services");
+    setCategory("All categories");
+    setMapView(null);
+  }, [nav.version, nav.cause]);
   // Nothing has been confirmed yet: the page is loading, not reporting a
   // service-wide failure. Screens show skeletons rather than 28 "unavailable"
   // rows until the first sweep completes.
@@ -610,6 +731,11 @@ export default function App() {
     const content = [...stage.children].filter(
       (child) => child !== heading && !child.matches(".error-banner"),
     );
+    // Arriving by back is not arriving for the first time. Replaying the entry
+    // stagger on a traversal is the single most noticeable way a back button can
+    // feel wrong -- the reader asked for the page they had, and gets an
+    // animation that says "new page".
+    if (nav.cause === "pop") return;
     const context = gsap.context(() => {
       const timeline = gsap.timeline({ defaults: { ease: "power3.out" } });
       if (heading)
@@ -716,13 +842,23 @@ export default function App() {
     });
     return () => cleanup.forEach((remove) => remove());
   }, [page, allIncidents.length, visible.length]);
-  const closeModal = useCallback(() => {
-    setModal(null);
-    setSelected(null);
-  }, []);
+  // Identity has to stay stable: the Modal's effect is keyed on [onClose] and
+  // returns focus to whatever opened it in its cleanup, so a fresh function every
+  // render would pull focus out of the watchlist editor's search field on each
+  // keystroke.
+  //
+  // It pops one sheet rather than clearing them all, because sheets nest in
+  // exactly one place: tapping a provider row inside the incident inbox. Back --
+  // and this X -- should return the reader to the inbox they were reading, not
+  // to the page underneath it. Today that inbox is simply lost.
+  const closeModal = dismiss;
+  const openModal = (kind) =>
+    setModals((open) =>
+      open.length >= 3 ? [...open.slice(0, 2), kind] : [...open, kind],
+    );
   const openProvider = (p) => {
     setSelected(p.id);
-    setModal("provider");
+    openModal("provider");
   };
   const detailProvider = items.find((p) => p.id === selected);
   const detail = detailProvider
@@ -773,7 +909,7 @@ export default function App() {
           : "Open incident notifications"
       }
       onClick={() => {
-        setModal("notifications");
+        openModal("notifications");
         void refresh();
       }}
     >
@@ -788,7 +924,7 @@ export default function App() {
           ref={scrimRef}
           className="nav-scrim"
           aria-hidden="true"
-          onClick={closeNavigation}
+          onClick={dismiss}
         />
       )}
       <aside
@@ -799,7 +935,7 @@ export default function App() {
         role={mobileNav ? "dialog" : undefined}
         aria-modal={mobileNav || undefined}
         onClickCapture={(e) => {
-          if (mobileNav && e.target.closest("button, a")) closeNavigation();
+          if (mobileNav && e.target.closest("button, a")) dismiss();
         }}
         onKeyDown={(e) => {
           if (!mobileNav || e.key !== "Tab") return;
@@ -821,7 +957,7 @@ export default function App() {
       >
         <SheetGrabber
           sheetRef={sidebarRef}
-          onClose={closeNavigation}
+          onClose={dismiss}
           label="Close navigation"
         />
         <div className="sidebar-header">
@@ -841,7 +977,7 @@ export default function App() {
           <button
             className="icon-button sidebar-close"
             aria-label="Close navigation"
-            onClick={closeNavigation}
+            onClick={dismiss}
           >
             <X size={20} />
           </button>
@@ -893,7 +1029,7 @@ export default function App() {
                 YOUR WATCHLIST{" "}
                 <button
                   aria-label="Edit watchlist"
-                  onClick={() => setModal("monitor")}
+                  onClick={() => openModal("monitor")}
                 >
                   <Plus size={16} />
                 </button>
@@ -938,7 +1074,7 @@ export default function App() {
                   <br />
                   Wherever you work.
                 </p>
-                <button onClick={() => setModal("apps")}>
+                <button onClick={() => openModal("apps")}>
                   Get Pulse for your device <ArrowUpRight size={16} />
                 </button>
               </div>
@@ -947,20 +1083,20 @@ export default function App() {
         </div>
         <div className="sidebar-bottom">
           {compact && import.meta.env.VITE_STATUS_TRANSPORT === "poll" && (
-            <button className="nav-item" onClick={() => setModal("apps")}>
+            <button className="nav-item" onClick={() => openModal("apps")}>
               <Download size={20} />
               <span>Get the app</span>
               <ArrowUpRight size={16} />
             </button>
           )}
-          <button className="nav-item" onClick={() => setModal("methodology")}>
+          <button className="nav-item" onClick={() => openModal("methodology")}>
             <CircleHelp size={20} />
             <span>Help & methodology</span>
             <ArrowUpRight size={16} />
           </button>
           <button
             className="nav-item sidebar-settings"
-            onClick={() => setModal("settings")}
+            onClick={() => openModal("settings")}
           >
             <Settings size={20} />
             <span>Settings</span>
@@ -991,7 +1127,24 @@ export default function App() {
                   repeated chrome that said the same thing on every
                   destination; it lives on the marketing page instead. */}
               <div className="page-title-row">
-                <h1>
+                {/* The EXE is the only surface with no back affordance of its
+                    own: the browser has its chrome and Android has a system
+                    gesture, but an Electron BrowserWindow has neither. Always
+                    rendered rather than appearing and vanishing, so the headline
+                    never reflows, and aria-disabled rather than disabled so the
+                    tab stop survives. Playwright never defines window.pulseDesktop,
+                    so no geometry gate and no captured screenshot sees this. */}
+                {onDesktop() && (
+                  <button
+                    className="icon-button desktop-back"
+                    aria-label="Go back"
+                    aria-disabled={!nav.backAvailable}
+                    onClick={() => nav.backAvailable && window.history.back()}
+                  >
+                    <ArrowLeft size={20} />
+                  </button>
+                )}
+                <h1 ref={headingRef} tabIndex={-1}>
                   {page === "Overview" ? (
                     <>
                       Internet health, <span>in view.</span>
@@ -1017,6 +1170,9 @@ export default function App() {
                 {notificationButton}
               </div>
             </div>
+            <p className="visually-hidden" role="status">
+              {announced}
+            </p>
           </div>
           {error && page !== "Global map" && (
             <div className="error-banner" role="alert">
@@ -1195,7 +1351,7 @@ export default function App() {
                     <BackgroundSettings
                       watchlist={watchlist}
                       compact
-                      onConfigure={() => setModal("settings")}
+                      onConfigure={() => openModal("settings")}
                     />
                   )}
                   <button
@@ -1359,7 +1515,7 @@ export default function App() {
                           Component health{" "}
                           <button
                             title="Each bar is a reported component, not historical uptime"
-                            onClick={() => setModal("methodology")}
+                            onClick={() => openModal("methodology")}
                             aria-label="About component health"
                           >
                             <CircleHelp size={16} />
@@ -1455,7 +1611,7 @@ export default function App() {
                         </p>
                         <button
                           className="button primary"
-                          onClick={() => setModal("monitor")}
+                          onClick={() => openModal("monitor")}
                         >
                           <Plus size={16} />
                           Add services
@@ -1491,7 +1647,7 @@ export default function App() {
                 {previewing ? (
                   <button
                     className="table-footer-toggle"
-                    onClick={() => setModal("monitor")}
+                    onClick={() => openModal("monitor")}
                     aria-haspopup="dialog"
                   >
                     View all {visible.length} services
@@ -1643,7 +1799,7 @@ export default function App() {
               <span>
                 <PulseMark size={20} /> Stay informed. Build with confidence.
               </span>
-              <button onClick={() => setModal("methodology")}>
+              <button onClick={() => openModal("methodology")}>
                 Independent monitoring · Official sources{" "}
                 <ArrowUpRight size={16} />
               </button>
@@ -1697,7 +1853,7 @@ export default function App() {
               <button
                 className="button primary full-width"
                 onClick={() => {
-                  closeModal();
+                  dismiss();
                   setToast("Your watchlist is saved.");
                 }}
               >
@@ -1911,7 +2067,7 @@ export default function App() {
                 </span>
                 <button
                   className="text-button"
-                  onClick={() => setModal("monitor")}
+                  onClick={() => openModal("monitor")}
                 >
                   Manage <ArrowRight size={16} />
                 </button>
