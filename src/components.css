@@ -1933,6 +1933,39 @@ select {
   .overview-grid {
     align-items: start;
   }
+  /* And the map card takes that height, so the two line up along the bottom.
+     The live-incidents card is the one with real content, so it is what defines
+     the row -- measured at 1440 it runs from 320px with nothing to report to
+     495px at its three-incident preview cap, and further at narrower widths
+     where the rows wrap. The map has no content height of its own (everything
+     inside it is absolutely positioned), so it cannot define anything; it is
+     told to fill the row instead, which means overriding both the row's `start`
+     and its own fixed 620px. The globe re-projects itself into whatever it
+     gets: the ResizeObserver in WorldMap watches this element.
+
+     Not on the APK, which is why this is scoped rather than unconditional.
+     Below 761px the grid is a single column and the two cards are stacked, so
+     there is no shared row to match and nothing to line up along -- and the
+     APK is only ever below it. The map keeps its fixed height there. */
+  :root:not([data-platform="android"]) .overview-grid > .atlas-map.is-preview {
+    align-self: stretch;
+    height: auto;
+  }
+  /* And one consequence of that, because the map picks its own arrangement partly
+     from its height: a card under 430px tall and over 570px wide switches from
+     the narrow layout to the wide one, which this card never did while it was a
+     fixed 620px. In the wide layout the service dock reserves 145px on its right
+     for the zoom cluster, and the cluster is 134px wide with a 17px margin, so it
+     wants 151 -- at the map's full width the dock's own max-width caps it long
+     before that matters, but between roughly 570 and 700px of map it binds and
+     the two overlap by six pixels. 163 is 151 plus the same 12px gap the left
+     side of that rule already reserves. */
+  :root:not([data-platform="android"])
+    .overview-grid
+    > .atlas-map.is-preview.wide
+    .atlas-service-dock {
+    right: 163px;
+  }
 }
 
 /* ========================================================================
