@@ -291,6 +291,24 @@ function WidgetMark({ id }) {
     </svg>
   ) : null;
 }
+// Gives each illustration the same framed-device treatment the hero screenshot
+// already uses, so the art reads as a deliberate figure rather than loose parts.
+function FigureFrame({ label, caption, tone = "", children }) {
+  return (
+    <figure className="figure-frame">
+      <div className="figure-bar" aria-hidden="true">
+        <span className="figure-dots">
+          <i />
+          <i />
+          <i />
+        </span>
+        <span>{label}</span>
+      </div>
+      <div className={`figure-body ${tone}`}>{children}</div>
+      <figcaption>{caption}</figcaption>
+    </figure>
+  );
+}
 // Both home-screen widgets, on the card colour and in the worst-first order the
 // widget itself uses.
 function WidgetArt() {
@@ -859,50 +877,47 @@ export default function Landing() {
                 </div>
                 <h3>You will never quietly be running last month’s build.</h3>
                 <p>
-                  Once a day, some time after 08:00 on your own clock, Pulse
-                  asks whether anything newer has shipped. If it has, you get
-                  one quiet notification — once per release, not once per
-                  morning — and a row under Dependency insights that reads{" "}
+                  Once a day, after 08:00 on your own clock, Pulse checks
+                  whether anything newer has shipped. If it has, you get one
+                  notification on its own silent channel — once per release, not
+                  once per morning — and a row under Dependency insights reading{" "}
                   <b>Update to {releaseVersion}</b>.
-                </p>
-                <p>
-                  Tap it and Pulse fetches the build itself: no browser, no
-                  download manager, no save dialog. It refuses to go any further
-                  unless the byte count <em>and</em> the SHA-256 both match what
-                  the release published. Then Android hands the verified file to
-                  the system installer, and Windows restarts into the new
-                  version.
                 </p>
                 <ul>
                   <li>
                     <Check size={15} />
-                    One notification per release, on its own silent channel
+                    Pulse fetches the build itself — no browser, no download
+                    manager, no save dialog
+                  </li>
+                  <li>
+                    <Check size={15} />A live percentage inside the app while it
+                    downloads
                   </li>
                   <li>
                     <Check size={15} />
-                    Verified against the published checksum before anything
-                    installs
+                    Nothing installs until the byte count and the SHA-256 both
+                    match the published release
                   </li>
                   <li>
                     <Check size={15} />
-                    Live percentage while it downloads, inside the app
+                    Android hands it to the system installer; Windows restarts
+                    into the new version
                   </li>
                 </ul>
                 <p className="showcase-limit">
-                  <strong>Straight about it:</strong> this is a daily check, not
-                  a push — a device asleep at 08:00 checks when it wakes, and
-                  nothing downloads until you tap. The website carries no notice
-                  at all, because a browser tab is already current.
+                  <strong>Straight about it:</strong> a daily check, not a push.
+                  A device asleep at 08:00 checks when it wakes, and nothing
+                  downloads until you tap. The website carries no notice — a tab
+                  is already current.
                 </p>
               </div>
-              <div className="showcase-art">
+              <FigureFrame
+                label="On your device"
+                caption="The notification and the row, in the words the apps use. Size shown for the Android build."
+              >
                 <NoticeArt />
                 <UpdateArt />
-                <small>
-                  The notification and the row, in the words the apps use.
-                  Download size shown for the Android build.
-                </small>
-              </div>
+              </FigureFrame>
             </div>
             <div className="showcase showcase-flip">
               <div className="showcase-copy">
@@ -915,27 +930,24 @@ export default function Landing() {
                   Two widgets ship with the Android app. <b>Pulse · My stack</b>{" "}
                   lists every service you watch, worst first, each with its own
                   last-check time and one plain word for its state.{" "}
-                  <b>Pulse · Service icons</b> is just your marks in their own
-                  brand colours — amber on a reported degradation, red during an
-                  outage.
-                </p>
-                <p>
-                  Both resize, both keep refreshing after you close Pulse, and a
-                  tap on either opens your watchlist. Add one from inside Pulse,
-                  or long-press your home screen and pick Widgets.
+                  <b>Pulse · Service icons</b> is just your marks — amber on a
+                  reported degradation, red during an outage.
                 </p>
                 <ul>
                   <li>
                     <Check size={15} />
-                    Worst-first ordering, so the problem is the top row
+                    Worst first, so the problem is always the top row
                   </li>
                   <li>
                     <Check size={15} />
-                    Refreshes on its own with the app closed
+                    Both resize, and both keep refreshing with Pulse closed
+                  </li>
+                  <li>
+                    <Check size={15} />A tap on either opens your watchlist
                   </li>
                   <li>
                     <Check size={15} />
-                    Service icons floats on your wallpaper, or sits on a card
+                    Add one from inside Pulse, or long-press the home screen
                   </li>
                 </ul>
                 <p className="showcase-limit">
@@ -943,17 +955,17 @@ export default function Landing() {
                   iOS, lock-screen or Windows widget. It polls rather than
                   pushes, roughly every fifteen minutes, and Android may stretch
                   that while the phone is idle. Build your watchlist in Pulse
-                  first, and a reading older than thirty minutes is shown as
-                  Unavailable rather than passed off as current.
+                  first, and a reading older than thirty minutes shows as
+                  Unavailable rather than as current.
                 </p>
               </div>
-              <div className="showcase-art">
+              <FigureFrame
+                tone="figure-wallpaper"
+                label="Android home screen"
+                caption="Both widgets, in their own colours and order. Services shown for illustration."
+              >
                 <WidgetArt />
-                <small>
-                  Both widgets, in their own colours and order. Services shown
-                  for illustration.
-                </small>
-              </div>
+              </FigureFrame>
             </div>
             <div className="installed-extras">
               {[

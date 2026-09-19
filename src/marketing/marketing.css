@@ -1582,11 +1582,19 @@ img {
   border-block: 1px solid #e3e7db;
 }
 .showcase {
+  --showcase-gap: 54px;
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 54px;
-  align-items: center;
-  margin-top: 54px;
+  grid-template-columns: 1fr 1.05fr;
+  gap: 56px;
+  align-items: start;
+  margin-top: var(--showcase-gap);
+}
+/* A rule between the two showcases, so they read as two distinct things
+   rather than one long alternating column. */
+.showcase + .showcase {
+  border-top: 1px solid #e3e7db;
+  margin-top: calc(var(--showcase-gap) + 6px);
+  padding-top: calc(var(--showcase-gap) + 6px);
 }
 /* The second showcase leads with its art, so the two rows do not read as one
    long column of prose. Undone at phone width, where copy must come first. */
@@ -1595,22 +1603,30 @@ img {
 }
 .showcase-copy {
   min-width: 0;
+  max-width: 420px;
+}
+/* The flipped row puts its copy in the right-hand column, so the rail hugs the
+   outer edge and the slack falls into the gutter rather than inside the text. */
+@media (min-width: 761px) {
+  .showcase-flip .showcase-copy {
+    margin-left: auto;
+  }
 }
 .showcase-label {
   display: flex;
   align-items: center;
-  gap: 10px;
-  font-size: 8px;
-  letter-spacing: 0.8px;
+  gap: 11px;
+  font-size: 9px;
+  letter-spacing: 1.7px;
   color: #707966;
-  margin-bottom: 18px;
+  margin-bottom: 20px;
 }
 .showcase-label > b {
   background: #e0eacb;
   border: 1px solid #ccd9b6;
   border-radius: 20px;
-  padding: 4px 9px;
-  font-size: 8px;
+  padding: 4px 10px;
+  font-size: 9px;
   font-weight: 500;
   color: #47573a;
   letter-spacing: 0;
@@ -1622,6 +1638,8 @@ img {
   letter-spacing: -0.9px;
   line-height: 1.22;
   margin-bottom: 16px;
+  max-width: 360px;
+  text-wrap: balance;
 }
 .showcase-copy > p {
   font-size: 13px;
@@ -1656,27 +1674,16 @@ img {
   color: #899e76;
   margin-top: 2px;
 }
-.showcase-limit {
+.showcase-copy > p.showcase-limit {
   font-size: 11px;
   line-height: 1.9;
   border-left: 2px solid #d8e0cc;
   padding-left: 14px;
+  margin-bottom: 0;
 }
 .showcase-limit strong {
   color: #5d6e4c;
   font-weight: 600;
-}
-.showcase-art {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-  min-width: 0;
-}
-.showcase-art > small {
-  font-size: 9px;
-  color: #626d59;
-  text-align: center;
-  line-height: 1.75;
 }
 .notice-art {
   display: flex;
@@ -1792,13 +1799,13 @@ img {
    page's own type rather than with chrome invented inside the dark card. */
 .widget-name {
   font-size: 9px;
-  color: #707966;
+  color: #3f4a36;
   text-align: center;
 }
 .widget-art {
   display: grid;
-  grid-template-columns: 1.3fr 1fr;
-  gap: 13px;
+  grid-template-columns: 1.25fr 1fr;
+  gap: 14px;
   align-items: start;
 }
 .widget-card,
@@ -1950,8 +1957,8 @@ img {
     grid-template-columns: repeat(2, 1fr);
   }
   .showcase {
+    --showcase-gap: 44px;
     gap: 34px;
-    margin-top: 44px;
   }
   .showcase-copy h3 {
     font-size: 23px;
@@ -1973,8 +1980,8 @@ img {
     padding: 21px 19px 23px;
   }
   .showcase {
+    --showcase-gap: 34px;
     gap: 26px;
-    margin-top: 34px;
   }
   .showcase-flip .showcase-copy {
     order: 0;
@@ -1985,12 +1992,79 @@ img {
   .showcase-copy > p {
     font-size: 12px;
   }
-  .showcase-art {
-    width: 100%;
+  .showcase-copy {
     max-width: 420px;
-    margin-inline: auto;
+  }
+  .figure-frame {
+    width: 100%;
+    max-width: 520px;
   }
   .installed-extras {
     margin-top: 34px;
   }
+}
+/* ---------------------------------------------------------------------------
+   Framed figures for the installed-app showcases. The hero screenshot already
+   establishes "chrome bar over a framed surface" as this page's way of saying
+   "this is a picture of the product", so the update row and the widgets borrow
+   it rather than floating loose on the section background.
+   --------------------------------------------------------------------------- */
+.figure-frame {
+  margin: 0;
+  min-width: 0;
+}
+.figure-bar {
+  height: 34px;
+  background: #f0f2ec;
+  border: 1px solid #d5d9ce;
+  border-bottom: 0;
+  border-radius: 12px 12px 0 0;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 0 13px;
+  font-size: 9px;
+  letter-spacing: 0.9px;
+  text-transform: uppercase;
+  color: #707966;
+}
+.figure-dots {
+  display: flex;
+  gap: 5px;
+}
+.figure-dots i {
+  height: 6px;
+  width: 6px;
+  border-radius: 50%;
+  background: #c9cec1;
+}
+.figure-body {
+  border: 1px solid #d5d9ce;
+  border-radius: 0 0 12px 12px;
+  background: #fbfbf8;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-shadow:
+    0 25px 70px -34px #2b402638,
+    0 2px 4px #2b40260a;
+}
+/* The icon widget can float transparently on the wallpaper, so the widget
+   figure stands on a wallpaper rather than on paper -- it is the one claim the
+   copy makes that a flat surface cannot show. */
+.figure-body.figure-wallpaper {
+  background:
+    radial-gradient(120% 90% at 18% 8%, #d8e0cb 0%, transparent 62%),
+    radial-gradient(110% 80% at 88% 96%, #b9c6a8 0%, transparent 58%),
+    linear-gradient(150deg, #c6d1b5, #aab79b);
+  padding: 20px;
+}
+.figure-frame figcaption {
+  font-size: 9px;
+  color: #626d59;
+  text-align: center;
+  line-height: 1.75;
+  margin-top: 13px;
+  text-wrap: balance;
 }
