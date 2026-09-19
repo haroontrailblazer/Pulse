@@ -83,7 +83,9 @@ img {
   width: min(1216px, calc(100% - 80px));
   margin-inline: auto;
 }
-.marketing-page { overflow-x: clip; }
+.marketing-page {
+  overflow-x: clip;
+}
 .m-section {
   padding-block: 108px;
 }
@@ -1507,4 +1509,488 @@ img {
 }
 .platform-card > small {
   font-size: 10px;
+}
+/* ---------------------------------------------------------------------------
+   Developer moments, the installed-app showcases, and the two illustrations
+   that carry them. Both illustrations are drawn from values the product already
+   owns -- the update row uses the strings shared/updates.js produces, and the
+   widget art uses the widget's own card colour, state words and worst-first
+   order -- so neither can quietly drift away from what the apps do.
+
+   These rules sit at the end of the sheet on purpose: the blocks below carry
+   their own breakpoints, so appending keeps them clear of the cascade above.
+   --------------------------------------------------------------------------- */
+.moments-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  background: #e6e9df;
+  border: 1px solid #e6e9df;
+  border-radius: 12px;
+  overflow: hidden;
+}
+.moments-grid > article {
+  background: #fafaf8;
+  padding: 24px 22px 26px;
+}
+.moment-icon {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid #dde4d3;
+  border-radius: 50%;
+  color: #769060;
+  margin-bottom: 18px;
+}
+.moment-when {
+  font-size: 9px;
+  letter-spacing: 0.7px;
+  text-transform: uppercase;
+  color: #707966;
+  margin-bottom: 9px;
+}
+.moments-grid h3 {
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.4px;
+  line-height: 1.35;
+  margin-bottom: 11px;
+}
+.moments-grid > article > p:last-child {
+  font-size: 11px;
+  line-height: 1.85;
+  color: #626d59;
+}
+.moments-foot {
+  margin-top: 26px;
+  text-align: center;
+  font-size: 11px;
+  color: #707966;
+  line-height: 1.8;
+}
+.moments-foot a {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #6c7c5c;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.installed-section {
+  background: #f0f2eb;
+  border-block: 1px solid #e3e7db;
+}
+.showcase {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 54px;
+  align-items: center;
+  margin-top: 54px;
+}
+/* The second showcase leads with its art, so the two rows do not read as one
+   long column of prose. Undone at phone width, where copy must come first. */
+.showcase-flip .showcase-copy {
+  order: 2;
+}
+.showcase-copy {
+  min-width: 0;
+}
+.showcase-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 8px;
+  letter-spacing: 0.8px;
+  color: #707966;
+  margin-bottom: 18px;
+}
+.showcase-label > b {
+  background: #e0eacb;
+  border: 1px solid #ccd9b6;
+  border-radius: 20px;
+  padding: 4px 9px;
+  font-size: 8px;
+  font-weight: 500;
+  color: #47573a;
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+.showcase-copy h3 {
+  font-size: 27px;
+  font-weight: 600;
+  letter-spacing: -0.9px;
+  line-height: 1.22;
+  margin-bottom: 16px;
+}
+.showcase-copy > p {
+  font-size: 13px;
+  line-height: 1.9;
+  color: #626d59;
+  margin-bottom: 14px;
+}
+.showcase-copy > p b {
+  color: #47573a;
+  font-weight: 600;
+}
+.showcase-copy > p em {
+  font-style: normal;
+  color: #47573a;
+  font-weight: 600;
+}
+.showcase-copy ul {
+  list-style: none;
+  padding: 0;
+  margin: 22px 0 20px;
+}
+.showcase-copy li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 11px;
+  line-height: 1.7;
+  color: #637455;
+  margin-bottom: 11px;
+}
+.showcase-copy li svg {
+  color: #899e76;
+  margin-top: 2px;
+}
+.showcase-limit {
+  font-size: 11px;
+  line-height: 1.9;
+  border-left: 2px solid #d8e0cc;
+  padding-left: 14px;
+}
+.showcase-limit strong {
+  color: #5d6e4c;
+  font-weight: 600;
+}
+.showcase-art {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  min-width: 0;
+}
+.showcase-art > small {
+  font-size: 9px;
+  color: #626d59;
+  text-align: center;
+  line-height: 1.75;
+}
+.notice-art {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.notice-card {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  background: #fdfdfb;
+  border: 1px solid #e4e8dc;
+  border-radius: 12px;
+  padding: 14px 16px;
+  box-shadow: 0 14px 30px -24px #34412b55;
+}
+.notice-mark {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: #eef3e4;
+  border: 1px solid #dfe8d0;
+  color: #54846c;
+  flex-shrink: 0;
+}
+.notice-card b {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: #26301f;
+  margin-bottom: 3px;
+}
+.notice-card p {
+  font-size: 11px;
+  color: #707966;
+  line-height: 1.6;
+}
+.notice-meta {
+  font-size: 8px;
+  letter-spacing: 0.7px;
+  color: #707966;
+  padding-left: 4px;
+}
+.update-art {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: #fdfdfb;
+  border: 1px solid #e4e8dc;
+  border-radius: 12px;
+  padding: 10px;
+}
+.update-row {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 9px 11px;
+  border-radius: 7px;
+  color: #56634a;
+  min-height: 44px;
+  background: #f4f6ee;
+}
+.update-row.is-busy {
+  background: #f8f9f3;
+}
+.update-row:last-child {
+  background: #e9f0df;
+  color: #3f5330;
+}
+.update-row > span {
+  flex: 1;
+  font-size: 11px;
+  font-weight: 600;
+  min-width: 0;
+}
+.update-row small {
+  display: block;
+  font-weight: 400;
+  font-size: 10px;
+  margin-top: 3px;
+  color: #707966;
+}
+.update-bar {
+  display: block;
+  height: 2px;
+  border-radius: 1px;
+  background: #dfe5d4;
+  margin-top: 7px;
+  overflow: hidden;
+}
+.update-bar::after {
+  content: "";
+  display: block;
+  width: var(--at, 0%);
+  height: 100%;
+  border-radius: 1px;
+  background: #7d9469;
+}
+.update-row > svg {
+  color: #95a386;
+}
+/* The widgets really are a dark card on a light home screen. Keeping that
+   contrast is more honest than restyling them into the marketing palette. */
+.widget-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+/* The icon widget draws no label of its own, so both panels are named in the
+   page's own type rather than with chrome invented inside the dark card. */
+.widget-name {
+  font-size: 9px;
+  color: #707966;
+  text-align: center;
+}
+.widget-art {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr;
+  gap: 13px;
+  align-items: start;
+}
+.widget-card,
+.widget-icons {
+  background: #161616;
+  border: 1px solid #303030;
+  border-radius: 16px;
+  min-width: 0;
+}
+.widget-card {
+  padding: 15px 15px 12px;
+}
+.widget-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 8px;
+  letter-spacing: 1px;
+  color: #7c7c7c;
+}
+.widget-eyebrow svg {
+  color: #93d3ad;
+}
+.widget-headline {
+  display: block;
+  font-family: "Manrope Variable", sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: #f2f2f0;
+  line-height: 1.35;
+  margin: 11px 0 5px;
+}
+.widget-sub {
+  display: block;
+  font-size: 9px;
+  color: #8b8b8b;
+  margin-bottom: 14px;
+}
+.widget-rows {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.widget-rows li {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+}
+.widget-rows svg {
+  width: 13px;
+  height: 13px;
+  fill: #d6d6d4;
+  flex-shrink: 0;
+}
+.widget-rows li > span {
+  flex: 1;
+  font-size: 10px;
+  color: #e2e2e0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+.widget-rows li > span i {
+  font-style: normal;
+  color: #7a7a7a;
+  margin-left: 5px;
+}
+.widget-rows em {
+  font-style: normal;
+  font-size: 9px;
+  white-space: nowrap;
+}
+.widget-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid #2a2a2a;
+  margin-top: 14px;
+  padding-top: 10px;
+  font-size: 8px;
+  color: #7c7c7c;
+}
+.widget-foot svg {
+  color: #9a9a9a;
+}
+.widget-icons {
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.widget-icons > div {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+.widget-icons > div > span {
+  display: grid;
+  place-items: center;
+}
+.widget-icons svg {
+  width: 20px;
+  height: 20px;
+  fill: currentColor;
+}
+.installed-extras {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  background: #e0e5d6;
+  border: 1px solid #e0e5d6;
+  border-radius: 12px;
+  overflow: hidden;
+  margin-top: 54px;
+}
+.installed-extras > article {
+  background: #f6f7f1;
+  padding: 22px 21px 24px;
+}
+.installed-extras > article > span {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid #dbe2d1;
+  border-radius: 50%;
+  color: #769060;
+  margin-bottom: 15px;
+}
+.installed-extras h3 {
+  font-family: "Manrope Variable", sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.3px;
+  margin: 0 0 9px;
+}
+.installed-extras p {
+  font-size: 11px;
+  line-height: 1.85;
+  color: #626d59;
+}
+@media (max-width: 1050px) {
+  .moments-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .showcase {
+    gap: 34px;
+    margin-top: 44px;
+  }
+  .showcase-copy h3 {
+    font-size: 23px;
+  }
+  .widget-art {
+    grid-template-columns: 1fr;
+  }
+  .installed-extras {
+    margin-top: 44px;
+  }
+}
+@media (max-width: 760px) {
+  .moments-grid,
+  .showcase,
+  .installed-extras {
+    grid-template-columns: 1fr;
+  }
+  .moments-grid > article {
+    padding: 21px 19px 23px;
+  }
+  .showcase {
+    gap: 26px;
+    margin-top: 34px;
+  }
+  .showcase-flip .showcase-copy {
+    order: 0;
+  }
+  .showcase-copy h3 {
+    font-size: 21px;
+  }
+  .showcase-copy > p {
+    font-size: 12px;
+  }
+  .showcase-art {
+    width: 100%;
+    max-width: 420px;
+    margin-inline: auto;
+  }
+  .installed-extras {
+    margin-top: 34px;
+  }
 }
