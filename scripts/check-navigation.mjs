@@ -979,7 +979,7 @@ const PROFILES = [
       bytes: 105191649,
       sha256:
         "d75232f4226c7727deffdae217c70d5dc1e64d8a5a8b1f95c28ee5b6f68c9b7d",
-      url: "https://pulse-status-zeta.vercel.app/downloads/v9.9.9/Pulse-9.9.9-Windows.exe",
+      url: "https://www.pulses4u.in/downloads/v9.9.9/Pulse-9.9.9-Windows.exe",
     },
     width: 390,
     height: 844,

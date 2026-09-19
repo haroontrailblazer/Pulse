@@ -4,23 +4,80 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#fafaf8" />
+    <meta name="color-scheme" content="light" />
+    <title>Pulse — Know what’s down. Get back to building.</title>
     <meta
       name="description"
       content="One place to check the services your code depends on. Explore outages, follow your stack, and get watchlist alerts with Pulse for web, Windows, and Android."
     />
+    <link rel="canonical" href="https://www.pulses4u.in/" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+    <!-- Absolute, and that is the whole point: crawlers resolve these without a
+         document base, so a relative path is either dropped or guessed at. The
+         card is 1200x630 because that is the only ratio every network crops
+         predictably. -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Pulse" />
+    <meta property="og:url" content="https://www.pulses4u.in/" />
+    <meta property="og:locale" content="en_US" />
     <meta
       property="og:title"
       content="Pulse — Know what’s down. Get back to building."
     />
     <meta
       property="og:description"
-      content="Official status updates for the tools you build with. One clear view, on web, Windows, and Android."
+      content="Official status for the 28 services your code depends on. One clear view, on the web, Windows and Android. Free, no account."
     />
-    <meta property="og:type" content="website" />
-    <meta property="og:image" content="/marketing/map-light@2x.png" />
+    <meta
+      property="og:image"
+      content="https://www.pulses4u.in/marketing/og-image.png"
+    />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta
+      property="og:image:alt"
+      content="Pulse — know what’s down, get back to building. A panel of 28 status dots for the services Pulse watches, most operational, two degraded and one out."
+    />
+
     <meta name="twitter:card" content="summary_large_image" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <title>Pulse — Know what’s down. Get back to building.</title>
+    <meta
+      name="twitter:title"
+      content="Pulse — Know what’s down. Get back to building."
+    />
+    <meta
+      name="twitter:description"
+      content="Official status for the 28 services your code depends on. One clear view, on the web, Windows and Android. Free, no account."
+    />
+    <meta
+      name="twitter:image"
+      content="https://www.pulses4u.in/marketing/og-image.png"
+    />
+    <meta
+      name="twitter:image:alt"
+      content="Pulse — know what’s down, get back to building. A panel of 28 status dots for the services Pulse watches, most operational, two degraded and one out."
+    />
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "Pulse",
+        "url": "https://www.pulses4u.in/",
+        "applicationCategory": "DeveloperApplication",
+        "applicationSubCategory": "Service status monitoring",
+        "operatingSystem": "Web, Windows 10+, Android 7.0+",
+        "description": "Pulse reads the official public status feeds of 28 services developers depend on and shows them in one view, with a personal watchlist, an incident inbox, a regional map and plain-English impact notes.",
+        "image": "https://www.pulses4u.in/marketing/og-image.png",
+        "isAccessibleForFree": true,
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        }
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>

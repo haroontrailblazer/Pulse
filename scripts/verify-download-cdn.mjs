@@ -24,7 +24,7 @@ export function downloadBudgetMs(bytes, bytesPerSecond = MIN_BYTES_PER_SECOND) {
 }
 
 export async function verifyDownloads(manifest) {
-  const base = `https://pulse-status-zeta.vercel.app/downloads/v${manifest.version}`;
+  const base = `https://www.pulses4u.in/downloads/v${manifest.version}`;
   const results = [];
   for (const asset of manifest.assets) {
     const started = performance.now();

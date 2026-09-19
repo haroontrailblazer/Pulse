@@ -4,7 +4,7 @@ import { createHash } from "node:crypto";
 import { resolve } from "node:path";
 
 const origin =
-  process.env.PULSE_CAPTURE_URL || "https://pulse-status-zeta.vercel.app/app";
+  process.env.PULSE_CAPTURE_URL || "https://www.pulses4u.in/app";
 const viewport = { width: 1440, height: 900 };
 const deviceScaleFactor = 2;
 const output = resolve("public/marketing");

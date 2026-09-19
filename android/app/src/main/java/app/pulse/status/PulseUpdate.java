@@ -30,7 +30,7 @@ final class PulseUpdate {
      * metadata, so a relative URL would compare this build against itself and
      * report "up to date" forever.
      */
-    static final String MANIFEST = "https://pulse-status-zeta.vercel.app/latest.json";
+    static final String MANIFEST = "https://www.pulses4u.in/latest.json";
 
     private PulseUpdate() {}
 

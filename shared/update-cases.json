@@ -163,13 +163,13 @@
       "platform": "android",
       "manifest": {
         "version": "1.0.21",
-        "checksums": "https://pulse-status-zeta.vercel.app/downloads/v1.0.21/SHA256SUMS.txt",
+        "checksums": "https://www.pulses4u.in/downloads/v1.0.21/SHA256SUMS.txt",
         "assets": {
           "android": {
             "name": "Pulse-1.0.21-Android.apk",
             "bytes": 6099879,
             "sha256": "a6b6c69934b86187714bcce9982d5da737ce587f9a462ed276443dcdb8e72ba6",
-            "url": "https://pulse-status-zeta.vercel.app/downloads/v1.0.21/Pulse-1.0.21-Android.apk"
+            "url": "https://www.pulses4u.in/downloads/v1.0.21/Pulse-1.0.21-Android.apk"
           }
         }
       },
@@ -186,7 +186,7 @@
             "name": "Pulse-1.0.21-Android.apk",
             "bytes": 6099879,
             "sha256": "a6b6c69934b86187714bcce9982d5da737ce587f9a462ed276443dcdb8e72ba6",
-            "url": "https://pulse-status-zeta.vercel.app/downloads/v1.0.21/Pulse-1.0.21-Android.apk"
+            "url": "https://www.pulses4u.in/downloads/v1.0.21/Pulse-1.0.21-Android.apk"
           }
         }
       },
@@ -203,7 +203,7 @@
             "name": "Pulse-1.0.21-Android.apk",
             "bytes": 6099879,
             "sha256": "a6b6c69934b86187714bcce9982d5da737ce587f9a462ed276443dcdb8e72ba6",
-            "url": "https://pulse-status-zeta.vercel.app/downloads/v1.0.21/Pulse-1.0.21-Android.apk"
+            "url": "https://www.pulses4u.in/downloads/v1.0.21/Pulse-1.0.21-Android.apk"
           }
         }
       },
@@ -220,7 +220,7 @@
             "name": "Pulse-1.0.21-Android.apk",
             "bytes": 6099879,
             "sha256": "a6b6c69934b86187714bcce9982d5da737ce587f9a462ed276443dcdb8e72ba6",
-            "url": "http://pulse-status-zeta.vercel.app/downloads/v1.0.21/Pulse-1.0.21-Android.apk"
+            "url": "http://www.pulses4u.in/downloads/v1.0.21/Pulse-1.0.21-Android.apk"
           }
         }
       },
@@ -237,7 +237,7 @@
             "name": "Pulse-1.0.21-Android.apk",
             "bytes": 0,
             "sha256": "a6b6c69934b86187714bcce9982d5da737ce587f9a462ed276443dcdb8e72ba6",
-            "url": "https://pulse-status-zeta.vercel.app/downloads/v1.0.21/Pulse-1.0.21-Android.apk"
+            "url": "https://www.pulses4u.in/downloads/v1.0.21/Pulse-1.0.21-Android.apk"
           }
         }
       },
@@ -254,7 +254,7 @@
             "name": "Pulse-1.0.21-Android.apk",
             "bytes": 1.5,
             "sha256": "a6b6c69934b86187714bcce9982d5da737ce587f9a462ed276443dcdb8e72ba6",
-            "url": "https://pulse-status-zeta.vercel.app/downloads/v1.0.21/Pulse-1.0.21-Android.apk"
+            "url": "https://www.pulses4u.in/downloads/v1.0.21/Pulse-1.0.21-Android.apk"
           }
         }
       },
@@ -271,7 +271,7 @@
             "name": "Pulse-1.0.21-Android.apk",
             "bytes": 6099879,
             "sha256": "NOTAHASH",
-            "url": "https://pulse-status-zeta.vercel.app/downloads/v1.0.21/Pulse-1.0.21-Android.apk"
+            "url": "https://www.pulses4u.in/downloads/v1.0.21/Pulse-1.0.21-Android.apk"
           }
         }
       },
@@ -288,7 +288,7 @@
             "name": "Pulse-1.0.20-Android.apk",
             "bytes": 6099879,
             "sha256": "a6b6c69934b86187714bcce9982d5da737ce587f9a462ed276443dcdb8e72ba6",
-            "url": "https://pulse-status-zeta.vercel.app/downloads/v1.0.20/Pulse-1.0.20-Android.apk"
+            "url": "https://www.pulses4u.in/downloads/v1.0.20/Pulse-1.0.20-Android.apk"
           }
         }
       },

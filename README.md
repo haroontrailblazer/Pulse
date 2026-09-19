@@ -252,7 +252,7 @@ that was asleep or switched off at the time: it runs at the first moment after
 08:00 instead of being skipped. A release is not a thing that changes between
 breakfast and lunch.
 
-Version truth is `https://pulse-status-zeta.vercel.app/latest.json`, written by
+Version truth is `https://www.pulses4u.in/latest.json`, written by
 `scripts/prepare-downloads.mjs` as the last thing it does. That placement is the
 point: by then every installer named in the manifest has been downloaded,
 size-checked and SHA-256 verified into the same `dist/` that deploys as one unit,
@@ -344,13 +344,32 @@ The public entry point is a marketing page explaining Pulse, with actual app scr
 
 Vercel serves /api/status as a bounded Node function. The hosted dashboard polls every 30 seconds while visible and pauses when hidden. Responses can be shared by the CDN for 30 seconds; freshness checks still exclude outdated readings. Native builds retain their existing local server or direct Android transport. No database or cross-device account system is introduced.
 
-Download links in both the landing page and dashboard point to versioned static files under https://pulse-status-zeta.vercel.app/downloads/v1.0.15, defined in shared/downloads.js. The deployment command `npm run build:deploy` fetches the published release once, verifies byte counts and SHA-256 against shared/release-assets.json, and stages the installers on the website CDN. Users download directly from that CDN; no runtime GitHub proxy or serverless function handles the file transfer. The APK and portable EXE include the compact sidebar and smaller wordmark, the desktop Overview in a portrait-monitor arrangement, Android-safe page spacing, complete live incident lists, location-scoped map evidence, component-health bars in a fixed-height, internally scrollable service directory, and a map-aligned live-incidents card with an internal list. See design/marketing-assets.md for artwork provenance and screenshot details.
+Download links in both the landing page and dashboard point to versioned static files under https://www.pulses4u.in/downloads/v1.0.15, defined in shared/downloads.js. The deployment command `npm run build:deploy` fetches the published release once, verifies byte counts and SHA-256 against shared/release-assets.json, and stages the installers on the website CDN. Users download directly from that CDN; no runtime GitHub proxy or serverless function handles the file transfer. The APK and portable EXE include the compact sidebar and smaller wordmark, the desktop Overview in a portrait-monitor arrangement, Android-safe page spacing, complete live incident lists, location-scoped map evidence, component-health bars in a fixed-height, internally scrollable service directory, and a map-aligned live-incidents card with an internal list. See design/marketing-assets.md for artwork provenance and screenshot details.
 
-Public website: https://pulse-status-zeta.vercel.app
+## Domain move, 1.0.22
 
-Open the dashboard: https://pulse-status-zeta.vercel.app/app
+Pulse moved from pulse-status-zeta.vercel.app to www.pulses4u.in in 1.0.22. The
+old host no longer serves anything, and that is a one-way door for builds that
+shipped before the move: 1.0.20 and 1.0.21 compiled the old manifest URL into
+the APK and the EXE, so their daily check now reads a 404, records nothing, and
+leaves the day unmarked. Nothing breaks and nothing is lost, but those builds
+can never learn that a newer Pulse exists. Anyone still on 1.0.21 or earlier has
+to download 1.0.22 by hand from https://www.pulses4u.in/#download; from 1.0.22
+on, the in-app update path works again.
 
-Public installers and checksums: https://github.com/haroontrailblazer/Pulse/releases/tag/v1.0.15
+Use the www host, not the apex, anywhere a build will read it. pulses4u.in
+answers 308 to www.pulses4u.in, and all four native network paths refuse
+redirects on purpose -- PulseUpdateWorker and PulseDownload both set
+setInstanceFollowRedirects(false), desktop/background.cjs fetches the manifest
+with redirect: "error", and desktop/download.cjs treats any non-200 as a
+failure. An apex URL would fail the update check on both platforms, silently on
+Android.
+
+Public website: https://www.pulses4u.in
+
+Open the dashboard: https://www.pulses4u.in/app
+
+Public installers and checksums: https://www.pulses4u.in/#download (SHA-256 at https://www.pulses4u.in/downloads/v1.0.22/SHA256SUMS.txt)
 
 The manual Build Windows release GitHub Actions workflow can build and upload a Windows EXE directly to an existing draft release. It installs the Electron runtime explicitly, runs the tests, checks the existing Android checksum, and uploads a matching combined checksum manifest. The release stays a draft until final review and publication.
 

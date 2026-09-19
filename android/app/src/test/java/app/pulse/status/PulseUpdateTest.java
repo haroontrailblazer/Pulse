@@ -106,7 +106,7 @@ public class PulseUpdateTest {
         JSONObject manifest = new JSONObject("{\"version\":\"1.0.21\",\"assets\":{\"android\":{"
             + "\"name\":\"Pulse-1.0.21-Android.apk\",\"bytes\":1.5,"
             + "\"sha256\":\"a6b6c69934b86187714bcce9982d5da737ce587f9a462ed276443dcdb8e72ba6\","
-            + "\"url\":\"https://pulse-status-zeta.vercel.app/downloads/v1.0.21/Pulse-1.0.21-Android.apk\"}}}");
+            + "\"url\":\"https://www.pulses4u.in/downloads/v1.0.21/Pulse-1.0.21-Android.apk\"}}}");
         assertNull(PulseUpdate.readUpdate(manifest, "android", "1.0.20"));
     }
 

@@ -84,13 +84,13 @@ test("the desktop update check notifies once per release, reaches the renderer, 
   }
   const manifest = (version) => ({
     version,
-    checksums: `https://pulse-status-zeta.vercel.app/downloads/v${version}/SHA256SUMS.txt`,
+    checksums: `https://www.pulses4u.in/downloads/v${version}/SHA256SUMS.txt`,
     assets: {
       windows: {
         name: `Pulse-${version}-Windows.exe`,
         bytes: 105191649,
         sha256: "d75232f4226c7727deffdae217c70d5dc1e64d8a5a8b1f95c28ee5b6f68c9b7d",
-        url: `https://pulse-status-zeta.vercel.app/downloads/v${version}/Pulse-${version}-Windows.exe`,
+        url: `https://www.pulses4u.in/downloads/v${version}/Pulse-${version}-Windows.exe`,
       },
     },
   });

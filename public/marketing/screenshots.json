@@ -1,6 +1,6 @@
 {
   "capturedAt": "2026-09-13T15:10:18.104Z",
-  "sourceUrl": "https://pulse-status-zeta.vercel.app/app",
+  "sourceUrl": "https://www.pulses4u.in/app",
   "source": "Actual Pulse application using official status feeds. Screenshots are illustrative snapshots, not current readings.",
   "tool": "Playwright",
   "browser": "153.0.4234.32",

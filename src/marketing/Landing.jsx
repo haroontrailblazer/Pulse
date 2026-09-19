@@ -1195,13 +1195,6 @@ export default function Landing() {
             Open dashboard <ArrowUpRight size={13} />
           </a>
           <a href="#download">Downloads</a>
-          <a
-            href="https://github.com/haroontrailblazer/Pulse"
-            target="_blank"
-            rel="noreferrer"
-          >
-            GitHub <ArrowUpRight size={13} />
-          </a>
         </nav>
         <small>Built for people who build.</small>
       </footer>

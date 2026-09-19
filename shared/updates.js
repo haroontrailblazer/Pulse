@@ -21,8 +21,7 @@
 // EXE, and both of those serve the copy of the app that is already installed --
 // so the check would compare a build against itself and report "up to date"
 // forever. verify-native-builds.mjs proves both packages carry that copy.
-export const latestManifestUrl =
-  "https://pulse-status-zeta.vercel.app/latest.json";
+export const latestManifestUrl = "https://www.pulses4u.in/latest.json";
 
 /** The hour, in the reader's own timezone, that the daily check runs at. */
 export const CHECK_HOUR = 8;

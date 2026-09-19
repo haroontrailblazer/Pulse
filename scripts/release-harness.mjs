@@ -10,7 +10,7 @@ import { releaseVersion } from "../shared/downloads.js";
 
 const root = resolve(import.meta.dirname, "..");
 const resultsDirectory = join(root, "test-results");
-const defaultOrigin = "https://pulse-status-zeta.vercel.app";
+const defaultOrigin = "https://www.pulses4u.in";
 const desktopPort = 47823;
 
 const sleep = (milliseconds) =>
