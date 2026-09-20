@@ -73,6 +73,7 @@ import ProviderLogo from "./ProviderLogo";
 import { downloads } from "../shared/downloads";
 import { describeDownload } from "../shared/updates";
 import { gsap, hoverMotionEnabled, motionEnabled } from "./motion";
+import SignalArcs from "./SignalArcs.jsx";
 import {
   dismiss,
   navigate,
@@ -2168,6 +2169,7 @@ export default function App() {
           )}
           {modal === "methodology" && (
             <div className="prose">
+              <SignalArcs />
               <p>
                 Pulse reads public, official provider status feeds. It is an
                 independent aggregator and is not affiliated with the providers
@@ -2202,6 +2204,12 @@ export default function App() {
               <p>
                 Open any provider to see reported components, active incident
                 details, and a link to its official status page.
+              </p>
+              <p className="methodology-byline">
+                <strong>Built by Haroon K M</strong>
+                Something would look broken and I would have eight status pages
+                open trying to work out whose problem it was. That is the whole
+                reason this exists: one question, asked once, in one place.
               </p>
             </div>
           )}

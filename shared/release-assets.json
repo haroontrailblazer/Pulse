@@ -1,16 +1,16 @@
 {
-  "version": "1.0.22",
+  "version": "1.0.23",
   "assets": [
     {
-      "name": "Pulse-1.0.22-Android.apk",
-      "bytes": 6120087,
-      "sha256": "0723ce451856cb25aaf6416a51c3c28c8ede92a9e4d82e8184744046dea9e90f"
+      "name": "Pulse-1.0.23-Android.apk",
+      "bytes": 6121119,
+      "sha256": "fb2dc8f9172b42a96c7e74c2400a6feab1591b14eb319298a375e8f310d0ad30"
     },
     {
-      "name": "Pulse-1.0.22-Windows.exe",
-      "bytes": 105204687,
-      "sha256": "3188ce294910b02e56dec8c29f9b50c355317c4f9ff5169f297c1fc5cfdb593b"
+      "name": "Pulse-1.0.23-Windows.exe",
+      "bytes": 105234859,
+      "sha256": "2ba743d202ec8d1ead395dd10b42385c6ac0aa07756a62dff930137fcea8d1d6"
     }
   ],
-  "sourceHash": "52f31fd09d553e4df8a2f13d78c3ac2a4253b8f061d948968071dcdd87ee54d2"
+  "sourceHash": "ac89d531b1795bdc8c8cc837d53b9b86bd147cb9e4c199b60db163e7b3d02743"
 }

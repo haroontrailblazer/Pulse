@@ -3446,3 +3446,51 @@ select {
 .provider-logo.logo-supabase {
   font-size: 19px;
 }
+
+/* ---- Help & methodology: the signal figure and the byline ---------------- */
+/* The figure inherits ink from .prose rather than naming a colour, so one asset
+   is correct in both themes. Only the status marks are named, and they are the
+   product's own four tokens. */
+.signal-arcs {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin: var(--space-2) 0 var(--space-5);
+  color: var(--text);
+}
+.signal-arcs .sig-lines line {
+  stroke: currentColor;
+  stroke-width: 1;
+  opacity: 0.2;
+}
+.signal-arcs .sig-nodes circle {
+  fill: currentColor;
+  opacity: 0.35;
+}
+.signal-arcs .sig-mark {
+  fill: currentColor;
+}
+/* Full opacity on the three that carry meaning: a field where everything is
+   calm would misdescribe what the product is for. */
+.signal-arcs .sig-positive {
+  fill: var(--positive);
+  opacity: 1;
+}
+.signal-arcs .sig-warning {
+  fill: var(--warning);
+  opacity: 1;
+}
+.signal-arcs .sig-negative {
+  fill: var(--negative);
+  opacity: 1;
+}
+.methodology-byline {
+  margin-top: var(--space-5);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--line);
+  color: var(--text-muted);
+}
+.methodology-byline strong {
+  display: block;
+  color: var(--text);
+}

@@ -1,10 +1,36 @@
 {
   "name": "pulse-status",
-  "version": "1.0.22",
+  "version": "1.0.23",
   "private": true,
   "type": "module",
-  "description": "Pulse â€” a clearer picture of the internet's health",
-  "author": "Pulse",
+  "description": "Pulse - a calm, modern view of the internet's health.",
+  "license": "Apache-2.0",
+  "author": "Haroon K M",
+  "homepage": "https://www.pulses4u.in",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/haroontrailblazer/Pulse.git"
+  },
+  "bugs": {
+    "url": "https://github.com/haroontrailblazer/Pulse/issues"
+  },
+  "keywords": [
+    "status-page",
+    "uptime",
+    "monitoring",
+    "observability",
+    "incident",
+    "statuspage",
+    "react",
+    "electron",
+    "capacitor",
+    "vite",
+    "sse",
+    "cross-platform"
+  ],
+  "engines": {
+    "node": ">=22.12.0"
+  },
   "main": "desktop/main.cjs",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
