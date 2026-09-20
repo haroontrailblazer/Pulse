@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Pulse website
+    url: https://www.pulses4u.in
+    about: The live dashboard, the installers, and what Pulse currently covers.
+  - name: Documentation
+    url: https://github.com/haroontrailblazer/Pulse/tree/main/docs
+    about: Data boundaries, the monitoring API, building Pulse, and deployment.
+  - name: Report a security vulnerability
+    url: https://github.com/haroontrailblazer/Pulse/security/advisories/new
+    about: Report privately through a GitHub security advisory. Please do not open a public issue.

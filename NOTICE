@@ -1,0 +1,157 @@
+Pulse
+Copyright 2026 Haroon K M
+
+This product includes software developed by Haroon K M.
+
+Licensed under the Apache License, Version 2.0 (the "License"); you may not
+use this file except in compliance with the License. A copy of the License is
+distributed with this work in the file named LICENSE, and may also be obtained
+at:
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+License for the specific language governing permissions and limitations under
+the License.
+
+
+===============================================================================
+Third-party components
+===============================================================================
+
+Pulse ships as three packages built from one codebase: the hosted website, an
+Android application, and a portable Windows executable. The components below
+are bundled with, or redistributed by, one or more of those packages. Licence
+identifiers are taken from each package's own metadata at the version pinned in
+this repository.
+
+
+--- Map geometry ---
+
+world-atlas 2.0.2
+    ISC License.
+    A redistribution of Natural Earth vector data as TopoJSON.
+
+Natural Earth
+    Public domain. Natural Earth places its map data in the public domain and
+    asks for no permission or attribution, though attribution is welcomed.
+    http://www.naturalearthdata.com/
+
+topojson-client 3.1.0
+    ISC License.
+
+d3-geo 3.1.1
+    ISC License.
+
+
+--- Icons ---
+
+Phosphor Icons, via @phosphor-icons/react 2.1.10
+    MIT License.
+    https://phosphoricons.com/
+
+Simple Icons, via simple-icons 16.31.0
+    CC0-1.0 (Creative Commons Zero v1.0 Universal).
+    Selected brand paths are extracted at build time to identify providers.
+    The icon artwork is CC0; the brands the icons depict are not. See the
+    "Trademarks" section below.
+    https://simpleicons.org/
+
+
+--- Fonts ---
+
+DM Sans, via @fontsource-variable/dm-sans 5.3.0
+    SIL Open Font License 1.1.
+    Copyright 2014 The DM Sans Project Authors
+    (https://github.com/googlefonts/dm-fonts)
+    Full licence text: public/font-licenses/DM-Sans.txt
+
+Manrope, via @fontsource-variable/manrope 5.3.0
+    SIL Open Font License 1.1.
+    Copyright 2019 The Manrope Project Authors
+    (https://github.com/sharanda/manrope)
+    Full licence text: public/font-licenses/Manrope.txt
+
+Instrument Serif, via @fontsource/instrument-serif 5.3.0
+    SIL Open Font License 1.1, as declared by the package. Its licence text is
+    not mirrored in public/font-licenses/; it ships in the package itself at
+    node_modules/@fontsource/instrument-serif/LICENSE.
+
+
+--- Application runtime ---
+
+React 19.3.0 and React DOM 19.3.0
+    MIT License.
+
+Capacitor 8.5.2 (@capacitor/core, @capacitor/android) and
+@capacitor/share 8.0.1
+    MIT License.
+    Used to build and package the Android application.
+
+Electron 44.3.0
+    MIT License.
+    Used to build and package the portable Windows executable. Electron itself
+    redistributes Chromium and Node.js, which carry their own licences; those
+    terms are included in the licence files shipped inside the Electron
+    distribution and in the packaged application.
+
+fast-xml-parser 5.11.1
+    MIT License.
+
+GSAP 3.15.0
+    Not an OSI-approved open source licence. The package declares its licence
+    as: Standard "no charge" license: https://gsap.com/standard-license
+    No LICENSE file is shipped in the package. Consult GreenSock's published
+    terms at https://gsap.com/standard-license for the conditions that apply.
+
+
+--- Build and test tooling (not redistributed) ---
+
+These are used to build, package and check Pulse and are not shipped in the
+published website, APK or EXE.
+
+Vite 8.3.0 and @vitejs/plugin-react 6.1.1      MIT License.
+@capacitor/cli 8.5.2                           MIT License.
+electron-builder 26.15.3                       MIT License.
+Playwright 1.63.0                              Apache License 2.0.
+Prettier 3.9.6                                 MIT License.
+@resvg/resvg-js 2.6.2                          Mozilla Public License 2.0.
+
+Transitive dependencies are not enumerated here. The resolved licence of every
+installed package can be read from its own package.json metadata in
+node_modules.
+
+
+===============================================================================
+Trademarks
+===============================================================================
+
+"Pulse" and the Pulse mark are trademarks of Haroon K M. Section 6 of the
+Apache License, Version 2.0 grants no permission to use the trade names,
+trademarks, service marks or product names of the licensor, except as required
+for reasonable and customary use in describing the origin of the work and
+reproducing the content of the NOTICE file.
+
+Third-party provider names, logos and marks that appear in Pulse are the
+property of their respective owners. They are used solely to identify the
+official status source each entry reads from. Their use does not imply any
+affiliation with, sponsorship by, or endorsement from those owners, and Pulse
+is independent of every company it lists.
+
+OpenAI's mark is rendered in monochrome in accordance with OpenAI's brand
+guidance at https://openai.com/brand/.
+
+
+===============================================================================
+Data sources
+===============================================================================
+
+Pulse reads status information that providers publish themselves, through their
+own public status pages and feeds. It reports what those official sources say.
+
+Pulse performs no independent availability measurement of its own: it does not
+probe, poll or test any provider's service, and it makes no claim about a
+provider's availability beyond what that provider has published. Pulse is
+independent of every company it lists.

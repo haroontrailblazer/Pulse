@@ -1,0 +1,128 @@
+name: Bug report
+description: Report something in Pulse that behaves incorrectly.
+title: "Bug: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ### Before you post
+
+        Please do not report a security vulnerability here. Issues are public.
+        Use the process in
+        [SECURITY.md](https://github.com/haroontrailblazer/Pulse/blob/main/SECURITY.md),
+        which routes reports through
+        [a private security advisory](https://github.com/haroontrailblazer/Pulse/security/advisories/new).
+
+        If a provider's own status page is reporting an incident, Pulse is
+        reflecting that provider's published feed rather than misreporting it.
+        [Data boundaries and scope](https://github.com/haroontrailblazer/Pulse/blob/main/docs/data-boundaries.md)
+        explains what Pulse does and does not measure.
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Surface
+      description: Where did you see this?
+      options:
+        - Website (pulses4u.in)
+        - Windows EXE (portable)
+        - Android APK
+        - Local dev server
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Pulse version
+      description: >-
+        The installer filename you ran, e.g. Pulse-1.0.22-Windows.exe. On Android,
+        Settings > Apps > Pulse also shows it. On the website, put "website" and
+        the date you saw the problem.
+      placeholder: "1.0.22"
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Operating system, browser or device
+      description: Include the version where you can.
+      placeholder: "Windows 11 26200, Chrome 143 / Pixel 7, Android 15"
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: Describe the behaviour you actually saw.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected instead
+    validations:
+      required: false
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Numbered steps, starting from a fresh launch or a fresh page load.
+      placeholder: |
+        1. Open the dashboard at /app
+        2. Switch to the Incidents view
+        3. ...
+    validations:
+      required: true
+  - type: dropdown
+    id: provider
+    attributes:
+      label: Provider or feed involved
+      description: Choose one if the problem is specific to a single provider's data.
+      options:
+        - Not specific to one provider
+        - npm
+        - PyPI & Python
+        - Docker
+        - RubyGems
+        - CircleCI
+        - Postman
+        - Sentry
+        - GitHub
+        - Supabase
+        - Atlassian
+        - Snyk
+        - HackerOne
+        - OpenAI
+        - Anthropic
+        - Hugging Face
+        - Replicate
+        - Cloudflare
+        - Amazon Web Services
+        - Google Cloud
+        - Microsoft Azure
+        - Vercel
+        - DigitalOcean
+        - Render
+        - Netlify
+        - Discord
+        - Zoom
+        - Twilio
+        - Notion
+        - A provider Pulse does not yet cover
+    validations:
+      required: false
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs, console output or screenshots
+      description: Browser console output, terminal output, or anything else that helps. This is rendered as code, so no backticks are needed.
+      render: text
+    validations:
+      required: false
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Confirmation
+      options:
+        - label: I searched the existing issues and this has not already been reported.
+          required: true

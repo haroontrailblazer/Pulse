@@ -1,0 +1,55 @@
+name: Feature request
+description: Suggest a change to what Pulse shows or how it behaves.
+title: "Feature: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Pulse aggregates official provider-published status feeds and aims to
+        stay calm and legible rather than comprehensive. A proposal is easiest
+        to judge when it starts from the problem rather than the solution.
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem being solved
+      description: What are you trying to find out, or what goes wrong today?
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: What should Pulse do instead?
+    validations:
+      required: false
+  - type: checkboxes
+    id: surfaces
+    attributes:
+      label: Surfaces this should apply to
+      options:
+        - label: Website
+          required: false
+        - label: Windows EXE
+          required: false
+        - label: Android APK
+          required: false
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Other approaches you weighed, including doing nothing.
+    validations:
+      required: false
+  - type: checkboxes
+    id: delivery
+    attributes:
+      label: Delivery
+      options:
+        - label: >-
+            I understand that Pulse ships one product surface three ways, and
+            that under the delivery rules in AGENTS.md a change to application,
+            shared, native or branding code is a three-surface release rather
+            than a website-only change. That is the maintainer's problem, not
+            yours — it mostly means changes land slower than they would on a
+            website-only project.
