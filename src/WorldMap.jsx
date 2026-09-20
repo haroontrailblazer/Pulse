@@ -220,15 +220,22 @@ export default function WorldMap({
   // it is drawn about 160px tall inside a 411px surface, with 120px of empty
   // sky above it. One step is exactly what the + button gives.
   //
-  // Not initial state: there is a single WorldMap whose `expanded` prop flips
-  // between the Overview card and the Map page, so an initial value would never
-  // fire for the page. Leaving the page returns it to 1 so the Overview's
-  // preview card is never zoomed.
+  // The ref starts at null rather than at `expanded`, and that is the whole
+  // correctness of this. WorldMap is only mounted on Overview and on the Map
+  // page, so arriving from Incidents, Watchlist, Developer tools or Dependency
+  // insights - or cold-starting on /map, which a restored task does - mounts it
+  // fresh with `expanded` already true. Seeding the ref from `expanded` made the
+  // first run a no-op in exactly those cases, so the page opened at zoom 1 and
+  // the reader got the small map on every route in but one. A sentinel cannot
+  // equal either boolean, so the first run always decides.
+  //
+  // Leaving the page still returns it to 1 so the Overview's preview card is
+  // never zoomed.
   //
   // Arriving on a marker is left exactly as it was: `focus` is derived from
   // zoom, so zooming in on arrival would pan the map onto the marker instead of
   // showing it where the Overview showed it.
-  const wasExpanded = useRef(expanded);
+  const wasExpanded = useRef(null);
   useEffect(() => {
     if (wasExpanded.current === expanded) return;
     wasExpanded.current = expanded;

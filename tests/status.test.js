@@ -99,8 +99,27 @@ test("production server serves the built app, assets, and missing file responses
     assert.match(icon.headers.get("content-type"), /image\/svg/);
     const missing = await fetch(`${base}/missing.js`);
     assert.equal(missing.status, 404);
-    const traversal = await fetch(`${base}/..%5cpackage.json`);
-    assert.equal(traversal.status, 403);
+    // An encoded separator is the vector that works everywhere: `%2f` and the
+    // fully-encoded `%2e%2e%2f` both decode to `../`, which path.resolve treats
+    // as a parent on win32 and on POSIX alike, so the guard must refuse them on
+    // both. These are the assertions that actually pin the protection down.
+    for (const vector of ["/..%2fpackage.json", "/%2e%2e%2fpackage.json"]) {
+      const traversal = await fetch(`${base}${vector}`);
+      assert.equal(traversal.status, 403, `${vector} must be refused`);
+      assert.doesNotMatch(await traversal.text(), /pulse-status/, vector);
+    }
+    // A backslash is a separator on win32 and an ordinary, legal character in a
+    // POSIX filename, so the same request is traversal on one platform and a
+    // plain missing file on the other. Both answers are safe - nothing outside
+    // dist/ is served either way - so the assertion is that it is refused OR
+    // missing, never served. Pinning this at 403 is what failed CI on Linux
+    // while passing on the Windows machine it was written on.
+    const backslash = await fetch(`${base}/..%5cpackage.json`);
+    assert.ok(
+      [403, 404].includes(backslash.status),
+      `backslash vector must be refused or missing, got ${backslash.status}`,
+    );
+    assert.doesNotMatch(await backslash.text(), /pulse-status/);
     // Every destination now has a URL, and inside the EXE those URLs are served
     // by this server. Nothing tested the extension-less fallback the deep links
     // depend on, so a change to it would have silently broken Alt+Left, the

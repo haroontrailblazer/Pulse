@@ -1,6 +1,6 @@
 {
   "name": "pulse-status",
-  "version": "1.0.23",
+  "version": "1.0.24",
   "private": true,
   "type": "module",
   "description": "Pulse - a calm, modern view of the internet's health.",
