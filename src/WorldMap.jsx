@@ -67,6 +67,9 @@ const onAndroid = () =>
 // the page would open at 1 and jump to 1.5 a frame later.
 const homeZoom = (expanded, region) =>
   expanded && region === "Global" && onAndroid() ? MAP_PAGE_ZOOM : 1;
+// The reader having closed the map's resting services column. Distinct from
+// null, which on a desktop-sized map page means the column is showing.
+const CLOSED = "closed";
 const views = {
   Global: [435, 210, 1],
   "North America": [250, 132, 1.85],
@@ -99,11 +102,32 @@ export default function WorldMap({
   const [region, setRegion] = useState("Global"),
     [zoom, setZoom] = useState(1);
   const [selected, setSelected] = useState(null),
-    [panel, setPanel] = useState(null);
+    [chosen, setChosen] = useState(null);
   const [severity, setSeverity] = useState("all"),
     [stackOnly, setStackOnly] = useState(false);
   const [service, setService] = useState(null),
     [evidenceLimit, setEvidenceLimit] = useState(6);
+  const wide = size.width > 700 || (size.width > 570 && size.height < 430);
+  // On a window wide enough for two columns, the services list is not an overlay
+  // over the map -- it is the other half of the page, and the map page opens
+  // showing it. A dock that has to be clicked to reveal the one thing the page
+  // is for is a control asking permission to do its job.
+  //
+  // The website's desktop view and the EXE only. A phone has no room for a
+  // second column, and the APK is a phone-shaped surface even on the tablet
+  // where `wide` happens to be true, so it keeps the dock and the sheet.
+  //
+  // `chosen` is what the reader opened and `panel` is what is on screen. That
+  // split is the whole of it, and it is what keeps the history honest: the
+  // resting column was opened by nobody, so it owns no entry, and a back press
+  // on the map page leaves the map page rather than closing a column the reader
+  // never asked for. A hub panel and the coverage note are still overlays the
+  // reader opened, and still own theirs.
+  const resting = expanded && wide && !onAndroid() ? "services" : null;
+  // Closing the resting column is not the same as having opened nothing, so it
+  // needs a value of its own -- otherwise "close" would immediately fall back
+  // to the column it just closed.
+  const panel = chosen === CLOSED ? null : (chosen ?? resting);
   useEffect(() => {
     const observer = new ResizeObserver(([entry]) =>
       setSize({
@@ -138,9 +162,13 @@ export default function WorldMap({
     return () => observer.disconnect();
   }, [panel]);
   useEffect(() => {
-    if (panel) closeRef.current?.focus({ preventScroll: true });
+    // `chosen`, not `panel`: the resting column is part of the page, and
+    // arriving on a page should leave the reader at its start rather than
+    // inside a control they never opened.
+    if (chosen && chosen !== CLOSED)
+      closeRef.current?.focus({ preventScroll: true });
     if (bodyRef.current) bodyRef.current.scrollTop = 0;
-  }, [panel, service, severity]);
+  }, [chosen, service, severity]);
   const atlas = useMemo(
     () =>
       buildAtlas(
@@ -184,17 +212,22 @@ export default function WorldMap({
     severity,
   );
   const focused = rows.find((row) => row.provider.id === service);
+  // `next === resting` is the desktop map's own services column: asking for it
+  // is asking for the page's resting state, so it is recorded as exactly that
+  // and claims no history entry. Without this the dock would open a column that
+  // was already the default, and the back press that closed it would land the
+  // reader on the same screen -- a press that did nothing.
   const openPanel = (next, event) => {
     triggerRef.current = event?.currentTarget || null;
     setService(null);
     setEvidenceLimit(6);
-    setPanel(next);
+    setChosen(next === resting ? null : next);
   };
   // What the stack calls when the inspector's entry is popped: state and focus
   // only. Everything a reader can touch calls dismiss() instead, so the entry
   // leaves with the panel.
   const closePanel = () => {
-    setPanel(null);
+    setChosen(null);
     setService(null);
     triggerRef.current?.focus({ preventScroll: true });
   };
@@ -202,13 +235,25 @@ export default function WorldMap({
     setService(null);
     setEvidenceLimit(6);
   };
+  // Whether the thing on screen is an overlay the reader opened. The resting
+  // column is not, so it must not leave through the stack: asking history to
+  // drop an entry that was never added would pop whatever happened to be on
+  // top of it instead.
+  const opened = !!chosen && chosen !== CLOSED;
+  // The X. Everything else a reader can touch still goes through dismiss(), so
+  // an overlay's entry always leaves with it.
+  const dismissPanel = () => (opened ? dismiss() : setChosen(CLOSED));
   // Two levels, so two entries: the map, then the inspector, then the one
   // provider inside it. A back press unwinds exactly one of them, which is what
   // the inspector's own ArrowLeft already promised and nothing delivered.
   // Registered only while this instance is the Map destination -- the Overview
   // mounts the same component as a preview, and a preview never has an
   // inspector.
-  useDismissible(expanded && !!panel, closePanel, "map-panel");
+  useDismissible(
+    expanded && !!chosen && chosen !== CLOSED,
+    closePanel,
+    "map-panel",
+  );
   useDismissible(expanded && !!service, clearService, "map-service");
   const chooseHub = (index, event) => {
     if (motionEnabled() && event?.currentTarget)
@@ -234,7 +279,7 @@ export default function WorldMap({
   // dock and the chips that a `has-inspector` card hides.
   useEffect(() => {
     if (!preview) return;
-    setPanel(null);
+    setChosen(null);
     setSelected(null);
     setService(null);
     // The region too, or a reader who looked at Europe on the Map page would
@@ -284,24 +329,24 @@ export default function WorldMap({
   }, [expanded, initialView]);
   const appliedView = useRef(null);
   useEffect(() => {
-    if (!expanded || !initialView || appliedView.current === initialView) return;
+    if (!expanded || !initialView || appliedView.current === initialView)
+      return;
     appliedView.current = initialView;
     setService(null);
     setEvidenceLimit(6);
     if (initialView.panel === "region" && Number.isInteger(initialView.hub)) {
       setSelected(initialView.hub);
       setSeverity("all");
-      setPanel("region");
+      setChosen("region");
       return;
     }
     if (initialView.panel === "services") {
       setSeverity(initialView.severity || "all");
-      setPanel("services");
+      setChosen("services");
       return;
     }
-    if (initialView.panel === "about") setPanel("about");
+    if (initialView.panel === "about") setChosen("about");
   }, [expanded, initialView]);
-  const wide = size.width > 700 || (size.width > 570 && size.height < 430);
   const side = panel && wide ? Math.min(350, size.width * 0.43) : 0;
   // Fixed, and mirrored by the narrow inspector rules in map.css: the card
   // grows to fit the panel, so there is nothing for a percentage to adapt to.
@@ -470,7 +515,8 @@ export default function WorldMap({
       onKeyDown={(event) => {
         if (event.key === "Escape" && panel) {
           event.stopPropagation();
-          closePanel();
+          if (opened) closePanel();
+          else setChosen(CLOSED);
         }
       }}
     >
@@ -610,7 +656,7 @@ export default function WorldMap({
         onChange={(name) => {
           setRegion(name);
           setZoom(homeZoom(expanded, name));
-          setPanel(null);
+          setChosen(null);
           setSelected(null);
         }}
         icon={<Funnel size={16} />}
@@ -637,7 +683,7 @@ export default function WorldMap({
             setZoom(homeZoom(expanded, "Global"));
             setSelected(null);
             setSeverity("all");
-            setPanel(null);
+            setChosen(null);
           }}
         >
           <LocateFixed size={20} />
@@ -708,7 +754,7 @@ export default function WorldMap({
               ref={closeRef}
               className="atlas-close"
               aria-label="Close map insights"
-              onClick={dismiss}
+              onClick={dismissPanel}
             >
               <X size={20} />
             </button>
@@ -867,15 +913,25 @@ export default function WorldMap({
                 ) : (
                   <div className="atlas-no-signals">
                     <Globe2 size={24} />
+                    {/* Three empty states, not one. The unfiltered case reads
+                        far more often now that this column is the desktop map's
+                        resting state: an all-clear sweep would otherwise open
+                        the page on "no current evidence matches this filter"
+                        when nothing has been filtered, which reads as a broken
+                        control rather than as good news. */}
                     <h3>
                       {stackOnly && !watchlist.length
                         ? "No watched services yet"
-                        : "No matching signals"}
+                        : panel === "services" && severity === "all"
+                          ? "Every feed is clear"
+                          : "No matching signals"}
                     </h3>
                     <p>
                       {panel === "region"
                         ? "The current feeds don’t name a component here. Check service-wide conditions for broader incidents."
-                        : "No current evidence matches this filter. Unavailable feeds are excluded."}
+                        : severity === "all"
+                          ? "No provider is reporting an incident or maintenance right now. Unavailable feeds are excluded."
+                          : "No current evidence matches this filter. Unavailable feeds are excluded."}
                     </p>
                   </div>
                 )}
@@ -884,7 +940,7 @@ export default function WorldMap({
                     className="atlas-inline-button"
                     onClick={() => {
                       setSeverity("all");
-                      setPanel("services");
+                      setChosen("services");
                     }}
                   >
                     All service conditions

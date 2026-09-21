@@ -71,8 +71,16 @@ test("the APK map zoom applies however the reader reached the page", () => {
   );
   // The step itself is still one press of the + control, which moves by 0.5
   // from a base of 1. If either number moves the other has to move with it.
-  assert.match(source, /const MAP_PAGE_ZOOM = 1\.5/, "the page zoom is one step");
-  assert.match(source, /Math\.min\(3, value \+ 0\.5\)/, "the + control steps by 0.5");
+  assert.match(
+    source,
+    /const MAP_PAGE_ZOOM = 1\.5/,
+    "the page zoom is one step",
+  );
+  assert.match(
+    source,
+    /Math\.min\(3, value \+ 0\.5\)/,
+    "the + control steps by 0.5",
+  );
 });
 
 // Reset is the control whose whole job is "put the map back the way it was",
@@ -127,4 +135,55 @@ test("everything that resets the map returns it to the zoom the page opened at",
     2,
     "Reset and the region picker both return the map to its own default",
   );
+});
+
+// A dock that has to be clicked to reveal the one thing the map page is for is
+// a control asking permission to do its job, so on a window wide enough for two
+// columns the services list is the page's resting state rather than an overlay
+// over it. The website's desktop view and the EXE only: a phone has no room for
+// a second column, and the APK is phone-shaped even on the tablet where `wide`
+// happens to be true.
+//
+// The part worth holding is not the layout but the history. The resting column
+// was opened by nobody, so it owns no entry -- otherwise arriving on the map
+// page and pressing back would close a column the reader never asked for
+// instead of leaving the page, which is a dead press on two of three surfaces.
+test("the map's resting services column is the page, not an overlay over it", () => {
+  const source = readFileSync(
+    new URL("../src/WorldMap.jsx", import.meta.url),
+    "utf8",
+  );
+  // What the reader opened and what is on screen are different questions.
+  assert.match(source, /\[chosen, setChosen\] = useState\(null\)/);
+  assert.match(
+    source,
+    /const resting =\s*expanded && wide && !onAndroid\(\) \? "services" : null;/,
+    "the column belongs to a wide, expanded, non-Android map",
+  );
+  assert.match(
+    source,
+    /const panel = chosen === CLOSED \? null : \(chosen \?\? resting\);/,
+  );
+  // The entry follows the reader's own choice, never the resting state.
+  const entry = source.slice(
+    source.indexOf("useDismissible("),
+    source.indexOf('"map-service"'),
+  );
+  assert.match(entry, /expanded && !!chosen && chosen !== CLOSED/);
+  assert.doesNotMatch(
+    entry.slice(0, entry.indexOf('"map-panel"')),
+    /!!panel/,
+    "the resting column must not claim a history entry",
+  );
+  // Asking for the panel the page already rests on is asking for that resting
+  // state, so the dock cannot open a column that was already the default and
+  // leave a back press that lands on the same screen.
+  assert.match(source, /setChosen\(next === resting \? null : next\)/);
+  // And closing it is a layout change, not a dismissal: asking history to drop
+  // an entry that was never added would pop whatever sat on top of it instead.
+  assert.match(
+    source,
+    /const dismissPanel = \(\) =>\s*\(?opened \? dismiss\(\) : setChosen\(CLOSED\)\)?;/,
+  );
+  assert.match(source, /onClick=\{dismissPanel\}/);
 });
