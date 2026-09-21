@@ -18,6 +18,8 @@ export const plainImpact = {
     "Shared documents, team tools, or connected automations could be interrupted.",
   "Domains & hosting":
     "Domain renewals, DNS changes, control panels, or sites on shared hosting could be affected.",
+  "Payments & commerce":
+    "Checkout, payouts, bank connections, or storefront orders could fail or be delayed.",
 };
 // Read with no fallback until now, which meant a provider in a category nobody
 // had written a sentence for rendered "If you use the affected feature:" with

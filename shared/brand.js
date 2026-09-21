@@ -34,3 +34,56 @@ export function pulseSvg({
 // Straight lines only, no arcs and no subpath winding: Android's PathParser is
 // the strictest reader this path meets.
 export const genericMarkPath = "M4 14h3v6H4zM10.5 9h3v11h-3zM17 4h3v16h-3z";
+
+// A brand mark has to be legible on the tile it sits on, and brands are not
+// chosen for that. Thirteen of the first twenty-eight needed a hand-written CSS
+// exception; at seventy-seven that list is a maintenance trap and an audit
+// nobody repeats, so the adjustment is computed instead.
+//
+// The rule is the one the hand-written exceptions followed: keep the hue, move
+// the lightness the least that clears 3:1 against the tile -- the WCAG
+// non-text minimum, which is what a logo is. The provider's name is always
+// adjacent in text, so the mark identifies rather than informs, and a few
+// percent of lightness costs far less than an invisible logo.
+const TILE_LIGHT = [255, 255, 255];
+const TILE_DARK = [22, 22, 24];
+const channel = (value) => {
+  const v = value / 255;
+  return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
+};
+const luminance = ([r, g, b]) =>
+  0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b);
+const contrast = (a, b) => {
+  const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+  return (hi + 0.05) / (lo + 0.05);
+};
+const parse = (hex) => {
+  const clean = String(hex).replace("#", "").trim();
+  const full =
+    clean.length === 3
+      ? [...clean].map((c) => c + c).join("")
+      : clean.padEnd(6, "0").slice(0, 6);
+  return [0, 2, 4].map((i) => parseInt(full.slice(i, i + 2), 16) || 0);
+};
+const toHex = (rgb) =>
+  `#${rgb
+    .map((v) =>
+      Math.round(Math.min(255, Math.max(0, v)))
+        .toString(16)
+        .padStart(2, "0"),
+    )
+    .join("")}`;
+
+export function readableMark(hex, theme = "light", target = 3.05) {
+  const tile = theme === "dark" ? TILE_DARK : TILE_LIGHT;
+  const rgb = parse(hex);
+  if (contrast(rgb, tile) >= target) return toHex(rgb);
+  // Toward white on a dark tile, toward black on a light one. Stepping in 0.5%
+  // keeps the result as close to the brand as the floor allows.
+  const toward = theme === "dark" ? 255 : 0;
+  for (let t = 0.005; t <= 1.0001; t += 0.005) {
+    const moved = rgb.map((v) => v + (toward - v) * t);
+    if (contrast(moved, tile) >= target) return toHex(moved);
+  }
+  return theme === "dark" ? "#ffffff" : "#000000";
+}

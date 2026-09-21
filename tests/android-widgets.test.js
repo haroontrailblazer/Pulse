@@ -148,7 +148,22 @@ test("no shipped drawable trips the arc-flag gap in Android's path tokenizer", (
   );
   assert.deepEqual(
     compacted.map(([id]) => id).sort(),
-    ["atlassian", "digitalocean", "discord", "docker", "godaddy", "railway"],
+    [
+      "atlassian",
+      "bitbucket",
+      "box",
+      "buildkite",
+      "codecov",
+      "digitalocean",
+      "discord",
+      "docker",
+      "godaddy",
+      "hubspot",
+      "jfrog",
+      "mongodbatlas",
+      "railway",
+      "snowflake",
+    ],
     "a new brand icon uses compacted arc flags",
   );
   for (const provider of nativeCatalog()) {

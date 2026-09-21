@@ -2,6 +2,7 @@ import test from "node:test";
 import { readFileSync } from "node:fs";
 import assert from "node:assert/strict";
 import { arrangeMapPins } from "../shared/map-layout.js";
+import { hubs } from "../shared/atlas.js";
 
 test("crowded marker touch targets separate while preserving their source coordinates", () => {
   const points = [
@@ -189,3 +190,115 @@ test("the map's services column is the page, not an overlay over it", () => {
   // And Escape has something to do only when something was opened over it.
   assert.match(source, /Escape" && \(chosen \|\| service\)/);
 });
+
+// The pins are projected from shared/atlas.js by scripts/generate-map.mjs. They
+// used to come from a second array of coordinates kept inside that script,
+// index-aligned with the hubs by hand -- so adding a hub in one file and not the
+// other moved every pin after it to the wrong place and failed nothing. These
+// hold the two together.
+test("every hub has a pin, and the pin is the point the hub names", () => {
+  const points = JSON.parse(
+    readFileSync(new URL("../src/map-data.json", import.meta.url), "utf8"),
+  ).points;
+  assert.equal(
+    points.length,
+    hubs.length,
+    "a hub without a projected point shifts every pin after it",
+  );
+  for (const [index, hub] of hubs.entries()) {
+    assert.ok(
+      Array.isArray(hub.lonlat) && hub.lonlat.length === 2,
+      `${hub.name} has no lonlat to project`,
+    );
+    const [x, y] = points[index];
+    assert.ok(
+      Number.isFinite(x) && Number.isFinite(y),
+      `${hub.name} did not project to a point`,
+    );
+    // Inside the drawing surface the projection was fitted to.
+    assert.ok(
+      x >= 0 && x <= 870 && y >= 0 && y <= 420,
+      `${hub.name} is off the map`,
+    );
+  }
+});
+
+test("the coordinates a hub shows are the coordinates it is drawn at", () => {
+  // `coordinates` is read by the reader and `lonlat` is what the pin is
+  // projected from. Two spellings of one fact drift; this is what stops the
+  // label saying Frankfurt while the pin sits in Mumbai.
+  for (const hub of hubs) {
+    if (hub.global) continue;
+    const match = hub.coordinates.match(
+      /^([\d.]+)° ([NS]) \/ ([\d.]+)° ([EW])$/,
+    );
+    assert.ok(
+      match,
+      `${hub.name}: unreadable coordinates "${hub.coordinates}"`,
+    );
+    const lat = Number(match[1]) * (match[2] === "S" ? -1 : 1);
+    const lon = Number(match[3]) * (match[4] === "W" ? -1 : 1);
+    const [lonAt, latAt] = hub.lonlat;
+    assert.ok(
+      Math.abs(lat - latAt) < 0.1 && Math.abs(lon - lonAt) < 0.1,
+      `${hub.name}: label says ${hub.coordinates} but the pin is drawn at ${latAt}, ${lonAt}`,
+    );
+  }
+});
+
+test("every region a hub claims can be framed on its own", () => {
+  // The picker's options come from `views`; a hub in a region with no view is
+  // only ever visible from Global.
+  const source = readFileSync(
+    new URL("../src/WorldMap.jsx", import.meta.url),
+    "utf8",
+  );
+  const block = source.slice(source.indexOf("const views = {"));
+  for (const region of new Set(hubs.map((h) => h.region))) {
+    if (region === "Global") continue;
+    assert.ok(
+      block.includes(`"${region}"`) || block.includes(`\n  ${region}:`),
+      `${region} has a hub but no map view`,
+    );
+  }
+});
+
+// Markers are touch targets, so the arranger has to find 46px between any two
+// of them. At world scale on a 360px screen the six European hubs sit inside
+// 25px of each other, and the only way to seat them all is to fling them onto
+// long leader lines above the map: measured at 360x800 with every hub
+// reporting, nine markers landed more than 60px from the place they describe
+// and the furthest was 96px away. The map stopped being a map.
+//
+// So the narrow world view draws the places where something is happening. The
+// rule has to be exactly that shape: a wide map drops nothing, a region view
+// brings its whole set back, and a quiet world returns all of them rather than
+// emptying a map that would then read as broken. Asserted on the source,
+// because it is one expression inside a component the Node suite cannot mount.
+test("the narrow world view sheds the quiet places, and only those", () => {
+  const source = readFileSync(
+    new URL("../src/WorldMap.jsx", import.meta.url),
+    "utf8",
+  );
+  const at = source.indexOf("const busy = ");
+  assert.ok(at > 0, "one expression must answer which places are worth a pin");
+  const rule = source.slice(at, source.indexOf("const trimmed", at));
+  assert.match(
+    rule,
+    /h\.signals\.length && h\.status !== "operational"/,
+    "a place is kept when something was reported there and it is not plain operational",
+  );
+  assert.match(
+    rule,
+    /!wide && region === "Global" && busy\.length\s*\?\s*busy\s*:\s*atlas\.locations/,
+    "narrow and worldwide only, and never to nothing",
+  );
+  // And the reader is told, on the surface where it happens, rather than left
+  // to notice that the map is short of places.
+  assert.match(source, /\{trimmed && \(/);
+  assert.match(
+    source,
+    /too narrow to seat every location at world\s*\n?\s*scale/,
+  );
+});
+

@@ -26,7 +26,7 @@
 
 </div>
 
-Pulse aggregates the status feeds that 34 technology providers publish themselves, across eight categories, and presents them as one readable picture: overview counts, a live incident feed, a world map of affected regions, and a searchable service directory. It reports **provider-published health only** — never independent probes, synthetic checks, or inferred uptime. When a feed fails, times out, or changes format, Pulse marks that provider **unavailable** rather than assuming it is healthy. Pulse is independent of every company it lists and implies no endorsement.
+Pulse aggregates the status feeds that 77 technology providers publish themselves, across nine categories, and presents them as one readable picture: overview counts, a live incident feed, a world map of affected regions, and a searchable service directory. It reports **provider-published health only** — never independent probes, synthetic checks, or inferred uptime. When a feed fails, times out, or changes format, Pulse marks that provider **unavailable** rather than assuming it is healthy. Pulse is independent of every company it lists and implies no endorsement.
 
 One codebase ships three ways: the hosted website, a portable Windows EXE, and an Android APK.
 
@@ -49,7 +49,7 @@ Two things stated plainly: **the Windows EXE is unsigned** — Windows SmartScre
 | | |
 | --- | --- |
 | **Official feeds only** | Statuspage-compatible feeds, Google Cloud's incident JSON, Azure's RSS, the AWS Health Dashboard, and Hugging Face through Better Stack. |
-| **Overview** | Provider health counts, live incidents, and a filterable service directory across eight categories. |
+| **Overview** | Provider health counts, live incidents, and a filterable service directory across nine categories. |
 | **Global map** | Regional pins coloured by fresh component status, with the source evidence behind each one. Provider-wide incidents never invent city outages. |
 | **Incident inbox** | Active incidents sorted by newest source update, with local read state, impact badges, and watchlist scoping. |
 | **Dependency insights** | What is happening, what a reader might notice, and what to check next — with the evidence and a copyable summary. |

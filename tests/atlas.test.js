@@ -252,3 +252,115 @@ test("map optionally exposes maintenance evidence while disruption-only consumer
   );
   assert.equal(map.locations[2].status, "maintenance");
 });
+
+// Fifty of the seventy-seven services publish components called "API",
+// "Dashboard" and "Webhooks" and never name a place, so the only way onto this
+// map used to be to break: a healthy service of that kind was drawn nowhere at
+// all, and an outage moved it from nowhere to Worldwide. A map that draws a
+// service only once it fails is not a map of the services.
+//
+// The rule that replaces it invents nothing. A service is drawn at the places
+// its own reports name; a service whose reports name none is drawn at the
+// marker whose stated meaning is "no regional scope stated". That marker is a
+// statement about the feed, never a claim about where the service runs.
+test("a service that never names a region is still on the map, at the marker that says so", () => {
+  const result = buildAtlas(
+    [
+      provider({ id: "flat", components: [component("API", "operational")] }),
+      provider({
+        id: "regional",
+        components: [component("London / API", "operational")],
+      }),
+    ],
+    now,
+  );
+  const worldwide = result.locations.at(-1);
+  assert.equal(worldwide.global, true);
+  assert.deepEqual(
+    worldwide.signals.map((s) => [s.provider.id, s.kind]),
+    [["flat", "Provider status"]],
+    "the service that named a place is drawn there and not also at Worldwide",
+  );
+  assert.equal(
+    result.locations[2].signals.length,
+    1,
+    "and the one that named London is still at London",
+  );
+  // The reading is the provider's own published line, carried as published.
+  assert.equal(worldwide.signals[0].status, "operational");
+  assert.equal(
+    result.issues.length,
+    0,
+    "being on the map is not being an issue",
+  );
+});
+
+test("every service in the catalogue has a place on the map", async () => {
+  const { providers } = await import("../shared/providers.js");
+  const snapshot = providers.map((p) =>
+    provider({
+      id: p.id,
+      name: p.name,
+      components: [component("API", "operational")],
+    }),
+  );
+  const result = buildAtlas(snapshot, now);
+  const drawn = new Set(
+    result.locations.flatMap((l) => l.signals.map((s) => s.provider.id)),
+  );
+  assert.equal(
+    drawn.size,
+    providers.length,
+    `every service is drawn somewhere; missing: ${providers
+      .filter((p) => !drawn.has(p.id))
+      .map((p) => p.id)
+      .join(", ")}`,
+  );
+});
+
+// A feed that publishes no summary sentence must not drop its service off the
+// map -- the sentence is what the row says, not whether the service exists.
+test("a service with no published summary still takes its place", () => {
+  const result = buildAtlas(
+    [provider({ id: "quiet", name: "Quiet", description: undefined })],
+    now,
+  );
+  assert.deepEqual(
+    result.locations.at(-1).signals.map((s) => s.name),
+    ["Quiet"],
+  );
+});
+
+// Nothing below is new, but all three are the boundary this placement could
+// have crossed: an unread feed is not a place on the map, a troubled service
+// that names no region is placed once rather than twice, and a healthy
+// component that names no region is still not a signal of its own.
+test("placement cannot resurrect a feed that was never read", () => {
+  const stale = provider({
+    id: "stale",
+    checkedAt: new Date(now - STALE_MS - 1000).toISOString(),
+  });
+  const unknown = provider({ id: "dark", status: "unknown" });
+  const result = buildAtlas([stale, unknown], now);
+  assert.deepEqual(result.locations.at(-1).signals, []);
+  assert.equal(result.unavailable, 2);
+});
+test("a troubled service with no stated region is placed once, by its own trouble", () => {
+  const result = buildAtlas(
+    [
+      provider({
+        id: "down",
+        status: "outage",
+        components: [component("API", "major_outage")],
+      }),
+    ],
+    now,
+  );
+  const worldwide = result.locations.at(-1);
+  assert.deepEqual(
+    worldwide.signals.map((s) => s.kind),
+    ["Component"],
+    "the component fallback already put it there; the provider reading must not double it",
+  );
+  assert.equal(worldwide.status, "outage");
+});

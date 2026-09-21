@@ -384,55 +384,27 @@ legible brand tiles; the product accent belongs to Pulse controls. */
   background: var(--surface-tile);
   border-color: var(--line);
 }
-/* Dark mode used to flatten every mark to one grey, which cost the brands the
-   thing that identifies them at a glance. On the darker tile most marks clear
-   3:1 exactly as their brand draws them, so they are left alone. The exceptions
-   below are the marks drawn in near-black, which no amount of tile will
-   separate — and which their own brands render white on dark. Railway's
-   #0b0d0e measures 1.08:1 against the tile, which is the worst of them. */
-:root[data-theme="dark"]
-  :is(
-    .logo-circleci,
-    .logo-hackerone,
-    .logo-vercel,
-    .logo-replicate,
-    .logo-notion,
-    .logo-github,
-    .logo-openai,
-    .logo-railway
-  ) {
-  color: var(--text) !important;
+/* Brand marks. Each tile gets the value ProviderLogo computed for it: the
+   brand's own colour where that already clears the 3:1 non-text floor, and the
+   least hue-preserving adjustment that does where it does not.
+
+   This replaced thirteen hand-written exceptions. They were correct but they
+   were a list, and a list has to be re-audited every time the catalogue grows
+   -- at seventy-seven providers forty-six need an adjustment on one theme or
+   the other, and nobody was going to measure them by hand. shared/brand.js
+   does it, and a test asserts every mark in the catalogue clears the floor on
+   both tiles. */
+:root[data-theme] .provider-logo {
+  color: var(--mark-light);
 }
-/* And one the other way: Hostinger's violet reads 2.91:1 on the dark tile,
-   just under the floor, so it is lifted to the least that clears it. */
-:root[data-theme="dark"] .logo-hostinger {
-  color: #734de8 !important;
+:root[data-theme="dark"] .provider-logo {
+  color: var(--mark-dark);
 }
-/* Three brand oranges/yellows sit below 3:1 on a light tile. Each is darkened
-   to the minimum that clears it while staying recognisably the brand; the
-   provider name is always adjacent in text,
-so the mark identifies rather than
-   informs. */
-:root:not([data-theme="dark"]) .logo-cloudflare {
-  color: #e06f14 !important;
-}
-:root:not([data-theme="dark"]) .logo-huggingface {
-  color: #b5851b !important;
-}
-:root:not([data-theme="dark"]) .logo-postman {
-  color: #e85a26 !important;
-}
-/* GoDaddy's cyan measures 1.72:1 on a white tile and NVIDIA's green 2.41:1, so
-   both are darkened to the least that clears the 3:1 non-text floor — 3.30:1
-   each, the same margin the three above were set at. */
-:root:not([data-theme="dark"]) .logo-godaddy {
-  color: #139d9d !important;
-}
-:root:not([data-theme="dark"]) .logo-nvidia {
-  color: #649d00 !important;
-}
+/* OpenAI's mark is drawn to sit on a light chip rather than on the tile the
+   other brands use. Only the chip is special now -- the ink comes from the same
+   computed pair as every other mark, which is what keeps it legible once the
+   chip goes dark below. */
 .logo-openai {
-  color: #161616 !important;
   background: #fafafa !important;
 }
 :root[data-theme="dark"] .logo-openai {

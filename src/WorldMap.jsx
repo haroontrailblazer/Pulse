@@ -67,12 +67,17 @@ const onAndroid = () =>
 // the page would open at 1 and jump to 1.5 a frame later.
 const homeZoom = (expanded, region) =>
   expanded && region === "Global" && onAndroid() ? MAP_PAGE_ZOOM : 1;
+// Where each region sits on the map and how far in to frame it: [x, y, scale]
+// in map units. One entry per region the hubs actually use -- a region with a
+// hub and no view here can only ever be seen from Global, which is how Africa
+// was invisible until it had a hub at all. A test keeps the two in step.
 const views = {
   Global: [435, 210, 1],
   "North America": [250, 132, 1.85],
   Europe: [455, 110, 2.8],
   "Asia Pacific": [630, 222, 1.65],
   "South America": [325, 276, 2.2],
+  Africa: [490, 250, 2],
 };
 export default function WorldMap({
   expanded = false,
@@ -380,7 +385,32 @@ export default function WorldMap({
     spaceWidth / 2 + 15 - (rx + (point[0] - rx) * focus) * magnification;
   const ty =
     top + spaceHeight / 2 - (ry + (point[1] - ry) * focus) * magnification;
-  const visibleHubs = atlas.locations.filter(
+  // A phone cannot hold the whole world at once. Markers are touch targets, so
+  // the arranger has to find 46px between any two of them, and at world scale
+  // on a 360px screen six European hubs sit inside 25px of each other: the only
+  // way to seat them all is to fling them into the sky above the map on long
+  // leader lines, until the map is a cloud of badges with a globe somewhere
+  // underneath. Measured at 360x800 with every hub reporting: nine markers more
+  // than 60px from the place they describe, the furthest 96px away.
+  //
+  // So the narrow world view draws the places where something is happening, and
+  // leaves the ones reporting plain operational to the region views, where
+  // there is room for them. Nothing is hidden that a reader is looking for --
+  // they open this map to find trouble, and a green pin nudged 96px from its
+  // city is worse than an honest absence. Zooming into a region brings its
+  // whole set back, and the wide map never drops anything: there the geography
+  // itself is worth seeing.
+  //
+  // When the world really is quiet the full set returns. An empty map reads as
+  // broken rather than as calm, and with every marker green and interchangeable
+  // a crowded arrangement costs the reader nothing.
+  const busy = atlas.locations.filter(
+    (h) => h.signals.length && h.status !== "operational",
+  );
+  const populated =
+    !wide && region === "Global" && busy.length ? busy : atlas.locations;
+  const trimmed = populated !== atlas.locations;
+  const visibleHubs = populated.filter(
     (h) =>
       (region === "Global" || h.region === region) &&
       (!(panel && (board < 430 || (!wide && board < 600))) ||
@@ -765,6 +795,19 @@ export default function WorldMap({
                   Markers describe components that explicitly name a location.
                   They do not mean an entire city is down.
                 </p>
+                <p>
+                  A service whose own reports name no region is drawn at
+                  Worldwide. That marker stands for the absence of a stated
+                  scope, not for a place.
+                </p>
+                {trimmed && (
+                  <p>
+                    This screen is too narrow to seat every location at world
+                    scale, so it draws the {populated.length} with something
+                    happening. Choose a region to see all{" "}
+                    {atlas.locations.length}.
+                  </p>
+                )}
                 <div className="atlas-map-legend">
                   {[...issueStates, "operational", "unknown"].map((state) => (
                     <span key={state}>

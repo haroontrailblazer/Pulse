@@ -1,7 +1,7 @@
 import React from "react";
 import { Cloud, GitFork, Video, MessageCircle } from "./icons";
 import brandIcons from "./brand-icons.json";
-import { genericMarkPath } from "../shared/brand.js";
+import { genericMarkPath, readableMark } from "../shared/brand.js";
 export default function ProviderLogo({ provider }) {
   const icons = {
     cloud: Cloud,
@@ -18,7 +18,15 @@ export default function ProviderLogo({ provider }) {
   return (
     <span
       className={`provider-logo logo-${provider.id}`}
-      style={{ color: provider.color }}
+      // Two values, one per tile, and the stylesheet picks. Each is the brand's
+      // own colour where that already clears 3:1 and the least adjustment that
+      // does where it does not -- computed, because forty-six of the
+      // seventy-seven need one and a hand-written list of that size is an audit
+      // nobody repeats.
+      style={{
+        "--mark-light": readableMark(provider.color, "light"),
+        "--mark-dark": readableMark(provider.color, "dark"),
+      }}
     >
       {path ? (
         <svg

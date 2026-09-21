@@ -1,6 +1,7 @@
 import { geoNaturalEarth1, geoGraticule10, geoPath } from "d3-geo";
 import { feature, mesh, merge } from "topojson-client";
 import { readFileSync, writeFileSync } from "node:fs";
+import { hubs } from "../shared/atlas.js";
 const world = JSON.parse(
   readFileSync("node_modules/world-atlas/countries-110m.json", "utf8"),
 );
@@ -17,20 +18,15 @@ const projection = geoNaturalEarth1().fitExtent(
   ],
   land,
 );
-const coords = [
-  [-122.4, 37.8],
-  [-77, 38],
-  [-0.1, 51.5],
-  [8.7, 50.1],
-  [72.9, 19.1],
-  [103.8, 1.4],
-  [139.7, 35.7],
-  [151.2, -33.9],
-  [-46.6, -23.5],
-  [54.4, 24.5],
-  [50.6, 26.2],
-  [0, 0],
-];
+// Projected straight from shared/atlas.js rather than from a second list kept
+// in this file. The old array had to stay index-aligned with `hubs` by hand,
+// and getting that wrong moved every pin after the mistake without failing
+// anything -- the map just quietly drew Frankfurt in Mumbai's place.
+const coords = hubs.map((hub) => {
+  if (!Array.isArray(hub.lonlat) || hub.lonlat.length !== 2)
+    throw new Error(`Hub "${hub.name}" has no lonlat to project`);
+  return hub.lonlat;
+});
 const path = geoPath(projection).digits(1);
 writeFileSync(
   "src/map-data.json",
