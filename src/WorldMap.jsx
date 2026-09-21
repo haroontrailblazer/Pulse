@@ -67,9 +67,6 @@ const onAndroid = () =>
 // the page would open at 1 and jump to 1.5 a frame later.
 const homeZoom = (expanded, region) =>
   expanded && region === "Global" && onAndroid() ? MAP_PAGE_ZOOM : 1;
-// The reader having closed the map's resting services column. Distinct from
-// null, which on a desktop-sized map page means the column is showing.
-const CLOSED = "closed";
 const views = {
   Global: [435, 210, 1],
   "North America": [250, 132, 1.85],
@@ -108,26 +105,31 @@ export default function WorldMap({
   const [service, setService] = useState(null),
     [evidenceLimit, setEvidenceLimit] = useState(6);
   const wide = size.width > 700 || (size.width > 570 && size.height < 430);
-  // On a window wide enough for two columns, the services list is not an overlay
-  // over the map -- it is the other half of the page, and the map page opens
-  // showing it. A dock that has to be clicked to reveal the one thing the page
-  // is for is a control asking permission to do its job.
+  // On a window with room for two columns, the services list is not an overlay
+  // over the map -- it is the other half of the page. So the map page is drawn
+  // that way and stays that way: no dock to reveal it, and no close button,
+  // because a column that is part of the layout is not something to dismiss.
+  // The only way to a full-width map is a narrower window, which is the same
+  // answer the sidebar gives.
   //
-  // The website's desktop view and the EXE only. A phone has no room for a
-  // second column, and the APK is a phone-shaped surface even on the tablet
-  // where `wide` happens to be true, so it keeps the dock and the sheet.
+  // Measured width rather than `wide`, which also takes in a short landscape
+  // window down to 570. That much frame minus a 350 column leaves the map too
+  // little to be a map, and the EXE can be dragged there -- its floor is
+  // 390x620. Above 700 there is room for both; at or below it, the phone's dock
+  // and its dismissible sheet are the honest layout.
+  //
+  // The website's desktop view and the EXE only. The APK is a phone-shaped
+  // surface even on the tablet where this measurement passes.
   //
   // `chosen` is what the reader opened and `panel` is what is on screen. That
-  // split is the whole of it, and it is what keeps the history honest: the
-  // resting column was opened by nobody, so it owns no entry, and a back press
-  // on the map page leaves the map page rather than closing a column the reader
-  // never asked for. A hub panel and the coverage note are still overlays the
-  // reader opened, and still own theirs.
-  const resting = expanded && wide && !onAndroid() ? "services" : null;
-  // Closing the resting column is not the same as having opened nothing, so it
-  // needs a value of its own -- otherwise "close" would immediately fall back
-  // to the column it just closed.
-  const panel = chosen === CLOSED ? null : (chosen ?? resting);
+  // split is what keeps the history honest: the column was opened by nobody, so
+  // it owns no entry, and a back press on the map page leaves the map page. A
+  // hub panel and the coverage note are still overlays the reader opened, and
+  // still own theirs -- and closing one returns to the column, because
+  // `closePanel` clears `chosen` and the column is what is underneath.
+  const resting =
+    expanded && size.width > 700 && !onAndroid() ? "services" : null;
+  const panel = chosen ?? resting;
   useEffect(() => {
     const observer = new ResizeObserver(([entry]) =>
       setSize({
@@ -165,8 +167,7 @@ export default function WorldMap({
     // `chosen`, not `panel`: the resting column is part of the page, and
     // arriving on a page should leave the reader at its start rather than
     // inside a control they never opened.
-    if (chosen && chosen !== CLOSED)
-      closeRef.current?.focus({ preventScroll: true });
+    if (chosen) closeRef.current?.focus({ preventScroll: true });
     if (bodyRef.current) bodyRef.current.scrollTop = 0;
   }, [chosen, service, severity]);
   const atlas = useMemo(
@@ -235,25 +236,17 @@ export default function WorldMap({
     setService(null);
     setEvidenceLimit(6);
   };
-  // Whether the thing on screen is an overlay the reader opened. The resting
-  // column is not, so it must not leave through the stack: asking history to
-  // drop an entry that was never added would pop whatever happened to be on
-  // top of it instead.
-  const opened = !!chosen && chosen !== CLOSED;
-  // The X. Everything else a reader can touch still goes through dismiss(), so
-  // an overlay's entry always leaves with it.
-  const dismissPanel = () => (opened ? dismiss() : setChosen(CLOSED));
+  // Whether what is on screen is an overlay the reader opened, rather than the
+  // page's own column. Only an overlay has a close control, and only an overlay
+  // has an entry for that control to take with it.
+  const opened = !!chosen;
   // Two levels, so two entries: the map, then the inspector, then the one
   // provider inside it. A back press unwinds exactly one of them, which is what
   // the inspector's own ArrowLeft already promised and nothing delivered.
   // Registered only while this instance is the Map destination -- the Overview
   // mounts the same component as a preview, and a preview never has an
   // inspector.
-  useDismissible(
-    expanded && !!chosen && chosen !== CLOSED,
-    closePanel,
-    "map-panel",
-  );
+  useDismissible(expanded && !!chosen, closePanel, "map-panel");
   useDismissible(expanded && !!service, clearService, "map-service");
   const chooseHub = (index, event) => {
     if (motionEnabled() && event?.currentTarget)
@@ -513,10 +506,14 @@ export default function WorldMap({
           : undefined
       }
       onKeyDown={(event) => {
-        if (event.key === "Escape" && panel) {
+        // The column is the page, so there is nothing here for Escape to do
+        // unless the reader opened something over it -- a hub panel, the
+        // coverage note, or a provider inside the list, which owns an entry of
+        // its own. Instant, not through the stack: three QA scripts press this
+        // and immediately locate controls underneath.
+        if (event.key === "Escape" && (chosen || service)) {
           event.stopPropagation();
-          if (opened) closePanel();
-          else setChosen(CLOSED);
+          closePanel();
         }
       }}
     >
@@ -750,14 +747,16 @@ export default function WorldMap({
                       : "Provider signals, not inferred city outages"}
               </p>
             </div>
-            <button
-              ref={closeRef}
-              className="atlas-close"
-              aria-label="Close map insights"
-              onClick={dismissPanel}
-            >
-              <X size={20} />
-            </button>
+            {opened && (
+              <button
+                ref={closeRef}
+                className="atlas-close"
+                aria-label="Close map insights"
+                onClick={dismiss}
+              >
+                <X size={20} />
+              </button>
+            )}
           </header>
           <div ref={bodyRef} className="atlas-inspector-body">
             {panel === "about" ? (

@@ -138,17 +138,19 @@ test("everything that resets the map returns it to the zoom the page opened at",
 });
 
 // A dock that has to be clicked to reveal the one thing the map page is for is
-// a control asking permission to do its job, so on a window wide enough for two
-// columns the services list is the page's resting state rather than an overlay
-// over it. The website's desktop view and the EXE only: a phone has no room for
-// a second column, and the APK is phone-shaped even on the tablet where `wide`
-// happens to be true.
+// a control asking permission to do its job, so on a window with room for two
+// columns the services list IS the page's second column: drawn with the page,
+// with no dock to reveal it and no close button, because a column that is part
+// of the layout is not something to dismiss. The website's desktop view and the
+// EXE only -- the APK is phone-shaped even on the tablet where the measurement
+// would pass, and below 700 the frame minus a 350 column leaves the map too
+// little to be a map.
 //
-// The part worth holding is not the layout but the history. The resting column
-// was opened by nobody, so it owns no entry -- otherwise arriving on the map
-// page and pressing back would close a column the reader never asked for
-// instead of leaving the page, which is a dead press on two of three surfaces.
-test("the map's resting services column is the page, not an overlay over it", () => {
+// The part worth holding is not the layout but the history. The column was
+// opened by nobody, so it owns no entry -- otherwise arriving on the map page
+// and pressing back would close a column the reader never asked for instead of
+// leaving the page, which is a dead press on two of three surfaces.
+test("the map's services column is the page, not an overlay over it", () => {
   const source = readFileSync(
     new URL("../src/WorldMap.jsx", import.meta.url),
     "utf8",
@@ -157,33 +159,33 @@ test("the map's resting services column is the page, not an overlay over it", ()
   assert.match(source, /\[chosen, setChosen\] = useState\(null\)/);
   assert.match(
     source,
-    /const resting =\s*expanded && wide && !onAndroid\(\) \? "services" : null;/,
-    "the column belongs to a wide, expanded, non-Android map",
+    /const resting =\s*expanded && size\.width > 700 && !onAndroid\(\) \? "services" : null;/,
+    "a measured width, not `wide`, which also takes in a short landscape window",
   );
+  assert.match(source, /const panel = chosen \?\? resting;/);
+  // The entry follows the reader's own choice, never the resting state.
   assert.match(
     source,
-    /const panel = chosen === CLOSED \? null : \(chosen \?\? resting\);/,
-  );
-  // The entry follows the reader's own choice, never the resting state.
-  const entry = source.slice(
-    source.indexOf("useDismissible("),
-    source.indexOf('"map-service"'),
-  );
-  assert.match(entry, /expanded && !!chosen && chosen !== CLOSED/);
-  assert.doesNotMatch(
-    entry.slice(0, entry.indexOf('"map-panel"')),
-    /!!panel/,
-    "the resting column must not claim a history entry",
+    /useDismissible\(expanded && !!chosen, closePanel, "map-panel"\)/,
   );
   // Asking for the panel the page already rests on is asking for that resting
-  // state, so the dock cannot open a column that was already the default and
-  // leave a back press that lands on the same screen.
+  // state, so a severity chip cannot claim an entry for the column it is
+  // already looking at.
   assert.match(source, /setChosen\(next === resting \? null : next\)/);
-  // And closing it is a layout change, not a dismissal: asking history to drop
-  // an entry that was never added would pop whatever sat on top of it instead.
+  // No close control on the column: it renders with the overlay it belongs to,
+  // and leaves through the stack, so it can never ask history to drop an entry
+  // that was never added.
+  assert.match(source, /const opened = !!chosen;/);
   assert.match(
     source,
-    /const dismissPanel = \(\) =>\s*\(?opened \? dismiss\(\) : setChosen\(CLOSED\)\)?;/,
+    /\{opened && \(\s*<button\s*ref=\{closeRef\}\s*className="atlas-close"/,
+    "the close button belongs to an overlay, not to the column",
   );
-  assert.match(source, /onClick=\{dismissPanel\}/);
+  assert.doesNotMatch(
+    source,
+    /dismissPanel|CLOSED/,
+    "nothing closes the column, so nothing needs a closed state",
+  );
+  // And Escape has something to do only when something was opened over it.
+  assert.match(source, /Escape" && \(chosen \|\| service\)/);
 });
