@@ -5,7 +5,13 @@ import {
   incidentRevision,
   latestIncident,
 } from "../shared/incidents.js";
-import { explainIndustry, explainDisruptions } from "../shared/insights.js";
+import {
+  explainIndustry,
+  explainDisruptions,
+  plainImpact,
+} from "../shared/insights.js";
+import { providers, categories } from "../shared/providers.js";
+import { workflowHints } from "../shared/atlas.js";
 const now = Date.parse("2026-09-13T10:10:00Z");
 const provider = (extra = {}) => ({
   id: "test",
@@ -151,4 +157,53 @@ test("plain insights include component and incident issues behind operational ag
   assert.match(result.issues[0].meaning, /could/);
   assert.match(result.issues[0].action, /Check/);
   assert.equal(explainIndustry(items, "Unrelated", [], now).relevant.length, 0);
+});
+
+// Both of these were bare lookups into closed maps keyed by `provider.category`.
+// A category is data -- adding one to the catalogue is a content change -- so a
+// missing sentence has to read as one sentence less, not as a broken one. Before
+// the guard the insights page rendered "If you use the affected feature:" with
+// nothing after the colon and copied "Could affect: undefined" to the clipboard.
+test("a provider in an unwritten category still explains itself", () => {
+  // `now` is milliseconds here: isFresh does `now - Date.parse(checkedAt)`, and
+  // an ISO string makes that NaN, which reads as stale and drops the provider.
+  const now = Date.now();
+  const checkedAt = new Date(now).toISOString();
+  const invented = {
+    ...providers[0],
+    id: "invented",
+    name: "Invented",
+    category: "A category nobody wrote a sentence for",
+  };
+  const reading = {
+    ...invented,
+    status: "outage",
+    stale: false,
+    checkedAt,
+    sourceUpdatedAt: checkedAt,
+    components: [{ id: "c", name: "API", status: "major_outage" }],
+    incidents: [],
+  };
+  const [issue] = explainDisruptions([reading], [], now).issues;
+  assert.ok(issue, "the provider still reaches the insights page");
+  assert.equal(typeof issue.meaning, "string");
+  assert.equal(typeof issue.action, "string");
+  assert.ok(issue.meaning.length > 10, issue.meaning);
+  assert.ok(issue.action.length > 10, issue.action);
+  assert.doesNotMatch(`${issue.meaning} ${issue.action}`, /undefined/);
+});
+
+test("every category the catalogue ships has its own sentence, not the fallback", () => {
+  // The fallback exists so nothing breaks; it is not meant to be what readers
+  // usually get. A category that ships without its own line is an omission.
+  for (const category of categories) {
+    assert.ok(
+      plainImpact[category],
+      `${category} has no plain-English impact sentence`,
+    );
+    assert.ok(
+      workflowHints[category],
+      `${category} has no "what to check" hint`,
+    );
+  }
 });

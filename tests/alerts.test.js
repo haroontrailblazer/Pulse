@@ -66,11 +66,15 @@ test("component issues and active incidents alert even with an operational aggre
   );
 });
 test("request budget uses feed count and watched services, not fictional battery percentages", () => {
+  // Pinned to the arithmetic rather than to today's catalogue: the numbers
+  // below are what 34 automated feeds cost, and a catalogue that grows has to
+  // move them deliberately rather than quietly spending more of a reader's
+  // battery and bandwidth.
   const count = providers.filter((p) => p.format !== "source-only").length;
-  assert.equal(count, 28);
+  assert.equal(count, 34);
   assert.deepEqual(requestBudget(4, count), {
-    oldHourly: 3360,
-    foregroundHourly: 3360,
+    oldHourly: 4080,
+    foregroundHourly: 4080,
     androidHourly: 120,
     desktopHourly: 480,
   });

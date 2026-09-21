@@ -7,53 +7,53 @@ spacing and radius values live in tokens.css. This file only
    token-backed colours in components.css rather than being added to a selector
    list here — these lists are being retired as each screen is converted. */
 
-
 :root[data-theme] :is(.sidebar) {
   background: var(--chrome);
   border-color: var(--line);
 }
 :root[data-theme]
-  :is(.panel,
-.summary-card,
-.insight-card,
-.button.secondary,
-.search-input,
-select,
-.panel-footer-button) {
+  :is(
+    .panel,
+    .summary-card,
+    .insight-card,
+    .button.secondary,
+    .search-input,
+    select,
+    .panel-footer-button
+  ) {
   background: var(--surface);
   border-color: var(--line);
 }
 :root[data-theme]
-  :is(.workspace,
-.workspace-symbol,
-.tabs,
-.category-label,
-.count-label,
-.service-table th,
-.source-description,
-.methodology-note,
-.insight-icon,
-.insight-icon.color-1,
-.insight-icon.color-2,
-.theme-toggle) {
+  :is(
+    .workspace,
+    .workspace-symbol,
+    .tabs,
+    .category-label,
+    .count-label,
+    .service-table th,
+    .source-description,
+    .methodology-note,
+    .insight-icon,
+    .insight-icon.color-1,
+    .insight-icon.color-2,
+    .theme-toggle
+  ) {
   background: var(--surface-soft);
   border-color: var(--line);
   color: var(--secondary);
 }
 :root[data-theme]
-  :is(.brand-mark,
-.button.primary,
-.checkbox.checked,
-.toggle.on) {
+  :is(.brand-mark, .button.primary, .checkbox.checked, .toggle.on) {
   background: var(--accent);
   border-color: var(--accent);
   color: var(--on-accent);
 }
 @media (hover: hover) {
   :root[data-theme] .button.primary:hover {
-  background: var(--accent-hover);
-  border-color: var(--accent-hover);
-}
+    background: var(--accent-hover);
+    border-color: var(--accent-hover);
+  }
 }
 :root[data-theme] .brand-period {
   color: var(--accent);
@@ -69,127 +69,136 @@ select,
 }
 @media (hover: hover) {
   :root[data-theme]
-  :is(.nav-item:hover,
-.sidebar-watches > button:hover,
-.icon-button:hover,
-.theme-toggle:hover,
-.incident-item:hover,
-.panel-footer-button:hover,
-.service-table tbody tr:hover,
-.live-component-list > button:hover,
-.change-list > button:hover) {
-  background: var(--surface-hover);
-  color: var(--text);
-}
+    :is(
+      .nav-item:hover,
+      .sidebar-watches > button:hover,
+      .icon-button:hover,
+      .theme-toggle:hover,
+      .incident-item:hover,
+      .panel-footer-button:hover,
+      .service-table tbody tr:hover,
+      .live-component-list > button:hover,
+      .change-list > button:hover
+    ) {
+    background: var(--surface-hover);
+    color: var(--text);
+  }
 }
 :root[data-theme]
-  :is(.workspace small,
-.nav-label,
-.nav-item > small,
-.nav-upgrade small,
-.following-label button,
-.download-card p,
-.eyebrow,
-h1 > span,
-.panel-heading p,
-.summary-card > small,
-.summary-card > div > svg,
-.incident-meta > span:last-child,
-.incident-bottom > span:last-child,
-.quiet-state p,
-.refresh-button,
-.service-name small,
-.category-label,
-.component-cell > span,
-.table-footer,
-.insight-card > p,
-.insight-card-bottom > span:last-child,
-.page-footer,
-.page-footer button,
-.modal-description,
-.monitor-list small,
-.provider-detail-header p,
-.detail-meta > span,
-.detail-incidents small,
-.methodology-note,
-.setting-row small,
-.muted,
-.search-input kbd,
-.search-input input::placeholder) {
+  :is(
+    .workspace small,
+    .nav-label,
+    .nav-item > small,
+    .nav-upgrade small,
+    .following-label button,
+    .download-card p,
+    .eyebrow,
+    h1 > span,
+    .panel-heading p,
+    .summary-card > small,
+    .summary-card > div > svg,
+    .incident-meta > span:last-child,
+    .incident-bottom > span:last-child,
+    .quiet-state p,
+    .refresh-button,
+    .service-name small,
+    .category-label,
+    .component-cell > span,
+    .table-footer,
+    .insight-card > p,
+    .insight-card-bottom > span:last-child,
+    .page-footer,
+    .page-footer button,
+    .modal-description,
+    .monitor-list small,
+    .provider-detail-header p,
+    .detail-meta > span,
+    .detail-incidents small,
+    .methodology-note,
+    .setting-row small,
+    .muted,
+    .search-input kbd,
+    .search-input input::placeholder
+  ) {
   color: var(--muted);
 }
 :root[data-theme]
-  :is(.nav-item,
-.sidebar-watches > button,
-.download-card-icon,
-.icon-button,
-.summary-card > div,
-.button.secondary,
-.incident-item h3,
-.panel-footer-button,
-.quiet-state,
-.text-button,
-.tabs button,
-.search-input,
-.service-table th,
-.expanded-incident > p,
-.source-description,
-.detail-meta strong,
-.detail-incidents p,
-.components-list > div,
-.prose,
-.insight-arrow) {
+  :is(
+    .nav-item,
+    .sidebar-watches > button,
+    .download-card-icon,
+    .icon-button,
+    .summary-card > div,
+    .button.secondary,
+    .incident-item h3,
+    .panel-footer-button,
+    .quiet-state,
+    .text-button,
+    .tabs button,
+    .search-input,
+    .service-table th,
+    .expanded-incident > p,
+    .source-description,
+    .detail-meta strong,
+    .detail-incidents p,
+    .components-list > div,
+    .prose,
+    .insight-arrow
+  ) {
   color: var(--secondary);
 }
 :root[data-theme]
-  :is(h1,
-h2,
-.brand,
-.service-name strong,
-.quiet-state h3,
-.section-title h2,
-.insight-card h3,
-.empty-state h3,
-.prose h3,
-.app-option strong,
-.search-input input,
-.monitor-list strong,
-.provider-detail-header h2) {
+  :is(
+    h1,
+    h2,
+    .brand,
+    .service-name strong,
+    .quiet-state h3,
+    .section-title h2,
+    .insight-card h3,
+    .empty-state h3,
+    .prose h3,
+    .app-option strong,
+    .search-input input,
+    .monitor-list strong,
+    .provider-detail-header h2
+  ) {
   color: var(--text);
 }
 :root[data-theme] h1 > span {
   color: var(--muted);
 }
 :root[data-theme]
-  :is(.download-card:after,
-.incidents-panel .panel-heading,
-.incident-item,
-.incident-stream > .incident-item,
-.service-table th,
-.service-table td,
-.table-footer,
-.insight-card-bottom,
-.page-footer,
-.monitor-list > button,
-.components-list > div,
-.modal-actions,
-.setting-row,
-.app-option,
-.search-input kbd,
-.checkbox) {
+  :is(
+    .download-card:after,
+    .incidents-panel .panel-heading,
+    .incident-item,
+    .incident-stream > .incident-item,
+    .service-table th,
+    .service-table td,
+    .table-footer,
+    .insight-card-bottom,
+    .page-footer,
+    .monitor-list > button,
+    .components-list > div,
+    .modal-actions,
+    .setting-row,
+    .app-option,
+    .search-input kbd,
+    .checkbox
+  ) {
   border-color: var(--line);
 }
 @media (hover: hover) {
   :root[data-theme]
-  :is(.summary-card:not(:disabled):hover, .insight-card:hover) {
-  border-color: var(--accent);
-}
+    :is(.summary-card:not(:disabled):hover, .insight-card:hover) {
+    border-color: var(--accent);
+  }
 }
 :root[data-theme][data-input="keyboard"] .search-input:focus-within {
   border-color: var(--accent);
 }
-:root[data-theme] :is(button,
-a):focus-visible {
+:root[data-theme] :is(button, a):focus-visible {
   outline-color: var(--accent);
 }
 :root[data-theme] .download-card {
@@ -197,16 +206,12 @@ a):focus-visible {
   border-color: var(--line);
 }
 :root[data-theme]
-  :is(.download-card-icon,
-.insight-icon,
-.workspace-symbol,
-.lab-icon) {
+  :is(.download-card-icon, .insight-icon, .workspace-symbol, .lab-icon) {
   background: var(--accent-soft);
   border-color: var(--line);
   color: var(--accent-ink);
 }
-:root[data-theme] :is(.star-button,
-.toggle) {
+:root[data-theme] :is(.star-button, .toggle) {
   color: var(--muted);
 }
 :root[data-theme] .star-button.watched {
@@ -241,9 +246,9 @@ a):focus-visible {
 }
 @media (hover: hover) {
   :root[data-theme] .stack-provider:hover {
-  background: var(--surface-hover);
-  border-color: var(--accent);
-}
+    background: var(--surface-hover);
+    border-color: var(--accent);
+  }
 }
 :root[data-theme] .stack-provider.degraded {
   border-color: var(--warning-line);
@@ -253,22 +258,21 @@ a):focus-visible {
   border-color: var(--negative-line);
   box-shadow: inset 0 2px 0 var(--negative);
 }
-:root[data-theme] .security-lab :is(input,
-textarea,
-select):focus-visible {
+:root[data-theme] .security-lab :is(input, textarea, select):focus-visible {
   outline-color: var(--accent);
 }
 :root[data-theme] .issues-filter input {
   accent-color: var(--accent);
 }
-:root[data-theme] :is(.connection-state i,
-.change-dot) {
+:root[data-theme] :is(.connection-state i, .change-dot) {
   background: var(--green);
 }
 :root[data-theme]
-  :is(.connection-state.paused i,
-.connection-state.connecting i,
-.connection-state.polling i) {
+  :is(
+    .connection-state.paused i,
+    .connection-state.connecting i,
+    .connection-state.polling i
+  ) {
   background: var(--warning);
 }
 :root[data-theme] .jwt-notes {
@@ -291,16 +295,12 @@ select):focus-visible {
   border-color: var(--positive-line);
 }
 :root[data-theme]
-  :is(.status-pill.degraded,
-.incident-phase,
-.nav-count,
-.tabs button > span) {
+  :is(.status-pill.degraded, .incident-phase, .nav-count, .tabs button > span) {
   color: var(--warning);
   background: var(--warning-bg);
   border-color: var(--warning-line);
 }
-:root[data-theme] :is(.status-pill.outage,
-.incident-phase.critical) {
+:root[data-theme] :is(.status-pill.outage, .incident-phase.critical) {
   color: var(--negative);
   background: var(--negative-bg);
   border-color: var(--negative-line);
@@ -316,34 +316,36 @@ select):focus-visible {
   border-color: var(--neutral-line);
 }
 :root[data-theme]
-  :is(.status-pill.operational i,
-.state-dot.operational,
-.health-bars i.operational) {
+  :is(
+    .status-pill.operational i,
+    .state-dot.operational,
+    .health-bars i.operational
+  ) {
   background: var(--green);
 }
 :root[data-theme]
-  :is(.status-pill.degraded i,
-.state-dot.degraded,
-.health-bars i.degraded_performance,
-.health-bars i.partial_outage) {
+  :is(
+    .status-pill.degraded i,
+    .state-dot.degraded,
+    .health-bars i.degraded_performance,
+    .health-bars i.partial_outage
+  ) {
   background: var(--warning);
 }
 :root[data-theme]
-  :is(.status-pill.outage i,
-.state-dot.outage,
-.health-bars i.major_outage) {
+  :is(.status-pill.outage i, .state-dot.outage, .health-bars i.major_outage) {
   background: var(--negative);
 }
 :root[data-theme]
-  :is(.status-pill.maintenance i,
-.state-dot.maintenance,
-.health-bars i.under_maintenance) {
+  :is(
+    .status-pill.maintenance i,
+    .state-dot.maintenance,
+    .health-bars i.under_maintenance
+  ) {
   background: var(--info);
 }
 :root[data-theme]
-  :is(.status-pill.unknown i,
-.state-dot.unknown,
-.health-bars i.unknown) {
+  :is(.status-pill.unknown i, .state-dot.unknown, .health-bars i.unknown) {
   background: var(--neutral);
 }
 :root[data-theme] .component-state {
@@ -353,8 +355,7 @@ select):focus-visible {
   color: var(--positive);
 }
 :root[data-theme]
-  :is(.component-state.degraded_performance,
-.component-state.partial_outage) {
+  :is(.component-state.degraded_performance, .component-state.partial_outage) {
   color: var(--warning);
 }
 :root[data-theme] .component-state.major_outage {
@@ -384,10 +385,11 @@ legible brand tiles; the product accent belongs to Pulse controls. */
   border-color: var(--line);
 }
 /* Dark mode used to flatten every mark to one grey, which cost the brands the
-   thing that identifies them at a glance. On the darker tile 21 of the 28
-   marks clear 3:1 exactly as their brand draws them, so they are left alone.
-   The exceptions below are the marks drawn in near-black, which no amount of
-   tile will separate — and which their own brands render white on dark. */
+   thing that identifies them at a glance. On the darker tile most marks clear
+   3:1 exactly as their brand draws them, so they are left alone. The exceptions
+   below are the marks drawn in near-black, which no amount of tile will
+   separate — and which their own brands render white on dark. Railway's
+   #0b0d0e measures 1.08:1 against the tile, which is the worst of them. */
 :root[data-theme="dark"]
   :is(
     .logo-circleci,
@@ -396,9 +398,15 @@ legible brand tiles; the product accent belongs to Pulse controls. */
     .logo-replicate,
     .logo-notion,
     .logo-github,
-    .logo-openai
+    .logo-openai,
+    .logo-railway
   ) {
   color: var(--text) !important;
+}
+/* And one the other way: Hostinger's violet reads 2.91:1 on the dark tile,
+   just under the floor, so it is lifted to the least that clears it. */
+:root[data-theme="dark"] .logo-hostinger {
+  color: #734de8 !important;
 }
 /* Three brand oranges/yellows sit below 3:1 on a light tile. Each is darkened
    to the minimum that clears it while staying recognisably the brand; the
@@ -413,6 +421,15 @@ so the mark identifies rather than
 }
 :root:not([data-theme="dark"]) .logo-postman {
   color: #e85a26 !important;
+}
+/* GoDaddy's cyan measures 1.72:1 on a white tile and NVIDIA's green 2.41:1, so
+   both are darkened to the least that clears the 3:1 non-text floor — 3.30:1
+   each, the same margin the three above were set at. */
+:root:not([data-theme="dark"]) .logo-godaddy {
+  color: #139d9d !important;
+}
+:root:not([data-theme="dark"]) .logo-nvidia {
+  color: #649d00 !important;
 }
 .logo-openai {
   color: #161616 !important;
@@ -431,8 +448,8 @@ so the mark identifies rather than
 }
 @media (hover: hover) {
   :root[data-theme] .advisory-list a:hover {
-  border-color: var(--accent);
-}
+    border-color: var(--accent);
+  }
 }
 :root[data-theme] .atlas {
   --atlas-ocean: var(--map-ocean);
@@ -448,14 +465,12 @@ so the mark identifies rather than
   --atlas-chip: var(--accent-soft);
 }
 @media (max-width: 600px) {
-.theme-toggle {
+  .theme-toggle {
     min-width: 44px;
     min-height: 44px;
     padding: 8px;
   }
-.theme-toggle > span {
+  .theme-toggle > span {
     display: none;
   }
 }
-
-

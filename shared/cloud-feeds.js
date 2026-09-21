@@ -135,6 +135,86 @@ export function normalizeAws(provider, data, now) {
   };
 }
 
+// Instatus publishes components and nothing else: /v2/components.json is a bare
+// { components: [...] } with no page indicator and no incidents array, so the
+// overall reading has to be derived from the parts rather than read off the top.
+// That is the same shape normalizeComponent already works in, so this converts
+// the payload into the Statuspage vocabulary and hands it to the one normalizer
+// every other feed ends at -- one contract downstream, whatever the source.
+//
+// Instatus names its states in SCREAMINGCASE with no separators. The mapping is
+// deliberately total: an unrecognised state is an error rather than a silent
+// "operational", because a status page inventing good news is the one failure
+// this product cannot have.
+const INSTATUS_STATES = {
+  OPERATIONAL: "operational",
+  UNDERMAINTENANCE: "under_maintenance",
+  DEGRADEDPERFORMANCE: "degraded_performance",
+  PARTIALOUTAGE: "partial_outage",
+  MAJOROUTAGE: "major_outage",
+};
+// Worst wins, and maintenance does not outrank an outage.
+const INSTATUS_RANK = {
+  operational: 0,
+  under_maintenance: 1,
+  degraded_performance: 2,
+  partial_outage: 3,
+  major_outage: 4,
+};
+const INSTATUS_INDICATOR = {
+  operational: "none",
+  under_maintenance: "maintenance",
+  degraded_performance: "minor",
+  partial_outage: "minor",
+  major_outage: "major",
+};
+export function normalizeInstatus(provider, data, now, normalizeSummary) {
+  const raw = data?.components;
+  if (!Array.isArray(raw) || !raw.length)
+    throw new Error("Instatus feed carried no components");
+  const components = raw.map((component) => {
+    const status = INSTATUS_STATES[component.status];
+    if (!status)
+      throw new Error(
+        `Unrecognized Instatus component state: ${component.status}`,
+      );
+    return {
+      id: String(component.id),
+      // The group is the half a reader recognises -- "Builds", "Edge Network" --
+      // and Instatus puts it beside the part rather than in the name.
+      name: component.group?.name
+        ? `${component.group.name} / ${component.name}`
+        : component.name,
+      status,
+    };
+  });
+  const worst = components.reduce(
+    (at, component) =>
+      INSTATUS_RANK[component.status] > INSTATUS_RANK[at]
+        ? component.status
+        : at,
+    "operational",
+  );
+  const hurt = components.filter((c) => c.status !== "operational").length;
+  return normalizeSummary(
+    provider,
+    {
+      status: {
+        indicator: INSTATUS_INDICATOR[worst],
+        description: hurt
+          ? `${hurt} of ${components.length} components are not operational.`
+          : `All ${components.length} components operational.`,
+      },
+      components,
+      // Instatus keeps incidents on a separate document this feed does not
+      // carry, so none are claimed rather than guessed at. The components are
+      // the evidence, and the official page is one tap away.
+      incidents: [],
+    },
+    now,
+  );
+}
+
 export function normalizeComponent(provider, data, now, normalizeSummary) {
   const component = data?.components?.find(
     (c) => c.id === provider.componentId && !c.group,

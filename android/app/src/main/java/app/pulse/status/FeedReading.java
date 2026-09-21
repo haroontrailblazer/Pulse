@@ -109,6 +109,43 @@ final class FeedReading {
                     incidents.put(new JSONObject().put("id",i.getString("id")).put("name",a.optString("title","Service issue")).put("impact",a.optString("report_type").equals("maintenance")?"maintenance":"minor").put("status",a.optString("aggregate_state")));
                 }
             }
+        } else if (format.equals("instatus")) {
+            // Instatus publishes components and nothing else: no page indicator
+            // and no incidents document on this feed, so the overall reading is
+            // derived from the parts. Mirrors normalizeInstatus in
+            // shared/cloud-feeds.js -- the same states, the same worst-wins
+            // ordering, the same refusal to read an unknown state as good news.
+            JSONArray raw = new JSONObject(text).optJSONArray("components");
+            if (raw == null || raw.length() == 0) throw new JSONException("Instatus feed carried no components");
+            int worst = 0;
+            for (int n=0; n<raw.length(); n++) {
+                JSONObject c = raw.getJSONObject(n);
+                String componentState;
+                switch (c.optString("status")) {
+                    case "OPERATIONAL": componentState="operational"; break;
+                    case "UNDERMAINTENANCE": componentState="under_maintenance"; break;
+                    case "DEGRADEDPERFORMANCE": componentState="degraded_performance"; break;
+                    case "PARTIALOUTAGE": componentState="partial_outage"; break;
+                    case "MAJOROUTAGE": componentState="major_outage"; break;
+                    default: throw new JSONException("Unrecognized Instatus component state");
+                }
+                int rank = componentState.equals("operational") ? 0
+                    : componentState.equals("under_maintenance") ? 1
+                    : componentState.equals("degraded_performance") ? 2
+                    : componentState.equals("partial_outage") ? 3 : 4;
+                if (rank > worst) worst = rank;
+                JSONObject group = c.optJSONObject("group");
+                String name = group != null && !group.optString("name").isEmpty()
+                    ? group.optString("name") + " / " + c.optString("name")
+                    : c.optString("name");
+                components.put(new JSONObject().put("id", c.optString("id")).put("name", name).put("status", componentState));
+            }
+            // Only a major outage reads as an outage. Instatus's PARTIALOUTAGE
+            // maps to Statuspage's "minor" indicator, which this product has
+            // always read as degraded -- and the JS normalizer takes the same
+            // route, so the phone and the website cannot disagree about the
+            // same feed.
+            status = worst == 0 ? "operational" : worst == 1 ? "maintenance" : worst == 4 ? "outage" : "degraded";
         } else {
             JSONObject data = new JSONObject(text);
             status = state(data.getJSONObject("status").getString("indicator"));

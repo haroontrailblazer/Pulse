@@ -1,20 +1,16 @@
 {
-  "version": "1.0.25",
+  "version": "1.0.26",
   "assets": [
     {
-      "name": "Pulse-1.0.25-Android.apk",
-      "bytes": 6406400,
-      "sha256": "a8be5c119fb30599def205ea19abd19bb537f139b9c1b8a6f4b7068afeeb8117"
+      "name": "Pulse-1.0.26-Android.apk",
+      "bytes": 6133160,
+      "sha256": "7e50dd5025dd7060f7cd41eaa0432f62eb153fdec2c65aac86e67d93f2250669"
     },
     {
-      "name": "Pulse-1.0.25-Windows.exe",
-      "bytes": 105235333,
-      "sha256": "41ae895289173cb4c7782b893ecec9044579f41599d73598f9a8e08d57915059"
+      "name": "Pulse-1.0.26-Windows.exe",
+      "bytes": 105242553,
+      "sha256": "3eb877be0f5a9602f9de8d449b9539114849a88cb54b8ac4ad7bea573e178f2c"
     }
   ],
-  "sourceHash": "7c2c89377b9108e1d77c2a74050769ed496803253b2fbfdda40fcbce63a3bc44",
-  "webOnly": {
-    "sourceHash": "4235cbc6ccd8df66e229142aaa21eb64b063fa9d13caab0fe65410753de989e9",
-    "reason": "the map page's services column, which is a desktop layout change the 1.0.25 installers do not carry"
-  }
+  "sourceHash": "6f1f43dcdf69e315ab61fea6721bda4f9c29b1789cb625f3d58d360004f07e59"
 }

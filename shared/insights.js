@@ -1,4 +1,4 @@
-import { buildAtlas, workflowHints } from "./atlas.js";
+import { buildAtlas, generalHint, workflowHints } from "./atlas.js";
 import { isFresh } from "./monitor.js";
 import { latestIncident } from "./incidents.js";
 export const plainImpact = {
@@ -16,7 +16,16 @@ export const plainImpact = {
     "Security scans and vulnerability workflows could be delayed.",
   Productivity:
     "Shared documents, team tools, or connected automations could be interrupted.",
+  "Domains & hosting":
+    "Domain renewals, DNS changes, control panels, or sites on shared hosting could be affected.",
 };
+// Read with no fallback until now, which meant a provider in a category nobody
+// had written a sentence for rendered "If you use the affected feature:" with
+// nothing after the colon, and copied "Could affect: undefined" to the reader's
+// clipboard. A category is data; a missing sentence should read as one sentence
+// less, not as a broken one.
+export const generalImpact =
+  "Features that depend on this provider could be slow or fail.";
 export function explainIndustry(items, industry, watchlist, now) {
   const relevant = items.filter((p) => p.industries.includes(industry));
   return explainProviders(relevant, watchlist, now);
@@ -52,8 +61,12 @@ function explainProviders(relevant, watchlist, now) {
       sourceMessage: primary?.incident
         ? latestIncident(primary.incident).body
         : "",
-      meaning: plainImpact[issue.provider.category],
-      action: workflowHints[issue.provider.category],
+      // Guarded. These were bare lookups into two closed maps keyed by
+      // category, so adding a category to the catalogue -- which is data, not
+      // code -- rendered a dangling "If you use the affected feature:" and put
+      // "Could affect: undefined" on the reader's clipboard.
+      meaning: plainImpact[issue.provider.category] || generalImpact,
+      action: workflowHints[issue.provider.category] || generalHint,
     };
   });
   return {

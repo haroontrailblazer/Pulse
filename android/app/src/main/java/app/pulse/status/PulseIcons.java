@@ -33,6 +33,12 @@ final class PulseIcons {
             case "twilio": return R.drawable.ic_provider_twilio;
             case "atlassian": return R.drawable.ic_provider_atlassian;
             case "notion": return R.drawable.ic_provider_notion;
+            case "railway": return R.drawable.ic_provider_railway;
+            case "godaddy": return R.drawable.ic_provider_godaddy;
+            case "hostinger": return R.drawable.ic_provider_hostinger;
+            case "groq": return R.drawable.ic_provider_groq;
+            case "nvidia": return R.drawable.ic_provider_nvidia;
+            case "googleaistudio": return R.drawable.ic_provider_googleaistudio;
             default: return R.drawable.ic_pulse_notification_logo;
         }
     }

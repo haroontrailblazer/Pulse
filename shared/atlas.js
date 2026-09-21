@@ -130,8 +130,9 @@ const incidentState = (provider, incident) => {
   const affected = new Set(incident.components || []);
   const componentState = worst(
     (provider.components || [])
-      .filter((component) =>
-        affected.has(component.id) || affected.has(component.name),
+      .filter(
+        (component) =>
+          affected.has(component.id) || affected.has(component.name),
       )
       .map((component) => componentStates[component.status] || "unknown"),
   );
@@ -279,4 +280,10 @@ export const workflowHints = {
     "Check messaging, voice, notification delivery, and queued jobs.",
   Productivity:
     "Check workspace access, connected automations, and integration jobs.",
+  "Domains & hosting":
+    "Check domain renewals, DNS records, nameserver changes, and control-panel access.",
 };
+// The map page already falls back when a category has no hint; the insights
+// page did not. Naming the fallback once means both read the same sentence.
+export const generalHint =
+  "Compare your application errors and the provider's own components before changing anything.";

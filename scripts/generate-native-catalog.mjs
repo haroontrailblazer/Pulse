@@ -1,5 +1,6 @@
 import { providers, feedUrl } from "../shared/providers.js";
 import brandIcons from "../src/brand-icons.json" with { type: "json" };
+import { genericMarkPath } from "../shared/brand.js";
 import { mkdirSync, writeFileSync, readdirSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -108,8 +109,12 @@ export function vectorDrawable(rawPath) {
 
 export function nativeCatalog() {
   return providers.map((p) => {
-    if (!brandIcons[p.id])
-      throw new Error(`Provider "${p.id}" has no brand icon`);
+    // No throw for a missing brand icon any more. The widgets draw a vector and
+    // have no text fallback, so requiring artwork meant a provider whose brand
+    // is absent from the icon set could not be catalogued at all -- and the
+    // honest answer to "we have no artwork" is a neutral mark, not a
+    // hand-approximated trademark. shared/brand.js owns the one the web tile
+    // uses too, so both surfaces draw the same thing.
     return {
       id: p.id,
       name: p.name,
@@ -157,7 +162,7 @@ export function generate(root = process.cwd()) {
   for (const provider of catalog)
     writeFileSync(
       join(drawables, `${provider.icon}.xml`),
-      vectorDrawable(brandIcons[provider.id]),
+      vectorDrawable(brandIcons[provider.id] ?? genericMarkPath),
     );
   writeFileSync(join(java, "PulseIcons.java"), iconLookup(catalog));
   return catalog;

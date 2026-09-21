@@ -16,3 +16,21 @@ export function pulseSvg({
     : "";
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${adaptive ? "-22 -22 108 108" : "0 0 64 64"}">${backdrop}${shape}</svg>`;
 }
+
+// The mark a provider gets when its brand has no artwork in the icon set, on a
+// 24-unit grid like every other provider mark.
+//
+// It is deliberately not a logo. Approximating a trademark from memory ships a
+// wrong version of someone else's mark on three surfaces, so this says "a feed,
+// no artwork" instead: three rising bars, the same shape the product uses to
+// mean a signal. The brand's own colour still tints it, and the provider's name
+// is always adjacent in text, so the tile identifies rather than claims.
+//
+// Both surfaces read this one constant. The web tile used to fall back to the
+// `mark` string and the Android widgets had no fallback at all -- they draw a
+// vector and there is nowhere for text to go -- so a provider with no icon
+// could not be added to the catalogue at all.
+//
+// Straight lines only, no arcs and no subpath winding: Android's PathParser is
+// the strictest reader this path meets.
+export const genericMarkPath = "M4 14h3v6H4zM10.5 9h3v11h-3zM17 4h3v16h-3z";

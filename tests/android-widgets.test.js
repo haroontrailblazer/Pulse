@@ -4,6 +4,7 @@ import { readFileSync, readdirSync } from "node:fs";
 import { Resvg } from "@resvg/resvg-js";
 import { providers } from "../shared/providers.js";
 import brandIcons from "../src/brand-icons.json" with { type: "json" };
+import { genericMarkPath } from "../shared/brand.js";
 import {
   drawableName,
   vectorDrawable,
@@ -81,7 +82,15 @@ test("every watchable provider reaches the widgets with an icon and a brand colo
       `${entry.id} has no usable colour`,
     );
     assert.equal(entry.icon, `ic_provider_${entry.id}`);
-    assert.ok(brandIcons[entry.id], `${entry.id} has no brand icon`);
+    // Artwork is no longer required to be catalogued. The widgets draw a vector
+    // and have no text to fall back to the way the web tile did, so a provider
+    // whose brand is absent from the icon set gets the shared neutral mark
+    // rather than a hand-approximated trademark -- and still reaches the
+    // widgets, identifiable by its own colour and its adjacent name.
+    assert.ok(
+      brandIcons[entry.id] || genericMarkPath,
+      `${entry.id} has no drawable at all`,
+    );
   }
   assert.deepEqual(
     JSON.parse(read("android/app/src/main/assets/pulse-catalog.json")),
@@ -108,18 +117,15 @@ test("generated vector drawables are well formed and carry the exact brand path"
   );
   assert.equal(shipped.length, providers.length);
   for (const provider of nativeCatalog()) {
+    const source = brandIcons[provider.id] ?? genericMarkPath;
     const file = `android/app/src/main/res/drawable/${provider.icon}.xml`;
     const xml = read(file);
-    assert.equal(xml, vectorDrawable(brandIcons[provider.id]));
+    assert.equal(xml, vectorDrawable(source));
     assert.match(xml, /android:viewportWidth="24"/);
     assert.match(xml, /android:viewportHeight="24"/);
+    assert.ok(xml.includes(`android:pathData="${normalizePath(source)}"`));
     assert.ok(
-      xml.includes(
-        `android:pathData="${normalizePath(brandIcons[provider.id])}"`,
-      ),
-    );
-    assert.ok(
-      !brandIcons[provider.id].includes('"'),
+      !source.includes('"'),
       `${provider.id} path would break the XML attribute`,
     );
   }
@@ -142,16 +148,17 @@ test("no shipped drawable trips the arc-flag gap in Android's path tokenizer", (
   );
   assert.deepEqual(
     compacted.map(([id]) => id).sort(),
-    ["atlassian", "digitalocean", "discord", "docker"],
+    ["atlassian", "digitalocean", "discord", "docker", "godaddy", "railway"],
     "a new brand icon uses compacted arc flags",
   );
   for (const provider of nativeCatalog()) {
-    const path = normalizePath(brandIcons[provider.id]);
+    const source = brandIcons[provider.id] ?? genericMarkPath;
+    const path = normalizePath(source);
     assert.ok(androidCanParse(path), `${provider.id} still breaks PathParser`);
     // Only separators may change: no digit is rewritten, so the geometry the
     // web renders and the geometry Android renders stay identical.
     const digits = (value) => value.replace(/[\s,]/g, "");
-    assert.equal(digits(path), digits(brandIcons[provider.id]));
+    assert.equal(digits(path), digits(source));
   }
 });
 

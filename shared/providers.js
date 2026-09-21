@@ -2,6 +2,7 @@ import {
   normalizeAzure,
   normalizeAws,
   normalizeComponent,
+  normalizeInstatus,
 } from "./cloud-feeds.js";
 
 export const providers = [
@@ -321,6 +322,84 @@ export const providers = [
     color: "#272a2c",
     industries: ["Enterprise software", "Research"],
   },
+  {
+    id: "railway",
+    name: "Railway",
+    product: "Deployments, builds & edge network",
+    category: "Cloud & infrastructure",
+    // Instatus, not Statuspage: status.railway.com serves the reader a page and
+    // answers /api/v2/summary.json with that same HTML, so the machine-readable
+    // document is the Instatus host's own. `url` stays the page a reader should
+    // open; `endpoint` is what Pulse reads.
+    url: "https://status.railway.com",
+    endpoint: "https://railway.instatus.com/v2/components.json",
+    format: "instatus",
+    mark: "R",
+    color: "#0b0d0e",
+    industries: ["Developer tools", "Enterprise software", "AI products"],
+  },
+  {
+    id: "godaddy",
+    name: "GoDaddy",
+    product: "Domains, DNS & managed hosting",
+    category: "Domains & hosting",
+    url: "https://status.godaddy.com",
+    mark: "G",
+    color: "#1bdbdb",
+    industries: ["E-commerce", "Enterprise software", "Developer tools"],
+  },
+  {
+    id: "hostinger",
+    name: "Hostinger",
+    product: "Shared hosting, VPS & domains",
+    category: "Domains & hosting",
+    url: "https://statuspage.hostinger.com",
+    mark: "H",
+    color: "#673de6",
+    industries: ["E-commerce", "Developer tools"],
+  },
+  {
+    id: "groq",
+    name: "Groq",
+    product: "LPU inference API & console",
+    category: "AI & machine learning",
+    url: "https://groqstatus.com",
+    // No brand mark in the icon set, so the tile draws the text instead -- the
+    // same fallback npm, PyPI and CircleCI already use.
+    mark: "Gq",
+    color: "#f55036",
+    industries: ["AI products", "Developer tools", "Research"],
+  },
+  {
+    id: "nvidia",
+    name: "NVIDIA NGC",
+    product: "NIM microservices, model catalog & GPU cloud",
+    category: "AI & machine learning",
+    // build.nvidia.com and the NIM endpoints run on NGC, and NGC is the surface
+    // NVIDIA publishes a status page for.
+    url: "https://status.ngc.nvidia.com",
+    mark: "N",
+    color: "#76b900",
+    industries: ["AI products", "Research", "Developer tools"],
+  },
+  {
+    id: "googleaistudio",
+    name: "Google AI Studio",
+    product: "Gemini API, AI Studio & Vertex AI",
+    category: "AI & machine learning",
+    // Google publishes one incident feed for the whole of Google Cloud, and the
+    // Gemini API is a product inside it. Reading the feed unfiltered would make
+    // this row repeat every Compute Engine and BigQuery incident, so it is
+    // narrowed to the products this row is actually about. `products` is matched
+    // case-insensitively against each incident's affected_products titles.
+    url: "https://status.cloud.google.com/products",
+    endpoint: "https://status.cloud.google.com/incidents.json",
+    format: "google",
+    products: ["Gemini", "AI Studio", "Vertex AI", "Generative Language"],
+    mark: "AI",
+    color: "#8e75b2",
+    industries: ["AI products", "Research", "Developer tools"],
+  },
 ];
 export const categories = [...new Set(providers.map((p) => p.category))];
 export const statusLabels = {
@@ -409,6 +488,8 @@ export function normalizeFeed(provider, data, now = new Date().toISOString()) {
   if (provider.format === "aws") return normalizeAws(provider, data, now);
   if (provider.format === "component")
     return normalizeComponent(provider, data, now, normalizeSummary);
+  if (provider.format === "instatus")
+    return normalizeInstatus(provider, data, now, normalizeSummary);
   if (provider.format === "betterstack")
     return normalizeBetterStack(provider, data, now);
   if (provider.format !== "google")
@@ -418,7 +499,23 @@ export function normalizeFeed(provider, data, now = new Date().toISOString()) {
     data.some((i) => !i.id || !i.begin || !Array.isArray(i.updates))
   )
     throw new Error("Unrecognized Google Cloud incident response");
-  const active = data.filter(
+  // Google publishes one feed for the whole of Google Cloud, so a provider that
+  // is a product inside it says which products it is. Without the filter every
+  // such row would repeat every Compute Engine and BigQuery incident as its
+  // own, which is the "inferred outage" this product exists not to do.
+  // Substring, case-insensitive, because Google renames products in place --
+  // "Vertex AI" has also shipped as "Vertex AI Online Prediction".
+  const named = (incident) =>
+    !provider.products ||
+    (incident.affected_products || []).some((product) =>
+      provider.products.some((wanted) =>
+        (product.current_title || product.title || "")
+          .toLowerCase()
+          .includes(wanted.toLowerCase()),
+      ),
+    );
+  const scoped = data.filter(named);
+  const active = scoped.filter(
     (i) => !i.end && i.most_recent_update?.status !== "AVAILABLE",
   );
   const incidents = active.map((i) => ({
@@ -447,11 +544,11 @@ export function normalizeFeed(provider, data, now = new Date().toISOString()) {
         ? "degraded"
         : "operational",
     description: active.length
-      ? "Active incidents reported in Google Cloud’s public incident feed."
-      : "No ongoing incidents in Google Cloud’s public incident feed. This does not include account-specific health events.",
+      ? `Active incidents reported in Google Cloud’s public incident feed${provider.products ? ` for ${provider.products[0]} and related products` : ""}.`
+      : `No ongoing incidents in Google Cloud’s public incident feed${provider.products ? ` for ${provider.products[0]} and related products` : ""}. This does not include account-specific health events.`,
     checkedAt: now,
     sourceUpdatedAt:
-      data
+      scoped
         .map((i) => i.modified)
         .filter(Boolean)
         .sort()

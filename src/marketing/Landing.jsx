@@ -26,6 +26,7 @@ import {
 import PulseMark from "../PulseMark";
 import brandIcons from "../brand-icons.json";
 import { downloads, releaseVersion } from "../../shared/downloads";
+import { providers } from "../../shared/providers";
 import releaseAssets from "../../shared/release-assets.json";
 import { gsap, hoverMotionEnabled, motionEnabled } from "../motion";
 
@@ -1133,7 +1134,7 @@ export default function Landing() {
               ],
               [
                 "Where does the status information come from?",
-                "From the providers’ own public status feeds. Pulse includes links and timestamps so you can read the original reports. All 28 tracked services are read from an automated feed. When a feed cannot be read, Pulse shows that service as unavailable and links you to the official page rather than guessing.",
+                `From the providers’ own public status feeds. Pulse includes links and timestamps so you can read the original reports. All ${providers.length} tracked services are read from an automated feed. When a feed cannot be read, Pulse shows that service as unavailable and links you to the official page rather than guessing.`,
               ],
               [
                 "How often does it update?",

@@ -1,10 +1,10 @@
 import { chromium } from "playwright";
+import { providers } from "../shared/providers.js";
 import { mkdir, writeFile } from "node:fs/promises";
 import { createHash } from "node:crypto";
 import { resolve } from "node:path";
 
-const origin =
-  process.env.PULSE_CAPTURE_URL || "https://www.pulses4u.in/app";
+const origin = process.env.PULSE_CAPTURE_URL || "https://www.pulses4u.in/app";
 const viewport = { width: 1440, height: 900 };
 const deviceScaleFactor = 2;
 const output = resolve("public/marketing");
@@ -45,8 +45,13 @@ try {
   const data = await (await responsePromise).json();
   if (!data.providers?.some((p) => p.checkedAt && !p.stale))
     throw new Error("No current official readings available for capture.");
+  // Derived, not pinned: the coverage control names the catalogue's own size,
+  // so a pinned number makes every service added to the product look like a
+  // broken screenshot gate.
   await page
-    .getByRole("button", { name: /[1-9]\d*\/28 feeds current/ })
+    .getByRole("button", {
+      name: new RegExp("[1-9][0-9]*/" + providers.length + " feeds current"),
+    })
     .waitFor();
   await page.evaluate(() => document.fonts.ready);
   const actual = await page.evaluate(() => ({

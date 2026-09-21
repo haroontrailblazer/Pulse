@@ -1,3 +1,4 @@
+import { providers } from "./providers.js";
 // Alert only from successful official readings. Persist the last successful
 // signature across unavailable checks so reconnects do not repeat an alert.
 export function alertSignature(provider) {
@@ -32,7 +33,13 @@ export function nextAlert(previous, provider) {
     notify: !!signature && signature.split("|").some((part) => !old.has(part)),
   };
 }
-export function requestBudget(watched, feeds = 28) {
+// The default is the catalogue's own automated-feed count rather than a number
+// copied out of it, so adding a provider cannot leave the budget describing a
+// product that no longer exists.
+export const automatedFeeds = providers.filter(
+  (p) => p.format !== "source-only",
+).length;
+export function requestBudget(watched, feeds = automatedFeeds) {
   const androidIntervalSeconds = Math.min(300, Math.max(30, watched * 30));
   return {
     oldHourly: feeds * 120,
