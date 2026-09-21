@@ -4,6 +4,8 @@ import { readFileSync } from "node:fs";
 import {
   HOME,
   NAV_POLICY,
+  NAV_POLICY_NATIVE,
+  navPolicyFor,
   PLACES,
   pageFor,
   pathFor,
@@ -133,7 +135,109 @@ test("exactly one module touches window.history", () => {
 
 test("the navigation policy is stated once, where the gate can read it", () => {
   assert.equal(NAV_POLICY, "linear");
-  assert.match(read("scripts/check-navigation.mjs"), /NAV_POLICY/);
+  assert.equal(NAV_POLICY_NATIVE, "clear-top");
+  // The website retraces; a task reorders to front.
+  assert.equal(navPolicyFor(false), NAV_POLICY);
+  assert.equal(navPolicyFor(true), NAV_POLICY_NATIVE);
+  const gate = read("scripts/check-navigation.mjs");
+  assert.match(gate, /NAV_POLICY/);
+  assert.match(gate, /NAV_POLICY_NATIVE/);
+});
+
+test("clear-top is decided from the policy, not from a second copy of it", () => {
+  // The whole reason the policy is a constant rather than a comment: the one
+  // branch that collapses the stack has to be reading the same value the gate
+  // asserts against, or the two drift and nobody notices until a reader does.
+  const nav = read("src/navigation.js");
+  assert.match(nav, /navPolicyFor\(nativeShell\(\)\) === NAV_POLICY_NATIVE/);
+  // And the collapse is gated on the policy alone. A surface test sitting
+  // beside it would be the policy stated twice, which is the drift the
+  // constant exists to prevent.
+  const branch = nav.slice(nav.indexOf("const seat ="), nav.indexOf("place(page);"));
+  assert.doesNotMatch(
+    branch,
+    /onAndroid\(\)|onDesktop\(\)|data-platform|pulseDesktop/,
+    "the clear-top branch must ask the policy, not the platform",
+  );
+});
+
+test("every entry carries the trail, so nothing has to guess what is beneath it", () => {
+  // window.history.state only ever exposes the entry the browser is standing
+  // on, so "have I already been to this destination" is not answerable without
+  // the trail travelling inside the entries themselves. A module array would be
+  // empty again after the APK's WebView or the EXE reloads.
+  const nav = read("src/navigation.js");
+  assert.match(nav, /const trailWith = /);
+  assert.match(nav, /const withTrail = /);
+  // Both places that adopt an entry the browser handed back normalise it. An
+  // entry written before trails existed -- a tab restored across a deploy --
+  // would otherwise reach an unconditional `live.t` read and throw out of a
+  // click handler, on the website too, where the collapse never even runs.
+  assert.match(nav, /if \(at\) live = withTrail\(at\);/, "the watchdog path");
+  assert.match(nav, /\? withTrail\(next\)/, "the popstate path");
+  // An overlay is not a place: it costs an entry but adds nothing to the trail,
+  // which is what keeps the distance to an older destination a plain
+  // subtraction. Read out of `claim`'s own body rather than matched across a
+  // character window, so reformatting cannot make it pass or fail.
+  const claim = nav.slice(nav.indexOf("const claim ="), nav.indexOf("// A layer that closed itself"));
+  assert.match(claim, /i: live\.i \+ 1/, "an overlay still costs an entry");
+  assert.match(claim, /t: live\.t/, "and still inherits the trail unchanged");
+  assert.doesNotMatch(
+    claim,
+    /trailWith/,
+    "an overlay must not appear in the trail; only pages do",
+  );
+});
+
+test("an arrival from outside the app pushes rather than collapsing", () => {
+  // The tray item and the Android notification take the reader away from
+  // whatever they were doing. Back has to give that back, so this one entry
+  // point is exempt from clear-top -- collapsing would hand them the page
+  // beneath an older Watchlist entry, which is somewhere they never were.
+  const nav = read("src/navigation.js");
+  assert.match(nav, /export function interrupt\(page\)/);
+  // It reaches `place` directly, so the collapse cannot be reintroduced by
+  // routing it back through navigate().
+  const body = nav.slice(nav.indexOf("export function interrupt"), nav.indexOf("// Nothing closes a sheet"));
+  assert.match(body, /place\(page\)/);
+  assert.doesNotMatch(body, /seatFor|navPolicyFor/);
+  const app = read("src/App.jsx");
+  assert.match(app, /interrupt\("Watchlist"\)/);
+  // And App cannot reach the collapsing path at all: if `navigate` is not
+  // imported, no future edit can quietly put the deep link back on it.
+  assert.doesNotMatch(
+    app,
+    /^\s*navigate,$/m,
+    "App must not import navigate; the deep link is the only direct caller",
+  );
+});
+
+test("an overlay closing is reported as its own kind of traversal", () => {
+  // A picker, a sheet and a page all own one history entry, and `drop` trims
+  // the layer from `live` before it traverses -- so by the time a landing
+  // arrives, an overlay close and a back press between pages have exactly the
+  // same shape. Only the side that started it knows, so it says so. Without
+  // this the service directory's category picker wiped the category that
+  // choosing it had just set.
+  const nav = read("src/navigation.js");
+  assert.match(nav, /pending = \{ kind: "layer" \}/);
+  assert.match(nav, /pending = \{ kind: "reorder"/);
+  assert.match(nav, /const landing = \(fallback\)/);
+  // Every traversal this module starts says what it is on the way out, so the
+  // landing is never left guessing. `drop` is the only layer close and the
+  // clear-top branch is the only reorder.
+  assert.equal((nav.match(/pending = \{/g) || []).length, 2);
+  // And App acts on the distinction rather than re-deriving it: one effect,
+  // one cause test, one shared reset.
+  const app = read("src/App.jsx");
+  const effect = app.slice(app.indexOf("const settledMove ="), app.indexOf("// Nothing has been confirmed yet"));
+  assert.match(effect, /nav\.cause !== "pop"/);
+  assert.match(effect, /clearViewState\(\)/);
+  assert.doesNotMatch(
+    effect,
+    /setCategory|setFilter|setSearch|setMapView/,
+    "the reset belongs to clearViewState, so every caller runs the same one",
+  );
 });
 
 test("the APK's back press is dispatched, and decided in the web layer", () => {

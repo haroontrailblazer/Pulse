@@ -3107,7 +3107,7 @@ select {
 }
 
 /* ---- Background settings ---------------------------------------------- */
-.background-heading h2 {
+.background-heading :is(h2, h3) {
   font-size: var(--fs-section);
 }
 .background-actions strong {
@@ -3493,4 +3493,216 @@ select {
 .methodology-byline strong {
   display: block;
   color: var(--text);
+}
+
+/* ---- Your preferences: the instrument and the groups -------------------- */
+/* The second of the product's two hero figures, and it follows the first one's
+   rules exactly: structure in currentColor at stated opacities so one asset is
+   right in both themes, and a named token only where a mark carries meaning.
+   Here that is --positive alone, on the graduations that stand for a watched
+   service and on the needle when readings are really being taken. */
+.settings-hero {
+  margin-bottom: var(--space-6);
+  text-align: center;
+}
+.instrument-dial {
+  display: block;
+  width: 100%;
+  /* Capped, not free. A 360x124 figure told to fill the width would be 165px
+     tall in the 480px sheet and 113px on a phone, and the phone's sheet is a
+     fixed 60dvh -- a third of everything the reader can see, before the first
+     control. preserveAspectRatio="xMidYMid meet" scales the whole drawing to
+     fit whatever height it is given and centres it, so nothing ever clips. */
+  height: 120px;
+  margin: var(--space-1) 0 var(--space-4);
+  color: var(--text);
+}
+.instrument-dial .inst-rule {
+  stroke: currentColor;
+  stroke-width: 1;
+  opacity: 0.16;
+}
+.instrument-dial .inst-arc {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1;
+  opacity: 0.28;
+}
+.instrument-dial .inst-arc.is-inner {
+  opacity: 0.12;
+}
+.instrument-dial .inst-ticks line {
+  stroke: currentColor;
+  stroke-width: 1;
+  opacity: 0.3;
+}
+.instrument-dial .inst-ticks .is-major {
+  stroke-width: 1.5;
+  opacity: 0.5;
+}
+.instrument-dial .inst-slots circle {
+  fill: currentColor;
+  opacity: 0.16;
+}
+/* A watched service on a surface that cannot check in the background is real
+   but quiet; on the APK and the EXE it is armed, and says so in the product's
+   own token rather than in a colour invented here. */
+.instrument-dial .inst-slots .is-watched {
+  opacity: 0.5;
+}
+.instrument-dial .inst-slots .is-armed {
+  fill: var(--positive);
+  opacity: 1;
+}
+.instrument-dial .inst-needle line {
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  opacity: 0.55;
+}
+.instrument-dial .inst-needle circle {
+  fill: currentColor;
+  opacity: 0.55;
+}
+.instrument-dial .inst-needle.is-live line,
+.instrument-dial .inst-needle.is-live circle {
+  opacity: 1;
+}
+.instrument-dial .inst-needle.is-live circle {
+  fill: var(--positive);
+}
+/* SVG2 makes `transform` the presentation attribute of the CSS property, so
+   flipping the switch swings the needle between two rotate()s about one origin
+   instead of teleporting it. */
+.instrument-dial .inst-needle {
+  transition: transform var(--duration-slow) var(--ease);
+}
+@media (prefers-reduced-motion: reduce) {
+  .instrument-dial .inst-needle {
+    transition: none;
+  }
+}
+.instrument-dial .inst-mark {
+  fill: currentColor;
+}
+/* The clause that names the promise is set in the serif, exactly as a page
+   headline sets its second clause: same size, same baseline, a different
+   voice. Instrument Serif ships one cut, so the weight is stroked on and the
+   x-height corrected by 6% -- see .page-title-row h1 > span. */
+.settings-deck {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--fs-section);
+  line-height: var(--lh-section);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--tracking-snug);
+  color: var(--text);
+  text-wrap: balance;
+}
+.settings-deck > span {
+  font-family: var(--font-serif);
+  font-size: 1.06em;
+  font-weight: var(--fw-medium);
+  font-style: normal;
+  letter-spacing: 0;
+  color: var(--text-muted);
+  -webkit-text-stroke: 0.45px currentColor;
+  paint-order: stroke fill;
+}
+/* A frame, not a fill. A card here would have to pick a surface, and on the
+   black theme every other surface token is darker than the sheet's own
+   --surface-raised, so it would read as a hole rather than as a group. A
+   hairline says the same thing in both themes, and leaves the switch's own
+   sunken track something to contrast against. */
+.settings-group + .settings-group {
+  margin-top: var(--space-6);
+}
+/* Aligned with the rows inside the frame below it, not with the frame's own
+   edge, so the label and the thing it labels share one left margin. */
+.settings-group > .eyebrow {
+  margin: 0 0 var(--space-2);
+  padding-inline: var(--space-4);
+}
+.settings-panel {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding-inline: var(--space-4);
+  background: transparent;
+}
+/* The frame is the group's own edge, so the last row inside it does not draw a
+   second one a hairline away from it. */
+.settings-panel > .setting-row:last-child {
+  border-bottom: 0;
+}
+/* The alerts component keeps every control, every platform branch and its
+   mount-time status() call; inside this panel it gives up only the chrome that
+   made it a card parked between rows. Three class levels, so this outranks
+   both `.background-panel` and `.modal .background-panel` in background.css
+   whichever order the bundler emits them in. */
+.modal .settings-panel .background-panel {
+  padding: var(--space-4) 0;
+  margin-bottom: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+/* Its heading stays -- it carries copy nothing else says -- but it stops being
+   a second <h2> competing with the sheet's own title, and drops to the size of
+   a row's own strong. */
+.modal .settings-panel .background-heading {
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+.modal .settings-panel .background-heading :is(h2, h3) {
+  /* Named, because the level moved. The dense-screen rules give an h2 inside a
+     .background-panel the display face and an h3 the body face, so demoting
+     the tag to keep one h2 in the dialog would have quietly changed the
+     typeface of a heading nobody meant to touch. */
+  font-family: var(--font-display);
+  font-size: var(--fs-card);
+  line-height: var(--lh-card);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--tracking-snug);
+}
+.modal .settings-panel .background-symbol {
+  width: 40px;
+  height: 40px;
+}
+.modal .settings-panel .background-actions {
+  gap: var(--space-4);
+}
+.modal .settings-panel .background-actions > div {
+  max-width: none;
+}
+/* The sheet is a fixed 60dvh on a phone -- roughly 400px of body on a 360x800
+   device -- so the figure and its deck line have a budget rather than a size.
+   Declared here rather than up in the density section because these rules and
+   the ones they override have equal specificity, so the later block has to be
+   this one. */
+@media (max-width: 760px) {
+  .instrument-dial {
+    height: 84px;
+  }
+  .settings-deck {
+    font-size: var(--fs-card);
+    line-height: var(--lh-card);
+  }
+  .settings-hero {
+    margin-bottom: var(--space-5);
+  }
+  .settings-group + .settings-group {
+    margin-top: var(--space-5);
+  }
+  .settings-panel,
+  .settings-group > .eyebrow {
+    padding-inline: var(--space-3);
+  }
+}
+/* A short phone -- 360x640 is still the shape the APK gate measures -- has
+   about a hundred fewer pixels to give. The figure gives up another twelve so
+   the alerts control stays reachable without a scroll there too. */
+@media (max-width: 760px) and (max-height: 720px) {
+  .instrument-dial {
+    height: 72px;
+  }
 }

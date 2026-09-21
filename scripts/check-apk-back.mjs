@@ -63,15 +63,23 @@ const launch = () =>
 const keyboardUp = () =>
   sh("shell", "dumpsys", "input_method").includes("mInputShown=true");
 
-// The devtools socket is named after the WebView's process id, so it changes on
-// every cold start and has to be looked up rather than remembered.
 async function attach() {
-  const socket = sh("shell", "cat", "/proc/net/unix")
+  // The devtools socket is named after the WebView's process id, so it changes
+  // on every cold start and has to be looked up rather than remembered -- and
+  // looked up BY that pid.
+  // Android leaves the socket names of dead WebViews in /proc/net/unix, and
+  // taking the last one found there attaches to whichever process happened to
+  // be listed last: after a couple of relaunches that is a corpse, the CDP
+  // handshake never answers, and the gate dies on a fetch timeout that looks
+  // like a product failure. Pulse's own pid is the only right answer; the
+  // scan is kept as a fallback for a shell that cannot report one.
+  const pid = sh("shell", "pidof", PKG).trim().split(/\s+/)[0];
+  const sockets = sh("shell", "cat", "/proc/net/unix")
     .split("\n")
-    .map((line) => line.match(/@(webview_devtools_remote_\d+)/))
-    .filter(Boolean)
-    .map((match) => match[1])
-    .pop();
+    .map((line) => line.match(/@(webview_devtools_remote_(\d+))/))
+    .filter(Boolean);
+  const socket =
+    sockets.find((match) => match[2] === pid)?.[1] ?? sockets.pop()?.[1];
   if (!socket)
     throw new Error("no WebView devtools socket; this needs the debug APK");
   try {
@@ -428,6 +436,43 @@ for (let n = 0; n < 3; n += 1) {
     now: at.heading,
   });
   previous = at;
+}
+
+// ---- J9 revisiting a place is going back to it -------------------------
+// The reported walk, on the device it was reported on: Overview, Map,
+// Incidents, Map, Overview. The two returns are the reader going back without
+// touching the back control, and on a task the stack has to say so. Under the
+// old linear policy this left five entries and took five presses to unwind,
+// four of which retraced pages the reader had already walked back out of by
+// hand. Only the depth can prove it -- every heading along the way is one the
+// reader really did visit, so a heading check would pass either way.
+{
+  const depths = [];
+  for (const place of ["Map", "Incidents", "Map", "Overview"]) {
+    await tap(place);
+    depths.push((await state()).pulse?.i ?? null);
+  }
+  check(
+    "J9 revisiting Map returned to the Map entry instead of duplicating it",
+    depths[2] === 1,
+    { depths },
+  );
+  const home = await state();
+  check(
+    "J9 and returning to Overview left the front door alone on the stack",
+    home.pulse?.i === 0 && /Internet health/.test(home.heading || ""),
+    { depths, at: home.pulse, heading: home.heading },
+  );
+  backKey();
+  await wait(2200);
+  check("J9 so one press leaves, not four that retrace", !foreground(), {});
+  check("J9 and the process is kept, so a relaunch still resumes", alive(), {});
+  // Leave the device where the rest of the file expects it.
+  launch();
+  await wait(3000);
+  cdp.close();
+  cdp = await attach();
+  await wait(1500);
 }
 
 cdp.close();

@@ -247,7 +247,11 @@ export default function BackgroundSettings({
           <Bell size={24} />
         </span>
         <div>
-          <h2>Your stack. Even when you step away.</h2>
+          {/* An h3, not an h2. This panel lives inside the preferences sheet,
+              whose title is already the dialog's h2, and a second one at the
+              same level gave the sheet two competing headings. The copy is
+              unchanged: it says something the rows beneath it do not. */}
+          <h3>Your stack. Even when you step away.</h3>
           <p>
             Quiet monitoring. Alerts when a watched service reports a new issue.
           </p>

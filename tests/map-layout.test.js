@@ -74,3 +74,57 @@ test("the APK map zoom applies however the reader reached the page", () => {
   assert.match(source, /const MAP_PAGE_ZOOM = 1\.5/, "the page zoom is one step");
   assert.match(source, /Math\.min\(3, value \+ 0\.5\)/, "the + control steps by 0.5");
 });
+
+// Reset is the control whose whole job is "put the map back the way it was",
+// and it wrote the literal 1 while only the arrival effect knew the APK's map
+// page opens at 1.5. So pressing it shrank the page by a third from the zoom it
+// had just opened at -- measured on a 411x560 frame, a 262px globe became
+// 175px. The region picker wrote the same literal.
+//
+// Asserted on the source, like the test above, because the behaviour lives in
+// React handlers the Node suite cannot mount. What is being held is not a
+// number but a shape: one function answers "what zoom does this view sit at",
+// and everything that returns the map to its starting point asks it.
+test("everything that resets the map returns it to the zoom the page opened at", () => {
+  const source = readFileSync(
+    new URL("../src/WorldMap.jsx", import.meta.url),
+    "utf8",
+  );
+  const at = source.indexOf("const homeZoom = ");
+  assert.ok(at > 0, "one function must answer what zoom this view sits at");
+  const homeZoom = source.slice(at, source.indexOf(";", at));
+  assert.match(
+    homeZoom,
+    /\(expanded, region\)/,
+    "and it must answer it for a view, not just for a page",
+  );
+  // Only the world needs the compensation: a region already carries its own
+  // framing multiplier in `views` -- Europe is 2.8 -- so stacking MAP_PAGE_ZOOM
+  // on top of it would push a continent's markers past the edges of the frame.
+  // Read out of homeZoom's own body, because `region === "Global"` also appears
+  // in the marker visibility filter and would pass for the wrong reason.
+  assert.match(
+    homeZoom,
+    /region === "Global"/,
+    "the page zoom belongs to the world view",
+  );
+  assert.match(homeZoom, /MAP_PAGE_ZOOM/);
+  // Nothing may write the bare literal as "the default" again. The arrival
+  // effect's `landingOnMarker ? 1 : ...` and the minus control's
+  // `Math.max(1, ...)` are deliberate and read as more than a lone 1, so this
+  // catches exactly the shape that caused the defect.
+  const writes = [...source.matchAll(/setZoom\(([^)]*)\)/g)].map((m) => m[1]);
+  assert.deepEqual(
+    writes.filter((w) => w.trim() === "1"),
+    [],
+    `setZoom(1) is not "the default" on every surface: ${writes.join(" | ")}`,
+  );
+  // And the two controls whose whole job is to put the map back must ask it.
+  for (const control of ["Reset map", "Map region"])
+    assert.ok(source.includes(control), `${control} is still the control`);
+  assert.equal(
+    (source.match(/setZoom\(homeZoom\(/g) || []).length,
+    2,
+    "Reset and the region picker both return the map to its own default",
+  );
+});

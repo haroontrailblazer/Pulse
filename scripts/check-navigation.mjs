@@ -17,7 +17,13 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { writeFileSync } from "node:fs";
 import { providers, unknownProvider } from "../shared/providers.js";
-import { PLACES, NAV_POLICY, HOME } from "../shared/navigation.js";
+import {
+  PLACES,
+  NAV_POLICY,
+  NAV_POLICY_NATIVE,
+  navPolicyFor,
+  HOME,
+} from "../shared/navigation.js";
 
 const DEV = process.env.PULSE_QA_URL || "http://127.0.0.1:5174";
 const OUT = process.env.OUT_FILE || "test-results/navigation.json";
@@ -117,6 +123,11 @@ async function surface({
   width,
   height,
 }) {
+  // The APK and the EXE are tasks and collapse a destination they already hold;
+  // a browser tab retraces every step. One gate, two expectations, both read
+  // from the same constants the product branches on.
+  const native = !!(android || desktop);
+  const policy = navPolicyFor(native);
   const browser = await chromium.launch({
     headless: true,
     channel: process.env.PLAYWRIGHT_CHANNEL || "msedge",
@@ -310,40 +321,127 @@ async function surface({
     await ctx.close();
   }
 
-  // ---- B. the reader's own scenario, retraced -----------------------------
+  // ---- B. tapping the destination you already have beneath you ------------
   {
     const { ctx, page } = await boot();
     await go(page, "Watchlist");
     await go(page, "Overview");
     const after = await look(page);
-    check(
-      name,
-      "B",
-      `policy ${NAV_POLICY}: tapping Overview after Watchlist pushes rather than collapsing`,
-      after.i === 2,
-      { i: after.i },
-    );
+    if (policy === NAV_POLICY_NATIVE) {
+      check(
+        name,
+        "B",
+        `policy ${policy}: tapping Overview after Watchlist collapses onto the entry it already has`,
+        after.i === 0 && /Internet health/.test(after.heading || ""),
+        { i: after.i, heading: after.heading },
+      );
+      check(
+        name,
+        "B",
+        "so one press leaves, because Overview is the front door",
+        (await back(page)) === "native",
+        {},
+      );
+    } else {
+      check(
+        name,
+        "B",
+        `policy ${policy}: tapping Overview after Watchlist pushes rather than collapsing`,
+        after.i === 2,
+        { i: after.i },
+      );
+      await back(page);
+      const one = await look(page);
+      check(
+        name,
+        "B",
+        "back once returns to Watchlist, and does not leave",
+        one.inApp && /Your stack/.test(one.heading || ""),
+        { heading: one.heading, inApp: one.inApp },
+      );
+      await back(page);
+      const two = await look(page);
+      check(
+        name,
+        "B",
+        "back twice returns to Overview, and does not leave",
+        two.inApp && /Internet health/.test(two.heading || ""),
+        { heading: two.heading, inApp: two.inApp },
+      );
+      check(name, "B", "back twice lands on the root entry", two.i === 0, {
+        i: two.i,
+      });
+    }
+    await ctx.close();
+  }
+
+  // ---- B2. the reported walk, exactly as it was reported ------------------
+  // Overview, Map, Incidents, Map, Overview. The two returns are the reader
+  // going back without touching the back control, and on a task the stack has
+  // to say so: five taps, one entry left, one press to leave. On the website
+  // the browser's own back button must still retrace all five.
+  {
+    const { ctx, page } = await boot();
+    const walked = [];
+    for (const place of ["Global map", "Incidents", "Global map", "Overview"]) {
+      await go(page, place);
+      walked.push((await look(page)).i);
+    }
+    const at = await look(page);
+    if (policy === NAV_POLICY_NATIVE) {
+      check(
+        name,
+        "B2",
+        "revisiting Map collapses onto the Map entry rather than duplicating it",
+        walked[2] === 1,
+        { depths: walked },
+      );
+      check(
+        name,
+        "B2",
+        "and returning to Overview leaves the front door alone on the stack",
+        at.i === 0 && /Internet health/.test(at.heading || ""),
+        { i: at.i, heading: at.heading, depths: walked },
+      );
+      check(
+        name,
+        "B2",
+        "one press leaves, instead of four that retrace pages already walked out of",
+        (await back(page)) === "native",
+        {},
+      );
+    } else {
+      check(
+        name,
+        "B2",
+        "the website retraces every tap, including the repeats",
+        at.i === 4,
+        { i: at.i, depths: walked },
+      );
+    }
+    await ctx.close();
+  }
+
+  // ---- B3. a first visit is still a push, on every surface ----------------
+  // Clear-top is not popUpTo(start): a destination the reader has NOT been to
+  // still earns its own entry, and back still retraces it.
+  {
+    const { ctx, page } = await boot();
+    await go(page, "Incidents");
+    await go(page, "Watchlist");
+    const at = await look(page);
+    check(name, "B3", "two new destinations are two entries", at.i === 2, {
+      i: at.i,
+    });
     await back(page);
     const one = await look(page);
     check(
       name,
-      "B",
-      "back once returns to Watchlist, and does not leave",
-      one.inApp && /Your stack/.test(one.heading || ""),
-      { heading: one.heading, inApp: one.inApp },
+      "B3",
+      "and back retraces the first of them",
+      one.inApp && /Every signal/.test(one.heading || ""),
+      { heading: one.heading },
     );
-    await back(page);
-    const two = await look(page);
-    check(
-      name,
-      "B",
-      "back twice returns to Overview, and does not leave",
-      two.inApp && /Internet health/.test(two.heading || ""),
-      { heading: two.heading, inApp: two.inApp },
-    );
-    check(name, "B", "back twice lands on the root entry", two.i === 0, {
-      i: two.i,
-    });
     await ctx.close();
   }
 
@@ -464,6 +562,75 @@ async function surface({
       `back closed ${overlay.id} without changing the place`,
       after.inApp && after.heading === before.heading,
       { was: before.heading, now: after.heading },
+    );
+    await ctx.close();
+  }
+
+  // ---- C2. choosing inside an overlay is not leaving a place --------------
+  // Every picker is a history entry, so choosing an option pops one -- and a
+  // pop used to mean "the reader moved, clear the view they left behind". That
+  // is what made the service directory's funnel look broken on both the
+  // Overview and the Watchlist: the category was set and then wiped by the
+  // dismissal of the menu that set it. The directory is the only place in the
+  // product where a picker writes page-level state, so it is the case to hold.
+  for (const place of ["Overview", "Watchlist"]) {
+    const { ctx, page } = await boot();
+    if (place !== "Overview") await go(page, place);
+    const funnel = page
+      .getByRole("button", { name: /Filter service category/ })
+      .and(page.locator(":visible"))
+      .first();
+    if (!(await funnel.count())) {
+      rows.push({
+        profile: name,
+        group: "C2",
+        name: `no category filter on ${place} at this width`,
+        ok: true,
+        skipped: true,
+      });
+      await ctx.close();
+      continue;
+    }
+    await funnel.click();
+    await page.waitForTimeout(350);
+    const option = page.locator("[role='listbox'] [role='option']").nth(1);
+    const wanted = ((await option.textContent()) || "").trim();
+    await option.click();
+    // Long enough for the picker's own history entry to pop and for anything
+    // that lands with it to have run.
+    await page.waitForTimeout(700);
+    const after = await page.evaluate(() => ({
+      label:
+        document
+          .querySelector(".category-filter .filter-menu-button")
+          ?.getAttribute("aria-label") || null,
+      active: !!document.querySelector(".category-filter.is-active"),
+      pressed: document.querySelectorAll(
+        ".directory-toolbar .tabs button[aria-pressed='true']",
+      ).length,
+      heading:
+        document.querySelector(".page-heading h1")?.textContent?.trim() || null,
+    }));
+    check(
+      name,
+      "C2",
+      `the category chosen on ${place} survives the picker closing`,
+      !!wanted && (after.label || "").includes(wanted),
+      { wanted, ...after },
+    );
+    check(
+      name,
+      "C2",
+      `and the funnel still reports that a filter is on (${place})`,
+      after.active,
+      after,
+    );
+    check(
+      name,
+      "C2",
+      `${place} keeps exactly one directory tab selected`,
+      after.pressed === 1,
+      after,
     );
     await ctx.close();
   }
@@ -600,11 +767,20 @@ async function surface({
   }
 
   // ---- H. no dead presses, and no press that does two things --------------
+  // Four taps and five presses on every surface: four that retrace, then the
+  // one that reaches the boundary. The fourth tap differs by policy only so
+  // that the walk stays four entries deep -- on a task, returning to Overview
+  // would collapse the stack and there would be nothing left to retrace, which
+  // group B2 proves on its own. What this holds is the other property: every
+  // press does exactly one thing, and none of them does nothing.
   {
     const { ctx, page } = await boot();
     const trail = [];
-    for (const place of ["Incidents", "Watchlist", "Global map", "Overview"])
-      await go(page, place);
+    const last =
+      policy === NAV_POLICY_NATIVE ? "Developer tools" : "Overview";
+    const taps = ["Incidents", "Watchlist", "Global map", last];
+    const presses = 4;
+    for (const place of taps) await go(page, place);
     let previous = await look(page);
     trail.push(previous.heading);
     for (let n = 0; n < 5; n += 1) {
@@ -614,8 +790,8 @@ async function surface({
           name,
           "H",
           `the shell took over on press ${n + 1}, after retracing every tap`,
-          n === 4,
-          { at: n + 1, trail },
+          n === presses,
+          { at: n + 1, want: presses + 1, trail },
         );
         break;
       }
@@ -625,8 +801,8 @@ async function surface({
           name,
           "H",
           `press ${n + 1} left the app`,
-          !android && !desktop && n === 4,
-          { at: n + 1, trail },
+          !native && n === presses,
+          { at: n + 1, want: presses + 1, trail },
         );
         break;
       }
@@ -646,7 +822,9 @@ async function surface({
       "five presses retraced four taps in order",
       trail.join(" < ") ===
         [
-          "Internet health, in view.",
+          policy === NAV_POLICY_NATIVE
+            ? "Built for your next deploy."
+            : "Internet health, in view.",
           "A connected world.",
           "Your stack, at a glance.",
           "Every signal. Less noise.",
@@ -938,7 +1116,10 @@ async function surface({
       return { kind: "window", at: Math.round(window.scrollY) };
     });
     await page.waitForTimeout(250);
-    await go(page, "Overview");
+    // Watchlist, not Overview: on a task Overview is already beneath the reader
+    // and tapping it collapses the stack, so the press that follows would leave
+    // the app instead of measuring a restored offset.
+    await go(page, "Watchlist");
     await back(page);
     await page.waitForTimeout(450);
     const restored = await page.evaluate(() => ({
@@ -1015,7 +1196,14 @@ server.close();
 
 const bad = rows.filter((r) => !r.ok);
 const skipped = rows.filter((r) => r.skipped);
-writeFileSync(OUT, JSON.stringify({ policy: NAV_POLICY, rows }, null, 1));
+writeFileSync(
+  OUT,
+  JSON.stringify(
+    { policy: { web: NAV_POLICY, native: NAV_POLICY_NATIVE }, rows },
+    null,
+    1,
+  ),
+);
 console.log(
   `\n${rows.length} checks, ${skipped.length} skipped, ${bad.length} problems -> ${OUT}`,
 );

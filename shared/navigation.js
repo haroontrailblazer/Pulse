@@ -12,15 +12,37 @@
 // `getLastPathSegment().contains(".")` -- so a slug like "v1.2" would 404 in
 // the EXE and would fail to reload inside the APK's WebView.
 
-// "linear": every destination tap is one history entry, exactly the way a
-// browser treats a link, so back retraces the path the reader actually walked.
-// The alternative is Material's bottom-navigation pattern (popUpTo(start) +
-// singleTop), which caps the stack at [Overview, current] -- under which back
-// immediately after tapping the Overview icon ejects the reader, which is the
-// ejection this change exists to fix. It is a constant rather than a comment
-// because the navigation gate reads it, so the policy and the test that proves
-// it cannot drift apart.
+// Two policies, because a browser tab and an installed app are not the same
+// kind of thing, and the reader's expectation of "back" differs accordingly.
+//
+// "linear", on the website: every destination tap is one history entry, exactly
+// the way a browser treats a link, so back retraces the path the reader
+// actually walked and the forward button still means something. The entry they
+// arrived on stays theirs.
+//
+// "clear-top", in the APK and the EXE: a destination that is already BELOW the
+// reader in the stack is somewhere to return to, not somewhere to visit a
+// second time, so tapping it traverses back to the entry it already has instead
+// of pushing a duplicate on top. That is the Android task rule -- CLEAR_TOP /
+// reorder-to-front -- and it is what stops Overview, Map, Incidents, Map,
+// Overview costing five presses to unwind, four of which retrace pages the
+// reader had already walked back out of by hand.
+//
+// It is NOT Material's popUpTo(start) + singleTop, which caps the stack at
+// [Overview, current] and throws away every destination in between; a first
+// visit still pushes, and a back press still retraces it. What collapses is
+// only a page the reader has already visited on this trip. The consequence is
+// deliberate: once they are back on Overview the stack is [Overview] again, and
+// the next press leaves, because Overview is the front door and there is
+// nothing beneath it.
+//
+// Constants rather than comments because the navigation gate reads them, so the
+// policy and the tests that prove it cannot drift apart.
 export const NAV_POLICY = "linear";
+export const NAV_POLICY_NATIVE = "clear-top";
+// The APK and the EXE are tasks; a browser tab is not.
+export const navPolicyFor = (native) =>
+  native ? NAV_POLICY_NATIVE : NAV_POLICY;
 export const HOME = "Overview";
 export const PLACES = [
   { page: "Overview", slug: "" },

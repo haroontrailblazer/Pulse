@@ -44,6 +44,29 @@ const MAP_PAGE_ZOOM = 1.5;
 const onAndroid = () =>
   typeof document !== "undefined" &&
   document.documentElement.dataset.platform === "android";
+// The zoom this view is supposed to sit at, and the only answer to that
+// question anywhere in the file. On a phone the Map page is width-limited --
+// about 360px of usable width against 870 map units -- so the world opens one
+// press of the + control in; the Overview's preview card and every
+// desktop-sized window already fill their space and sit at 1.
+//
+// It exists because three separate places wrote the literal 1 as "the default"
+// while only the arrival effect knew about MAP_PAGE_ZOOM, so Reset -- whose
+// whole job is to put the map back the way it was -- shrank the APK's map page
+// by a third from the zoom it had just opened at. Anything that returns the map
+// to its starting point reads this instead of writing a number.
+//
+// Only the world needs the compensation. A region already carries its own
+// framing multiplier in `views` (1.65 to 2.8), which is what MAP_PAGE_ZOOM is
+// standing in for at Global, so stacking the two would over-zoom the continent
+// and push its markers past the edges of the frame.
+//
+// A platform question and not a measured one, deliberately: `size` is seeded at
+// 870x600 until the ResizeObserver's first callback lands, so any predicate
+// derived from the frame reads "wide" on the first render of every mount, and
+// the page would open at 1 and jump to 1.5 a frame later.
+const homeZoom = (expanded, region) =>
+  expanded && region === "Global" && onAndroid() ? MAP_PAGE_ZOOM : 1;
 const views = {
   Global: [435, 210, 1],
   "North America": [250, 132, 1.85],
@@ -214,6 +237,13 @@ export default function WorldMap({
     setPanel(null);
     setSelected(null);
     setService(null);
+    // The region too, or a reader who looked at Europe on the Map page would
+    // find the Overview's card drawn at 2.8x over one continent, with the rest
+    // of the world's hubs filtered out of a card whose whole job is to show
+    // them. The zoom is already returned by the effect below; this is the other
+    // half of "the preview card is never left somewhere the reader put the
+    // page".
+    setRegion("Global");
   }, [preview]);
   // The APK's map page opens one zoom step in. On a phone the globe is
   // width-limited — 360px of usable width against 870 map units — so at zoom 1
@@ -230,7 +260,11 @@ export default function WorldMap({
   // equal either boolean, so the first run always decides.
   //
   // Leaving the page still returns it to 1 so the Overview's preview card is
-  // never zoomed.
+  // never zoomed -- on every surface now, not only on Android. The old
+  // `if (!onAndroid()) return` meant the website and the EXE carried a reader's
+  // zoom back into the preview card, which is the same class of complaint as
+  // the reset button's: the map should be at its default whenever it is put
+  // back, whichever way it got there.
   //
   // Arriving on a marker is left exactly as it was: `focus` is derived from
   // zoom, so zooming in on arrival would pan the map onto the marker instead of
@@ -239,12 +273,14 @@ export default function WorldMap({
   useEffect(() => {
     if (wasExpanded.current === expanded) return;
     wasExpanded.current = expanded;
-    if (!onAndroid()) return;
     const landingOnMarker =
       expanded &&
       initialView?.panel === "region" &&
       Number.isInteger(initialView?.hub);
-    setZoom(expanded && !landingOnMarker ? MAP_PAGE_ZOOM : 1);
+    setZoom(landingOnMarker ? 1 : homeZoom(expanded, region));
+    // `region` is read, not depended on: this runs when the reader enters or
+    // leaves the page, and picking a region has its own handler below.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [expanded, initialView]);
   const appliedView = useRef(null);
   useEffect(() => {
@@ -573,7 +609,7 @@ export default function WorldMap({
         options={Object.keys(views)}
         onChange={(name) => {
           setRegion(name);
-          setZoom(1);
+          setZoom(homeZoom(expanded, name));
           setPanel(null);
           setSelected(null);
         }}
@@ -596,7 +632,9 @@ export default function WorldMap({
           aria-label="Reset map"
           onClick={() => {
             setRegion("Global");
-            setZoom(1);
+            // The literal, because `region` has not been re-read yet: reset is
+            // a return to the world, and the world is what the page opened on.
+            setZoom(homeZoom(expanded, "Global"));
             setSelected(null);
             setSeverity("all");
             setPanel(null);

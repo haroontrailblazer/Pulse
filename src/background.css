@@ -51,7 +51,7 @@
   background: var(--surface-soft);
   border: 1px solid var(--line);
 }
-.background-panel h2 {
+.background-panel :is(h2, h3) {
   margin: 0 0 5px;
 }
 .background-panel p {

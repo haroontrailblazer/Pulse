@@ -17,12 +17,43 @@ EXE, the APK and the dev server answer at `/`. No slug contains a dot: the two
 extension-less fallbacks these deep links rely on -- `server/index.js` in the EXE
 and Capacitor's `WebViewLocalServer` in the APK -- both key off one.
 
-Policy is linear. Tapping a destination pushes one entry, exactly as a browser
-treats a link, so back retraces the path actually walked: Overview, Watchlist, then
-the Overview icon leaves three entries and takes three presses to unwind.
+Policy differs by surface, because a browser tab and an installed app are not the
+same kind of thing. Both values live in `shared/navigation.js` so the gate and
+the product read one source.
+
+On the website the policy is **linear**. Tapping a destination pushes one entry,
+exactly as a browser treats a link, so back retraces the path actually walked and
+the forward button still means something: Overview, Watchlist, then the Overview
+icon leaves three entries and takes three presses to unwind.
+
+In the APK and the EXE it is **clear-top**. A destination that is already below
+the reader is somewhere to return to, not somewhere to visit twice, so tapping it
+steps back onto the entry it already has. Overview, Map, Incidents, Map, Overview
+is five taps and one entry, not five: the two returns are the reader going back
+without touching the back control, and the stack says so. This is the Android task
+rule, not Material's `popUpTo(start) + singleTop` -- a first visit still pushes and
+back still retraces it; only a page already walked collapses. The consequence is
+deliberate: once the reader is back on Overview the stack is `[Overview]` and the
+next press leaves, because Overview is the front door.
+
+Each entry carries the trail of destinations beneath it inside its own history
+state, which is what makes the question answerable at all: `window.history.state`
+only ever exposes the entry the browser is standing on. A module-level array
+would be empty again after the WebView or the EXE reloads, and would not survive
+a system back or forward. An overlay inherits its page's trail unchanged, so the
+trail counts places while the depth counts entries, and the distance to an older
+destination stays a subtraction.
+
+One entry point is exempt. The Windows tray item and the Android notification
+call `interrupt()` rather than `navigate()`, so they always push: the
+interruption took the reader away from wherever they were, and back has to give
+that place back rather than whatever sat beneath an older entry.
+
 Re-tapping the destination you are already on adds nothing. Filters, search, the
 developer tool selection and the map's region and zoom are controls on a page, not
-places, and earn no entry.
+places, and earn no entry -- and because a picker is itself a history entry,
+closing one is reported as `layer` rather than as a move, so choosing a category
+no longer clears the category.
 
 What each surface adds:
 

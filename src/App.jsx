@@ -74,9 +74,12 @@ import { downloads } from "../shared/downloads";
 import { describeDownload } from "../shared/updates";
 import { gsap, hoverMotionEnabled, motionEnabled } from "./motion";
 import SignalArcs from "./SignalArcs.jsx";
+import SettingsInstrument, {
+  hasBackgroundChannel,
+} from "./SettingsInstrument.jsx";
 import {
   dismiss,
-  navigate,
+  interrupt,
   onDesktop,
   setScrollPort,
   useDesktopShortcuts,
@@ -462,6 +465,19 @@ export default function App() {
   // What the Overview's map preview was asked to show, handed to the Map
   // destination so it opens on that view rather than on a bare map.
   const [mapView, setMapView] = useState(null);
+  // What a change of place clears. A searched, filtered view of the directory
+  // belongs to the page the reader left, not to the one they arrive on. Named
+  // rather than repeated because three callers need exactly this set and had
+  // drifted apart: a tap, a traversal onto a different place, and the tray or
+  // notification deep link, which reaches the stack directly and used to run
+  // none of it. Every setter here is a stable useState setter, so the empty
+  // dependency list is honest.
+  const clearViewState = useCallback(() => {
+    setSearch("");
+    setFilter("All services");
+    setCategory("All categories");
+    setMapView(null);
+  }, []);
   // The incident feed is a fixed-viewport scroller like a sheet's body, so it
   // gets the same five-second chevron when there is more below the fold.
   const incidentFeedRef = useRef(null);
@@ -678,10 +694,17 @@ export default function App() {
   // the URL, and both spellings are frozen because they ship inside executables
   // and APKs that readers keep.
   useEffect(() => {
-    const open = () => navigate("Watchlist");
+    // The same resets a tap runs. Without them this entry point can land on the
+    // Watchlist with `filter` still "Watching" -- a value that page's tab strip
+    // does not offer -- and both tabs read aria-pressed="false", so nothing
+    // looks selected.
+    const open = () => {
+      interrupt("Watchlist");
+      clearViewState();
+    };
     window.addEventListener("pulse-open-watchlist", open);
     return () => window.removeEventListener("pulse-open-watchlist", open);
-  }, []);
+  }, [clearViewState]);
   useEffect(() => {
     try {
       localStorage.setItem("pulse-watchlist", JSON.stringify(watchlist));
@@ -725,10 +748,7 @@ export default function App() {
   // stack, and the More sheet is closed by that push rather than beside it.
   const go = (name) => {
     nav.go(name);
-    setSearch("");
-    setFilter("All services");
-    setCategory("All categories");
-    setMapView(null);
+    clearViewState();
   };
   // A traversal is not a click: nothing on screen moved focus, so a keyboard
   // reader's next Tab would resume from a control that no longer exists and a
@@ -745,16 +765,21 @@ export default function App() {
   // A back press lands on a place, not on the filtered view of it the reader
   // left behind, so a traversal runs the same resets a tap does. Keyed on the
   // stack's own version so it fires once per move and never on a re-render.
+  //
+  // "pop" is now only ever a move between places. It used to be every traversal
+  // including a closing overlay, and since a picker is a history entry that is
+  // what made this card's funnel look broken: FilterMenu sets the category and
+  // closes in the same tick, the picker's own entry pops a task later, and this
+  // wiped the choice that closed it. src/navigation.js reports an overlay close
+  // as "layer" instead, because only the side that started the traversal can
+  // tell the two apart -- by the time one lands they have the same shape.
   const settledMove = useRef(0);
   useEffect(() => {
     if (settledMove.current === nav.version) return;
     settledMove.current = nav.version;
     if (nav.cause !== "pop") return;
-    setSearch("");
-    setFilter("All services");
-    setCategory("All categories");
-    setMapView(null);
-  }, [nav.version, nav.cause]);
+    clearViewState();
+  }, [nav.version, nav.cause, clearViewState]);
   // Nothing has been confirmed yet: the page is loading, not reporting a
   // service-wide failure. Screens show skeletons rather than 28 "unavailable"
   // rows until the first sweep completes.
@@ -854,6 +879,16 @@ export default function App() {
       (filter !== "Disruptions" || ["degraded", "outage"].includes(p.status)) &&
       (filter !== "Watching" || watchlist.includes(p.id)),
   );
+  // The Watchlist has no "Watching" tab -- the whole page is the watchlist --
+  // so a `filter` carried in from another place must not leave the strip with
+  // nothing selected at all. The rows need no clamp: the `page !== "Watchlist"`
+  // term above already restricts them to watched services, so the value is
+  // inert there and only the chrome was ever wrong.
+  const directoryTabs =
+    page === "Watchlist"
+      ? ["All services", "Disruptions"]
+      : ["All services", "Disruptions", "Watching"];
+  const activeTab = directoryTabs.includes(filter) ? filter : "All services";
   // The Overview previews the directory; the Watchlist destination is the full
   // list of what you chose to watch, so it is never truncated.
   const previewing = page === "Overview" && visible.length > OVERVIEW_SERVICES;
@@ -1468,14 +1503,11 @@ export default function App() {
               </div>
               <div className="directory-toolbar">
                 <div className="tabs">
-                  {(page === "Watchlist"
-                    ? ["All services", "Disruptions"]
-                    : ["All services", "Disruptions", "Watching"]
-                  ).map((f) => (
+                  {directoryTabs.map((f) => (
                     <button
-                      className={filter === f ? "selected" : ""}
+                      className={activeTab === f ? "selected" : ""}
                       key={f}
-                      aria-pressed={filter === f}
+                      aria-pressed={activeTab === f}
                       onClick={() => setFilter(f)}
                     >
                       {page === "Watchlist" && f === "All services"
@@ -2114,53 +2146,137 @@ export default function App() {
           )}
           {modal === "settings" && (
             <>
-              <div className="setting-row">
-                <span>
-                  <strong>Appearance</strong>
-                  <small>Choose light or dark mode.</small>
-                </span>
-                <button
-                  className="theme-toggle"
-                  onClick={toggleTheme}
-                  aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
-                >
-                  {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
-                  <span>{theme === "dark" ? "Light mode" : "Dark mode"}</span>
-                </button>
+              {/* Help & methodology opens on a figure of what the world does.
+                  This is the only sheet whose whole content is the reader's
+                  own, so it opens on a figure of that instead. The dial is a
+                  reading rather than an ornament: the needle sits where
+                  automatic refresh put it, one graduation lights per watched
+                  service, and they are only green on a surface that can really
+                  watch in the background. */}
+              <div className="settings-hero">
+                <SettingsInstrument
+                  watched={watchlist.length}
+                  live={autoRefresh}
+                />
+                <p className="settings-deck">
+                  Your dials.{" "}
+                  <span>Everything Pulse does, at your setting.</span>
+                </p>
               </div>
-              <BackgroundSettings watchlist={watchlist} />
-              <div className="setting-row">
-                <span>
-                  <strong>Automatic refresh</strong>
-                  <small>
-                    Check official feeds every 30 seconds while visible. Hidden
-                    pages pause automatically.
-                  </small>
-                </span>
-                <button
-                  className={`toggle ${autoRefresh ? "on" : ""}`}
-                  role="switch"
-                  aria-checked={autoRefresh}
-                  aria-label="Automatic refresh"
-                  onClick={() => setAutoRefresh((v) => !v)}
-                >
-                  <i />
-                </button>
-              </div>
-              <div className="setting-row">
-                <span>
-                  <strong>Local watchlist</strong>
-                  <small>
-                    {watchlist.length} services saved on this device.
-                  </small>
-                </span>
-                <button
-                  className="text-button"
-                  onClick={() => openModal("monitor")}
-                >
-                  Manage <ArrowRight size={16} />
-                </button>
-              </div>
+
+              {/* Alerts first, and the order is the point. This sheet is 60dvh
+                  on a phone and cannot be made taller, so the one preference
+                  somebody opens it to reach has to be above the fold. Behind
+                  two other groups the Enable button was not. */}
+              <section className="settings-group" aria-labelledby="pref-alerts">
+                <h3 className="eyebrow" id="pref-alerts">
+                  Alerts
+                </h3>
+                <div className="settings-panel">
+                  {!hasBackgroundChannel && (
+                    <div className="setting-row">
+                      <span>
+                        <strong>Installed apps</strong>
+                        <small>
+                          The Android and Windows apps keep watching after the
+                          window closes.
+                        </small>
+                      </span>
+                      <button
+                        className="text-button"
+                        onClick={() => openModal("apps")}
+                      >
+                        Get Pulse <ArrowRight size={16} />
+                      </button>
+                    </div>
+                  )}
+                  {/* Unchanged, and deliberately mounted unconditionally: its
+                      mount effect is the only caller of the native status()
+                      bridge outside boot, and the update notice goes stale
+                      without it. */}
+                  <BackgroundSettings watchlist={watchlist} />
+                </div>
+              </section>
+
+              <section
+                className="settings-group"
+                aria-labelledby="pref-appearance"
+              >
+                <h3 className="eyebrow" id="pref-appearance">
+                  Appearance
+                </h3>
+                <div className="settings-panel">
+                  <div className="setting-row">
+                    <span>
+                      <strong>Theme</strong>
+                      {/* What the setting is doing, not what it is for: the
+                          reader answers "which one am I in?" from the sentence
+                          rather than from the colour of a control. */}
+                      <small>
+                        {theme === "dark"
+                          ? "Dark — true black, so an OLED screen switches those pixels off."
+                          : "Light — paper white, for a lit room."}
+                      </small>
+                    </span>
+                    <button
+                      className="theme-toggle"
+                      onClick={toggleTheme}
+                      aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+                    >
+                      {theme === "dark" ? (
+                        <Sun size={16} />
+                      ) : (
+                        <Moon size={16} />
+                      )}
+                      <span>
+                        {theme === "dark" ? "Light mode" : "Dark mode"}
+                      </span>
+                    </button>
+                  </div>
+                </div>
+              </section>
+
+              <section className="settings-group" aria-labelledby="pref-data">
+                <h3 className="eyebrow" id="pref-data">
+                  Data
+                </h3>
+                <div className="settings-panel">
+                  <div className="setting-row">
+                    <span>
+                      <strong>Automatic refresh</strong>
+                      <small>
+                        {autoRefresh
+                          ? "Checking official feeds every 30 seconds while this window is visible. Hidden pages pause."
+                          : "Paused. Pulse checks only when you ask it to."}
+                      </small>
+                    </span>
+                    <button
+                      className={`toggle ${autoRefresh ? "on" : ""}`}
+                      role="switch"
+                      aria-checked={autoRefresh}
+                      aria-label="Automatic refresh"
+                      onClick={() => setAutoRefresh((v) => !v)}
+                    >
+                      <i />
+                    </button>
+                  </div>
+                  <div className="setting-row">
+                    <span>
+                      <strong>Local watchlist</strong>
+                      <small>
+                        {watchlist.length} services saved on this device.
+                      </small>
+                    </span>
+                    <button
+                      className="text-button"
+                      onClick={() => openModal("monitor")}
+                    >
+                      Manage <ArrowRight size={16} />
+                    </button>
+                  </div>
+                </div>
+              </section>
+
               <p className="methodology-note">
                 Preferences stay on this device. No account or tracking cookies
                 are required.

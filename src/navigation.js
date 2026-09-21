@@ -5,7 +5,13 @@ import {
   useSyncExternalStore,
 } from "react";
 import { Capacitor, registerPlugin } from "@capacitor/core";
-import { HOME, pathFor, placeFromLocation } from "../shared/navigation";
+import {
+  HOME,
+  navPolicyFor,
+  NAV_POLICY_NATIVE,
+  pathFor,
+  placeFromLocation,
+} from "../shared/navigation";
 
 // The only file in the product that touches window.history. Everything else asks
 // this module, so there is one stack, one popstate listener and one place where
@@ -40,6 +46,13 @@ let base = "/";
 // What is on screen. Replaced, never mutated, so it is a safe
 // useSyncExternalStore snapshot.
 let live = null;
+// What this module asked the browser to do, held until the popstate it started
+// lands. It exists because a traversal arrives looking the same whatever began
+// it: `drop` trims the layer from `live` before it traverses, so an overlay
+// close and a page-level back press reach `onPopState` with identical shapes,
+// and a clear-top tap arrives as a back press that the reader experienced as a
+// tap. The side that started the traversal is the only one that knows.
+let pending = null;
 let cause = "boot";
 let version = 0;
 let store = null;
@@ -106,15 +119,73 @@ const unblock = () => {
 const settle = () => {
   unblock();
   const at = window.history.state?.[KEY];
-  if (at) live = at;
+  if (at) live = withTrail(at);
+  // A clear-top tap whose target entry no longer exists. Chromium keeps 50
+  // entries and prunes the OLDEST, so in a long session the seat the trail
+  // still names can be gone; history.go() is then a no-op and no popstate ever
+  // arrives, which would leave the tap doing nothing at all. Fall back to an
+  // ordinary push. `place` never consults the trail, so this cannot re-enter
+  // the branch that sent us here and cannot loop.
+  const missed =
+    pending?.kind === "reorder" && live.page !== pending.page
+      ? pending.page
+      : null;
+  pending = null;
+  // Before the queue drains, and synchronously: a tap the reader made while the
+  // collapse was in flight is already sitting in `jobs`, and appending the
+  // rescue behind it would replay their two taps in the wrong order and leave
+  // them on the first one. `unblock` above has already cleared the gate, so
+  // this is a plain push and write like any other.
+  if (missed) place(missed);
   pump();
 };
 // popstate always lands, but the queue must not seize up for the rest of the
-// session if it somehow does not.
+// session if it somehow does not. Callers set `pending` first when the landing
+// is supposed to be read as something other than a plain back press.
 const traverse = (steps = 1) => {
   waiting = setTimeout(settle, 400);
   window.history.go(-steps);
 };
+// ---- The page trail -------------------------------------------------------
+// Every entry carries `t`: the destinations at and beneath its own depth, as
+// `[{ page, i }, ...]`, ending with the page that entry is. It is what lets a
+// tap ask "have I already been there, and how far down is it" -- a question
+// nothing could answer before, because `window.history.state` only ever exposes
+// the entry the browser is standing on.
+//
+// Inside the history state rather than in a module array, and that is the whole
+// correctness of it. A module array is empty again after every reload -- which
+// the APK's WebView and the EXE both do -- and it is not indexed to entries, so
+// a system back or forward would leave it describing a stack the browser is no
+// longer in. A per-entry prefix is self-healing instead: whatever a traversal
+// lands on arrives carrying the trail that was true at that depth, with no
+// reconciliation code to get wrong.
+//
+// An overlay inherits its page's trail unchanged, so the trail counts pages
+// while `i` counts entries. The distance between two pages is still just the
+// difference of their `i`, because every entry -- overlay or page -- moves `i`
+// by exactly one.
+//
+// Capped, because the website is still linear and its trail would otherwise
+// grow with the session. Twelve is twice the number of destinations, so a
+// native stack, where a page can never appear twice, cannot reach it.
+const TRAIL = 12;
+const trailWith = (trail, page, i) => [...trail, { page, i }].slice(-TRAIL);
+// Adopting an entry this build did not write. A tab restored across a deploy, or
+// an entry below the one boot replaced, has no `t` at all; every trail read is
+// unconditional, so one missing field would throw out of a click handler on the
+// website as readily as in the apps. A one-element trail is the safe
+// degradation: the next tap pushes instead of collapsing, and nothing breaks.
+const withTrail = (entry) =>
+  entry.t ? entry : { ...entry, t: [{ page: entry.page, i: entry.i }] };
+// Where `page` already sits beneath the reader, or -1. Searched from the top so
+// that a trail which somehow holds a page twice collapses to the nearer one.
+const seatFor = (page) => {
+  for (let n = live.t.length - 1; n >= 0; n -= 1)
+    if (live.t[n].page === page && live.t[n].i < live.i) return n;
+  return -1;
+};
+
 // `search` is passed only by boot. Canonicalising the path must not throw away
 // whatever brought the reader here -- a referral or campaign parameter on the
 // arrival URL is theirs, and this is a dashboard link people paste. Every
@@ -180,12 +251,18 @@ function begin() {
   // trapping anyone: the entry the reader arrived on stays theirs, and we only
   // ever add entries above it. `o: []` drops any sheet a manual reload happened
   // inside, because a sheet nobody asked for is worse than one dead press.
+  const depth = resume?.i ?? 0;
+  const arrived = floor ? HOME : at.page;
   live = {
-    i: resume?.i ?? 0,
-    page: floor ? HOME : at.page,
+    i: depth,
+    page: arrived,
     o: [],
     y: resume?.y ?? 0,
     p: resume?.p ?? 0,
+    // A reload inside the app resumes the trail the entry was written with, so
+    // a WebView that reloaded itself still knows what is beneath it. An entry
+    // written before trails existed has none; see `withTrail`.
+    t: resume?.t ?? [{ page: arrived, i: depth }],
   };
   // Minus the legacy watchlist parameter, which the path now says instead; left
   // in, a shared /watchlist?watchlist=1 would state the same thing twice.
@@ -194,7 +271,17 @@ function begin() {
   const keep = query.size ? `?${query}` : "";
   write(live, true, keep);
   if (floor) {
-    live = { i: 1, page: at.page, o: [], y: 0, p: 0 };
+    live = {
+      i: 1,
+      page: at.page,
+      o: [],
+      y: 0,
+      p: 0,
+      t: [
+        { page: HOME, i: 0 },
+        { page: at.page, i: 1 },
+      ],
+    };
     write(live, false);
   }
   store = {
@@ -208,19 +295,50 @@ function begin() {
   window.addEventListener("popstate", onPopState);
 }
 
+// What a landing popstate actually was, decided by the side that started the
+// traversal rather than by comparing the two entries -- which cannot tell them
+// apart, because `drop` trims the layer from `live` before it traverses.
+//
+//   "push"   a tap. Either an ordinary push, or a clear-top tap that reached an
+//            entry it already had by stepping back to it; the reader performed
+//            the same gesture either way, so the page arrives at the top and
+//            animates in exactly as any other tap does.
+//   "layer"  an overlay closed and the place did not change. The one signal
+//            App needs to stop treating a picker's dismissal as a move.
+//   "pop"    the reader moved between places: a gesture, a button, Alt+Left.
+const landing = (fallback) => {
+  const aimed = pending;
+  pending = null;
+  if (aimed?.kind === "reorder")
+    return live.page === aimed.page && live.i === aimed.i ? "push" : fallback;
+  return aimed?.kind === "layer" ? "layer" : fallback;
+};
+
 function onPopState(event) {
   unblock();
   const was = live;
   const next = event.state?.[KEY];
-  live = next ?? {
-    // An entry this app did not write. Re-derive the place from the URL rather
-    // than guessing, and keep the depth so the stack stays monotonic.
-    i: was.i,
-    page: placeFromLocation(window.location).page,
-    o: [],
-    y: 0,
-    p: 0,
-  };
+  live = next
+    ? withTrail(next)
+    : (() => {
+        // An entry this app did not write. Re-derive the place from the URL
+        // rather than guessing, and keep the depth so the stack stays
+        // monotonic. What the trail said sat at this depth is no longer true,
+        // but everything beneath it still is.
+        const page = placeFromLocation(window.location).page;
+        return {
+          i: was.i,
+          page,
+          o: [],
+          y: 0,
+          p: 0,
+          t: trailWith(
+            (was.t ?? []).filter((entry) => entry.i < was.i),
+            page,
+            was.i,
+          ),
+        };
+      })();
   if (was.o.length > live.o.length) {
     // A sheet was open and the entry underneath is not that sheet, so this press
     // was a request to close it rather than to leave the page. Only reached when
@@ -231,7 +349,9 @@ function onPopState(event) {
     // and then immediately locate controls underneath.
     for (let n = was.o.length - 1; n >= live.o.length; n -= 1)
       closeLayer(was.o[n]);
-    publish("pop");
+    // Also the path a clear-top tap takes when it steps down past its own open
+    // sheets: the closers above still run, and `landing` reports the tap.
+    publish(landing("layer"));
     pump();
     return;
   }
@@ -242,9 +362,50 @@ function onPopState(event) {
     live = { ...live, o: [] };
     write(live, true);
   }
-  publish("pop");
+  publish(landing("pop"));
   pump();
 }
+
+// A destination the reader has not been to on this trip: one tap, one entry.
+// Split out of `navigate` because the pruned-entry rescue in `settle` has to be
+// able to reach it without going back through the clear-top branch that sent it
+// there, which is what would otherwise loop.
+const place = (page) => {
+  stamp();
+  if (live.o.length) {
+    // Closing a sheet and going somewhere in one tap -- a destination chosen
+    // inside the More sheet. The sheet's entry becomes the destination's, so
+    // back returns to the page the sheet was opened from and the sheet does
+    // not come back. A replace, so it cannot race the async pop a close would
+    // have needed.
+    //
+    // The trail APPENDS here rather than replacing its last element. An overlay
+    // inherits its page's trail while bumping `i`, so the trail's last entry is
+    // still the page underneath, which is still in history and still somewhere
+    // back can land -- dropping it would lose the reader's way home.
+    for (let n = live.o.length - 1; n >= 0; n -= 1) closeLayer(live.o[n]);
+    live = {
+      i: live.i,
+      page,
+      o: [],
+      y: 0,
+      p: 0,
+      t: trailWith(live.t, page, live.i),
+    };
+    write(live, true);
+  } else {
+    live = {
+      i: live.i + 1,
+      page,
+      o: [],
+      y: 0,
+      p: 0,
+      t: trailWith(live.t, page, live.i + 1),
+    };
+    write(live, false);
+  }
+  publish("push");
+};
 
 export function navigate(page) {
   enqueue(() => {
@@ -255,21 +416,47 @@ export function navigate(page) {
       window.scrollTo(0, 0);
       return;
     }
-    stamp();
-    if (live.o.length) {
-      // Closing a sheet and going somewhere in one tap -- a destination chosen
-      // inside the More sheet. The sheet's entry becomes the destination's, so
-      // back returns to the page the sheet was opened from and the sheet does
-      // not come back. A replace, so it cannot race the async pop a close would
-      // have needed.
-      for (let n = live.o.length - 1; n >= 0; n -= 1) closeLayer(live.o[n]);
-      live = { i: live.i, page, o: [], y: 0, p: 0 };
-      write(live, true);
-    } else {
-      live = { i: live.i + 1, page, o: [], y: 0, p: 0 };
-      write(live, false);
+    // Clear-top, in the APK and the EXE only. A destination already below the
+    // reader is somewhere to return to, so the tap steps back onto the entry it
+    // already has instead of pushing a second one on top: going Map, Incidents,
+    // Map is going back, and the stack should say so. shared/navigation.js
+    // states the policy for both surfaces, so the gate reads the same constant
+    // this branch is written from.
+    //
+    // No layer is closed here. The distance is simply the difference of the two
+    // depths -- every entry moves `i` by one, overlay or page -- so open sheets
+    // are stepped over for free, and onPopState's own was.o.length branch runs
+    // their closers when the landing arrives.
+    const seat =
+      navPolicyFor(nativeShell()) === NAV_POLICY_NATIVE ? seatFor(page) : -1;
+    if (seat >= 0) {
+      stamp();
+      pending = { kind: "reorder", ...live.t[seat] };
+      traverse(live.i - live.t[seat].i);
+      return;
     }
-    publish("push");
+    place(page);
+  });
+}
+
+// A destination the reader did not choose from inside the app: an Android
+// notification, the Windows tray item. Always a push, never a collapse. The
+// interruption took them away from wherever they were, so back has to hand that
+// place back -- collapsing onto an older entry for this destination would
+// instead return them to whatever sat beneath it, which is somewhere they were
+// not. It is the same reason this is a push rather than a replace.
+export function interrupt(page) {
+  enqueue(() => {
+    if (page === live.page) {
+      // Already here. Whatever is over it comes off, but nothing is written:
+      // an entry for a place the reader is standing on is a press that looks
+      // like a move and does nothing, and an alert arriving while a sheet is
+      // open is the ordinary way to reach this.
+      if (live.o.length) drop(0);
+      else window.scrollTo(0, 0);
+      return;
+    }
+    place(page);
   });
 }
 
@@ -290,6 +477,12 @@ const drop = (at) => {
   for (let n = live.o.length - 1; n >= at; n -= 1) closeLayer(live.o[n]);
   const steps = live.o.length - at;
   live = { ...live, i: live.i - steps, o: live.o.slice(0, at) };
+  // Trimming `live.o` above is what makes this traversal indistinguishable from
+  // a page-level back press by the time it lands, so it says what it is on the
+  // way out instead. Without this a picker's own dismissal reads as a move
+  // between places, and everything a page resets when the reader leaves it --
+  // its search, its tab, its category -- is wiped by the act of choosing.
+  pending = { kind: "layer" };
   traverse(steps);
 };
 
@@ -300,7 +493,17 @@ const claim = (id) =>
     // only -- the worst possible place for a difference.
     if (live.o[live.o.length - 1] === id) return;
     stamp();
-    live = { i: live.i + 1, page: live.page, o: [...live.o, id], y: 0, p: 0 };
+    // `t` unchanged: an overlay is not a place, so it adds nothing to the trail
+    // while still costing an entry. That is what makes the distance arithmetic
+    // in `navigate` work -- the trail counts pages, `i` counts entries.
+    live = {
+      i: live.i + 1,
+      page: live.page,
+      o: [...live.o, id],
+      y: 0,
+      p: 0,
+      t: live.t,
+    };
     write(live, false);
     publish("push");
   });
@@ -351,14 +554,23 @@ const canGoBack = () => live.o.length > 0 || live.i > 0;
 // nothing to unwind and let it decide how to leave. Registered once, at module
 // scope, for the same reason the popstate listener is.
 if (typeof window !== "undefined" && onAndroid())
-  Android.addListener?.("backPressed", () => {
-    if (live.o.length) dismiss();
-    else if (live.i > 0) enqueue(() => traverse(1));
-    // Reachable when a report has not landed yet, or once Chromium has pruned the
-    // entry this index still counts on. Either way the honest answer is the same
-    // one the Activity would have given, so it makes the decision.
-    else Android.leaveApp?.().catch(() => {});
-  });
+  Android.addListener?.("backPressed", () =>
+    // The whole decision is queued, not just its consequence. A clear-top tap
+    // holds the queue until its popstate lands, and a press taken inside that
+    // window used to be judged against the stack as it was before the collapse:
+    // it would read i > 0, queue a step back, and then run that step from the
+    // root, where going back is a no-op -- so the press did nothing and the
+    // reader had to press again to leave. Deciding inside the job means the
+    // press is always answered against the stack it actually lands on.
+    enqueue(() => {
+      if (live.o.length) drop(live.o.length - 1);
+      else if (live.i > 0) traverse(1);
+      // Reachable when a report has not landed yet, or once Chromium has pruned
+      // the entry this index still counts on. Either way the honest answer is
+      // the same one the Activity would have given, so it makes the decision.
+      else Android.leaveApp?.().catch(() => {});
+    }),
+  );
 
 const subscribe = (seat) => {
   seats.add(seat);
