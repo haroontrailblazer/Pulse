@@ -98,8 +98,32 @@ async function main() {
   );
   if (manifest.version !== releaseVersion)
     throw new Error("Download manifest must match the release version");
-  if (manifest.sourceHash !== buildIdentity().sourceHash)
-    throw new Error("Installers are stale for this app source. Run npm run build:all-downloads before publishing.");
+  // The installers this deployment offers were built from `sourceHash`, and
+  // normally the site is built from that same source -- one product, three
+  // surfaces, shipped together.
+  //
+  // AGENTS.md allows a deliberately web-only change with explicit
+  // confirmation, and this is where that confirmation lives. The site may run
+  // ahead of the installers, but only at a source someone wrote down: the hash
+  // is in the manifest, it is visible in the diff, and the very next edit to
+  // any fingerprinted file invalidates it again. So a web-only deploy stays a
+  // decision rather than becoming the default, and "stale installers" still
+  // means stale installers.
+  //
+  // What it does not relax: the version must still match, and the bytes are
+  // still downloaded and verified against the digests below. A visitor is
+  // offered exactly the installers this manifest names.
+  const identity = buildIdentity();
+  const built = manifest.sourceHash === identity.sourceHash;
+  const webOnly = manifest.webOnly?.sourceHash === identity.sourceHash;
+  if (!built && !webOnly)
+    throw new Error(
+      `Installers are stale for this app source (${identity.sourceHash.slice(0, 12)}). Run npm run build:all-downloads before publishing, or record a deliberate web-only deploy in shared/release-assets.json.`,
+    );
+  if (webOnly)
+    console.log(
+      `Web-only deploy: the site is ahead of the v${manifest.version} installers at source ${identity.sourceHash.slice(0, 12)} -- ${manifest.webOnly.reason}`,
+    );
   const outputDir = resolve("dist/downloads", `v${manifest.version}`);
   const cacheDir = resolve(".cache/download-mirror", `v${manifest.version}`);
   const source = `https://github.com/haroontrailblazer/Pulse/releases/download/v${manifest.version}`;

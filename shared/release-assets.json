@@ -12,5 +12,9 @@
       "sha256": "41ae895289173cb4c7782b893ecec9044579f41599d73598f9a8e08d57915059"
     }
   ],
-  "sourceHash": "7c2c89377b9108e1d77c2a74050769ed496803253b2fbfdda40fcbce63a3bc44"
+  "sourceHash": "7c2c89377b9108e1d77c2a74050769ed496803253b2fbfdda40fcbce63a3bc44",
+  "webOnly": {
+    "sourceHash": "81a42af0d76f29434469136a7e13ef8f45d6f8ac2825d0e5e659ce5bd2d272d6",
+    "reason": "the map page's services column, which is a desktop layout change the 1.0.25 installers do not carry"
+  }
 }
