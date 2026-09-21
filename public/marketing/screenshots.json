@@ -1,9 +1,9 @@
 {
-  "capturedAt": "2026-09-13T15:10:18.104Z",
+  "capturedAt": "2026-09-21T09:05:59.097Z",
   "sourceUrl": "https://www.pulses4u.in/app",
   "source": "Actual Pulse application using official status feeds. Screenshots are illustrative snapshots, not current readings.",
   "tool": "Playwright",
-  "browser": "153.0.4234.32",
+  "browser": "153.0.4234.48",
   "viewport": {
     "width": 1440,
     "height": 900
@@ -16,71 +16,71 @@
       "file": "overview.png",
       "width": 1440,
       "height": 900,
-      "bytes": 188389,
-      "sha256": "075eb9d317e728424fb4a4c1fb1c6d17b6908fe3214e14f62339bcc5b39239e6"
+      "bytes": 220139,
+      "sha256": "890eca67071481543e00a6a5c0213d224a91e90fb910742454dd2a486ca8a1f2"
     },
     {
       "file": "overview@2x.png",
       "width": 2880,
       "height": 1800,
-      "bytes": 472676,
-      "sha256": "605c1343a16b79de5427beac351ac58a34577098262c14240479f1f601fd4335"
+      "bytes": 592632,
+      "sha256": "0800ef74e88f29c35c187e22ff26cd74cf751ad24df8a698daf661a898cf7836"
     },
     {
       "file": "map-light.png",
       "width": 1440,
       "height": 900,
-      "bytes": 202010,
-      "sha256": "dd6b251834fce7f82f4eed21a81d9f9153dc70a49403665f2fe0a6ea75c5fcb8"
+      "bytes": 214950,
+      "sha256": "412476451cb232fcf7d4b8b6b4937b539efaaef8c3f3c75ced4f3b68f56a03e0"
     },
     {
       "file": "map-light@2x.png",
       "width": 2880,
       "height": 1800,
-      "bytes": 511968,
-      "sha256": "8a8b7b54a16c34026f5661b45a4d0655fe54ae1f3119d9de548316168560073f"
+      "bytes": 560658,
+      "sha256": "3b56972a5cd8852674c4d967e3043f61db2bc15ac3439b8693907195c0c0e1ac"
     },
     {
       "file": "map-dark.png",
       "width": 1440,
       "height": 900,
-      "bytes": 197059,
-      "sha256": "dd12fab5e6cf2b32ad4f08bf6616048805a5444c41cb8555690a54bc63a69d95"
+      "bytes": 184380,
+      "sha256": "cbfd971f5c43d8686cb73d87f80410e259c2d269864f9165ad1cb1d370609a96"
     },
     {
       "file": "map-dark@2x.png",
       "width": 2880,
       "height": 1800,
-      "bytes": 494126,
-      "sha256": "b5853c04ced56369ca868a78c1cbc36c370a1b8755f7ae691bec2cfa2cc64e80"
+      "bytes": 505450,
+      "sha256": "8f9754b2f37d5578fc9051ffcb8390873e635ed93dd74d83080aac93bdb24bcc"
     },
     {
       "file": "incidents.png",
       "width": 1440,
       "height": 900,
-      "bytes": 134264,
-      "sha256": "c142db410feced6ebc59e7532e7fe675a88c9ac48682e6862da82ea59619f1a2"
+      "bytes": 127020,
+      "sha256": "91bf67c57c90900a9eae0838a209c78f7b928e142ba5a6d2f66c7bd56a582d50"
     },
     {
       "file": "incidents@2x.png",
       "width": 2880,
       "height": 1800,
-      "bytes": 315874,
-      "sha256": "97c8595d41c778c76273a5ee7d774626ea23c3b0a38e2edb4d71d96e102c01aa"
+      "bytes": 403739,
+      "sha256": "081f2498e7bcc064d6ee8fb1cef505a6cab3435055b134d34cf8b2f0225ae47a"
     },
     {
       "file": "insights.png",
       "width": 1440,
       "height": 900,
-      "bytes": 147685,
-      "sha256": "2a21a82021905cf5e3a8abee1115ea51cc4cfe9d6eccbe33ec8e205137fcbdb3"
+      "bytes": 188729,
+      "sha256": "36f082546fb681ba7b42124fe897d1262a26ea6e2098d218bb1e1f7c392ae1db"
     },
     {
       "file": "insights@2x.png",
       "width": 2880,
       "height": 1800,
-      "bytes": 348626,
-      "sha256": "648a13fbe1a1bc35ef19ff254329b362e098c86c3be8cb5da69f0c479009dfb2"
+      "bytes": 463601,
+      "sha256": "a153c817e709906266531584fca298e02d72ab1641757bcf392281e5d884c43e"
     }
   ]
 }
