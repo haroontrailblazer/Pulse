@@ -24,13 +24,53 @@ export function alertSignature(provider) {
       parts.push(`incident:${i.id}:${i.impact || "minor"}`);
   return parts.sort().join("|");
 }
+const componentRank = {
+  degraded_performance: 1,
+  partial_outage: 2,
+  major_outage: 3,
+};
+/**
+ * What is worth interrupting someone for, as opposed to what is worth
+ * remembering. The signature stays the full picture; this is the part of it that
+ * may raise an alert.
+ *
+ * Components are collapsed to their worst level rather than kept as identities.
+ * A provider like Cloudflare publishes a component per datacenter, and their
+ * maintenance and partial-outage windows rotate all day, so every rotation used
+ * to introduce an id the stored signature had never seen and therefore read as
+ * news. Measured on the shipped Windows build: one open incident produced
+ * nineteen identical toasts across four hours, every one of them carrying that
+ * same incident's text, because the body is the provider's first incident. A
+ * service getting worse is news; a different datacenter reaching the level the
+ * service was already at is not.
+ *
+ * Maintenance is planned, so it is not an issue at all -- not as an aggregate
+ * state, not as a component, not as a maintenance incident.
+ */
+export function alertKeys(signature) {
+  const keys = new Set();
+  let worst = 0;
+  for (const part of (signature || "").split("|")) {
+    if (!part || part === "status:maintenance") continue;
+    if (part.startsWith("status:")) keys.add(part);
+    else if (part.startsWith("component:"))
+      worst = Math.max(
+        worst,
+        componentRank[part.slice(part.lastIndexOf(":") + 1)] || 0,
+      );
+    else if (part.startsWith("incident:") && !part.endsWith(":maintenance"))
+      keys.add(part);
+  }
+  if (worst) keys.add(`component:${worst}`);
+  return keys;
+}
 export function nextAlert(previous, provider) {
   const signature = alertSignature(provider);
   if (signature === null) return { signature: previous, notify: false };
-  const old = new Set((previous || "").split("|"));
+  const old = alertKeys(previous);
   return {
     signature,
-    notify: !!signature && signature.split("|").some((part) => !old.has(part)),
+    notify: [...alertKeys(signature)].some((key) => !old.has(key)),
   };
 }
 // The default is the catalogue's own automated-feed count rather than a number

@@ -80,3 +80,102 @@ test("request budget uses feed count and watched services, not fictional battery
   });
   assert.equal(requestBudget(0).androidHourly, 0);
 });
+
+test("a rotating component roster does not re-announce an incident that never changed", () => {
+  // Measured against the shipped Windows build: one open Cloudflare incident
+  // produced nineteen identical toasts over four hours, because Cloudflare
+  // publishes a per-datacenter component for every location and their
+  // maintenance and partial-outage windows rotate all day. Every rotation added
+  // a component id the stored signature had not seen, which read as news, and
+  // the toast body is the provider's first incident -- so the same sentence
+  // arrived again and again.
+  const datacenters = (n, status) =>
+    Array.from({ length: n }, (_, i) => ({ id: `dc${i}`, status }));
+  const open = { id: "warp", status: "investigating", impact: "minor" };
+  const first = nextAlert(
+    "",
+    reading("degraded", {
+      components: [
+        ...datacenters(40, "under_maintenance"),
+        { id: "ams", status: "partial_outage" },
+      ],
+      incidents: [open],
+    }),
+  );
+  assert.equal(first.notify, true, "the incident itself is still news");
+  // The same incident, the same severity, an entirely different roster of
+  // datacenters carrying it.
+  const rotated = nextAlert(
+    first.signature,
+    reading("degraded", {
+      components: [
+        ...datacenters(40, "under_maintenance").map((c) => ({
+          ...c,
+          id: `${c.id}-later`,
+        })),
+        { id: "sin", status: "partial_outage" },
+      ],
+      incidents: [open],
+    }),
+  );
+  assert.equal(rotated.notify, false, "a rotated roster is not a new issue");
+
+  // What must still get through: a component reaching a level the provider was
+  // not already at, a new incident, and the service itself getting worse.
+  assert.equal(
+    nextAlert(
+      rotated.signature,
+      reading("degraded", {
+        components: [{ id: "edge", status: "major_outage" }],
+        incidents: [open],
+      }),
+    ).notify,
+    true,
+    "a worse component level is news",
+  );
+  assert.equal(
+    nextAlert(
+      rotated.signature,
+      reading("degraded", {
+        components: [{ id: "edge", status: "partial_outage" }],
+        incidents: [
+          open,
+          { id: "new", status: "investigating", impact: "major" },
+        ],
+      }),
+    ).notify,
+    true,
+    "a second incident is news",
+  );
+  assert.equal(
+    nextAlert(
+      rotated.signature,
+      reading("outage", {
+        components: [{ id: "edge", status: "partial_outage" }],
+        incidents: [open],
+      }),
+    ).notify,
+    true,
+    "the service getting worse is news",
+  );
+});
+
+test("planned maintenance is not an issue and never raises an alert", () => {
+  const maintenance = nextAlert(
+    "",
+    reading("maintenance", {
+      components: [{ id: "db", status: "under_maintenance" }],
+    }),
+  );
+  assert.equal(maintenance.notify, false);
+  // And it does not mask a real problem arriving afterwards.
+  assert.equal(
+    nextAlert(
+      maintenance.signature,
+      reading("outage", {
+        components: [{ id: "db", status: "major_outage" }],
+      }),
+    ).notify,
+    true,
+  );
+});

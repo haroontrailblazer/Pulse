@@ -98,4 +98,30 @@ public class FeedReadingTest {
         JSONObject reading=FeedReading.parse(provider("betterstack"),"{\"data\":{\"attributes\":{\"aggregate_state\":\"downtime\"}},\"included\":[]}");
         assertEquals("outage",reading.getString("status"));
     }
+
+    @Test public void aRotatingComponentRosterDoesNotReannounceTheSameIncident() {
+        // The defect this rule exists for, measured on the Windows build that
+        // shares it: one open Cloudflare incident produced nineteen identical
+        // notifications over four hours, because Cloudflare publishes a component
+        // per datacenter and their maintenance windows rotate all day.
+        StringBuilder before=new StringBuilder("incident:warp:minor|status:degraded");
+        StringBuilder after=new StringBuilder("incident:warp:minor|status:degraded");
+        for(int n=0;n<40;n++) {
+            before.append("|component:dc").append(n).append(":under_maintenance");
+            after.append("|component:dc").append(n).append("-later:under_maintenance");
+        }
+        before.append("|component:ams:partial_outage");
+        after.append("|component:sin:partial_outage");
+        assertFalse(FeedReading.shouldNotify(before.toString(),after.toString()));
+        // What must still get through.
+        assertTrue(FeedReading.shouldNotify(before.toString(),"incident:warp:minor|status:degraded|component:sin:major_outage"));
+        assertTrue(FeedReading.shouldNotify(before.toString(),"incident:warp:minor|incident:new:major|status:degraded|component:sin:partial_outage"));
+        assertTrue(FeedReading.shouldNotify(before.toString(),"incident:warp:minor|status:outage|component:sin:partial_outage"));
+    }
+    @Test public void plannedMaintenanceIsNotAnIssue() {
+        assertFalse(FeedReading.shouldNotify("","status:maintenance|component:db:under_maintenance"));
+        // And it neither masks a real problem nor counts as something to recover from.
+        assertTrue(FeedReading.shouldNotify("status:maintenance|component:db:under_maintenance","status:outage|component:db:major_outage"));
+        assertFalse(FeedReading.resolved("status:maintenance|component:db:under_maintenance",""));
+    }
 }

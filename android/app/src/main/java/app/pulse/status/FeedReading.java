@@ -174,18 +174,57 @@ final class FeedReading {
         Collections.sort(parts); return String.join("|",parts);
     }
     /**
+     * What is worth interrupting someone for, as opposed to what the signature is
+     * worth remembering. Mirrors alertKeys in shared/alerts.js -- the same
+     * collapse and the same exclusions, so the phone and the desktop cannot
+     * disagree about whether something deserves a notification.
+     *
+     * Components are collapsed to their worst level rather than kept as
+     * identities. Cloudflare publishes a component per datacenter, and their
+     * maintenance and partial-outage windows rotate all day, so every rotation
+     * introduced an id the stored signature had never seen and read as news.
+     * Measured on the shipped Windows build, which carries the same rule: one
+     * open Cloudflare incident produced nineteen identical notifications over
+     * four hours. A service getting worse is news; a different datacenter
+     * reaching the level the service was already at is not.
+     *
+     * Maintenance is planned, so it is not an issue at all -- not as an aggregate
+     * state, not as a component, not as a maintenance incident.
+     */
+    static Set<String> alertKeys(String signature) {
+        Set<String> keys=new HashSet<>();
+        if(signature==null) return keys;
+        int worst=0;
+        for(String part:signature.split("\\|")) {
+            if(part.isEmpty()||part.equals("status:maintenance")) continue;
+            if(part.startsWith("status:")) keys.add(part);
+            else if(part.startsWith("component:")) worst=Math.max(worst,componentRank(part.substring(part.lastIndexOf(':')+1)));
+            else if(part.startsWith("incident:")&&!part.endsWith(":maintenance")) keys.add(part);
+        }
+        if(worst>0) keys.add("component:"+worst);
+        return keys;
+    }
+    private static int componentRank(String state) {
+        switch(state) {
+            case "degraded_performance": return 1;
+            case "partial_outage": return 2;
+            case "major_outage": return 3;
+            default: return 0;
+        }
+    }
+    /**
      * True when a service that was reporting something has gone fully clear.
      * Deliberately narrow: a feed that merely drops from outage to degraded is
      * still a problem, and an unreachable feed has a null signature, so neither
      * is announced as resolved.
      */
     static boolean resolved(String previous, String next) {
-        return previous != null && !previous.isEmpty() && next != null && next.isEmpty();
+        return next != null && !alertKeys(previous).isEmpty() && alertKeys(next).isEmpty();
     }
     static boolean shouldNotify(String previous, String next) {
-        if(next==null || next.isEmpty()) return false;
-        Set<String> old=new HashSet<>(Arrays.asList(previous.split("\\|")));
-        for(String part:next.split("\\|")) if(!old.contains(part)) return true;
+        if(next==null) return false;
+        Set<String> old=alertKeys(previous);
+        for(String key:alertKeys(next)) if(!old.contains(key)) return true;
         return false;
     }
     static int currentSeverity(JSONObject reading) {
