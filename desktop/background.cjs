@@ -49,9 +49,28 @@ module.exports = async function background({
     timer,
     updateTimer,
     suspended = false;
+  let persistTimer = null,
+    unsaved = false;
   function persist() {
+    unsaved = false;
     writeFileSync(file + ".tmp", JSON.stringify(state));
     renameSync(file + ".tmp", file);
+  }
+  // Coalesced, because accept() runs once per watched service per pass and is
+  // driven from two places at once -- the sweep and the monitor's own readings --
+  // so a watchlist the size of the catalogue was rewriting the whole state file
+  // synchronously a hundred and fifty times a minute, on the process that also
+  // draws the window. Nothing in here needs to reach the disk this second. A
+  // deliberate act like configure() still writes straight through, and stop()
+  // flushes whatever is outstanding before the app exits.
+  function persistSoon() {
+    unsaved = true;
+    if (persistTimer) return;
+    persistTimer = setTimeout(() => {
+      persistTimer = null;
+      if (unsaved) persist();
+    }, 2000);
+    persistTimer.unref?.();
   }
   const status = () => ({
     enabled: state.enabled,
@@ -125,7 +144,7 @@ module.exports = async function background({
             ? cached
             : await fetchProvider(provider);
         accept(reading);
-        persist();
+        persistSoon();
         } catch { /* A failed feed must not block the other watched services. */ }
         }
       }));
@@ -141,7 +160,7 @@ module.exports = async function background({
   const detach = monitor.observeReadings((reading) => {
     if (!state.enabled || !state.watchlist.includes(reading.id)) return;
     accept(reading);
-    persist();
+    persistSoon();
   });
   // The daily update check. Deliberately not on the sweep interval: the reader
   // asked for one look each morning, not a poll, and a release is not a thing
@@ -277,6 +296,12 @@ module.exports = async function background({
       stopped = true;
       clearInterval(timer);
       clearTimeout(updateTimer);
+      clearTimeout(persistTimer);
+      persistTimer = null;
+      if (unsaved)
+        try {
+          persist();
+        } catch {}
       downloader.stop();
       detach();
     },
