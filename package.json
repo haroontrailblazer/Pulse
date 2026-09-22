@@ -52,7 +52,7 @@
     "start": "node server/index.js",
     "test": "node --test tests/*.test.js",
     "desktop": "npm run build && electron .",
-    "build:windows": "npm run build && electron-builder --win portable",
+    "build:windows": "npm run build && electron-builder --win nsis",
     "android:sync": "node scripts/generate-native-catalog.mjs && npm run build && cap sync android",
     "build:android": "npm run android:sync && node scripts/build-android.mjs",
     "android:open": "cap open android",
@@ -72,12 +72,21 @@
       "package.json"
     ],
     "win": {
-      "target": "portable",
+      "target": "nsis",
       "signExecutable": false,
       "icon": "desktop/icon.ico"
     },
-    "portable": {
-      "artifactName": "Pulse-${version}-Windows.exe"
+    "nsis": {
+      "artifactName": "Pulse-${version}-Windows.exe",
+      "oneClick": true,
+      "perMachine": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Pulse",
+      "uninstallDisplayName": "Pulse",
+      "runAfterFinish": true,
+      "deleteAppDataOnUninstall": false,
+      "include": "desktop/installer.nsh"
     },
     "electronDist": "node_modules/electron/dist"
   },

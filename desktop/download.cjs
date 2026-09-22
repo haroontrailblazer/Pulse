@@ -142,11 +142,20 @@ module.exports = function downloads({ app, updates, report }) {
     });
   }
 
-  // relaunch replaces the executable this app will start as, and Electron only
-  // acts on it once the current instance exits -- which is also what releases the
-  // single-instance lock and frees port 47823 for the new one. execPath is not
-  // optional: the default is process.execPath, which inside a portable build is
-  // the temporary copy the stub deletes on exit.
+  // relaunch names what Electron starts once this instance exits -- which is also
+  // what releases the single-instance lock and frees port 47823 for the new one.
+  // What it starts is the downloaded installer rather than the app, because the
+  // app is now installed rather than portable. execPath is not optional; the
+  // default is process.execPath, which is the build being replaced.
+  //
+  // Deliberately not silent. /S is what electron-updater passes and what this
+  // first reached for, but measured here on Windows 11 with this NSIS
+  // configuration, an installer run over an existing installation never
+  // finishes: silently it exits having changed nothing, and visibly it sits on
+  // "Installing, please wait..." for five minutes with no child process and no
+  // progress. A fresh install takes twelve seconds. Until that is understood, a
+  // visible installer is the safer of the two -- a reader can see it stall and
+  // say so, where a silent no-op looks like an update button that does nothing.
   function restart() {
     if (!verified) return false;
     app.relaunch({ execPath: verified });

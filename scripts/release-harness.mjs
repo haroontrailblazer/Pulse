@@ -23,9 +23,9 @@ Usage:
   node scripts/release-harness.mjs prepare [--launch-native] [--android-serial SERIAL]
   node scripts/release-harness.mjs verify-live [--url URL] [--wait-seconds SECONDS]
 
-prepare builds and verifies the web app, APK, and portable Windows EXE. Add
+prepare builds and verifies the web app, APK, and the Windows installer. Add
 --launch-native to install and open the APK on one connected ADB device and
-to open the Windows EXE against its bundled local server.
+to open the unpacked Windows app against its bundled local server.
 
 verify-live requires the current HEAD to be on origin/main. It waits for the
 production CDN, verifies both installer bytes and ranges, and checks the live
@@ -244,7 +244,15 @@ async function smokeWindows(contract, keepOpen) {
   } catch {
     throw new Error(`Port ${desktopPort} is in use. Quit the running Pulse app before Windows launch verification.`);
   }
-  const executable = join(root, "releases", `Pulse-${contract.version}-Windows.exe`);
+  // The artifact is an installer now, so running it would install rather than
+  // start anything. win-unpacked is what the installer packs and what the reader
+  // ends up running, and verify-native-builds already treats it as the Windows
+  // build of record, so launching it tests the same binary without turning the
+  // release gate into a machine that installs software on itself.
+  const installer = join(root, "releases", `Pulse-${contract.version}-Windows.exe`);
+  assert.ok(existsSync(installer), `Missing Windows installer: ${installer}`);
+  const executable = join(root, "releases", "win-unpacked", "Pulse.exe");
+  assert.ok(existsSync(executable), `Missing unpacked Windows app: ${executable}`);
   const child = spawn(executable, [], {
     cwd: root,
     detached: false,
@@ -255,13 +263,13 @@ async function smokeWindows(contract, keepOpen) {
     await sleep(1500);
     if (child.exitCode !== null)
       throw new Error(`Windows executable exited during launch with code ${child.exitCode}`);
-    // The portable build unpacks ~105 MB to a temp directory on every launch,
-    // which measures about 25 seconds here. Fifteen was below the floor for a
-    // healthy EXE, so the gate failed on timing rather than on the app.
+    // An installed build starts straight from disk rather than unpacking ~105 MB
+    // to a temp directory first, so this is well inside the budget now. The
+    // allowance stays generous because a cold first run still pays for itself.
     const response = await waitForHttp(`http://127.0.0.1:${desktopPort}/`, 90000);
     const html = await response.text();
     assert.match(html, /Pulse/i, "Windows bundled server did not serve the app");
-    return { executable, pid: child.pid, localServer: response.status };
+    return { executable, installer, pid: child.pid, localServer: response.status };
   } finally {
     if (!keepOpen && child.pid) stopWindowsTree(child.pid);
   }
