@@ -34,7 +34,7 @@ public final class PulseAlarm extends BroadcastReceiver {
             PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
     }
 
-    static long interval(Context c) { return Math.max(PulseStore.continuousInterval(c), MIN_INTERVAL_MS); }
+    static long interval(Context c) { return Math.max(PulseStore.FULL_SWEEP_MS, MIN_INTERVAL_MS); }
 
     static synchronized void schedule(Context c) {
         AlarmManager alarms = c.getSystemService(AlarmManager.class);
@@ -65,7 +65,14 @@ public final class PulseAlarm extends BroadcastReceiver {
         if (lock != null) lock.acquire(WAKE_LOCK_MS);
         new Thread(() -> {
             long deadline = SystemClock.elapsedRealtime() + SWEEP_BUDGET_MS;
-            try { PulseStore.sweep(c, () -> SystemClock.elapsedRealtime() > deadline); }
+            PulseStore.Cancellation spent = () -> SystemClock.elapsedRealtime() > deadline;
+            // The cheap pass first, and that ordering is the point. It finishes in
+            // a few seconds, so every watched feed gets looked at on every tick.
+            // A full pass alone used to run out of budget partway through and was
+            // truncated in completion order, which quietly starved whichever
+            // providers answer slowest -- overnight, the same ones every time.
+            try { PulseProbe.tick(c, spent); } catch (Throwable ignored) {}
+            try { PulseStore.sweep(c, spent); }
             catch (Throwable ignored) {}
             finally {
                 // Re-armed in a finally: a chained alarm that throws once would

@@ -102,7 +102,7 @@ public class PulseBackground extends Plugin {
     // would be wiped again by the next watchlist edit. status(), configure() and
     // the permission callback all resolve this same object.
     private JSObject state() {
-        JSObject state=new JSObject().put("enabled",PulseStore.prefs(getContext()).getBoolean("enabled",false)).put("permission",PulseStore.permission(getContext())?"granted":"denied").put("lastCheckedAt",PulseStore.prefs(getContext()).getString("lastCheckedAt",null)).put("intervalSeconds",PulseStore.continuousInterval(getContext())/1000).put("continuous",PulseStore.continuous(getContext()));
+        JSObject state=new JSObject().put("enabled",PulseStore.prefs(getContext()).getBoolean("enabled",false)).put("permission",PulseStore.permission(getContext())?"granted":"denied").put("lastCheckedAt",PulseStore.prefs(getContext()).getString("lastCheckedAt",null)).put("intervalSeconds",PulseStore.PROBE_MS/1000).put("continuous",PulseStore.continuous(getContext()));
         org.json.JSONObject update=PulseUpdate.offered(getContext());
         if(update==null) return state;
         state.put("update",(Object)update);
@@ -126,7 +126,7 @@ public class PulseBackground extends Plugin {
                     Set<String> allowed=new HashSet<>(); JSONArray catalog=PulseStore.catalog(getContext());
                     for(int n=0;n<catalog.length();n++) allowed.add(catalog.getJSONObject(n).getString("id"));
                     Set<String> ids=new HashSet<>(); for(int n=0;n<requested.length();n++) if(allowed.contains(requested.optString(n))) ids.add(requested.optString(n));
-                    for(String old:PulseStore.watchlist(getContext())) if(!ids.contains(old)) { edit.remove("reading."+old);edit.remove("signature."+old); }
+                    for(String old:PulseStore.watchlist(getContext())) if(!ids.contains(old)) { edit.remove("reading."+old);edit.remove("signature."+old);edit.remove("probe."+old); }
                     if(!PulseStore.watchlist(getContext()).containsAll(ids)) edit.remove("lastRequested");
                     edit.putStringSet("watchlist",ids);
                 }
@@ -135,8 +135,11 @@ public class PulseBackground extends Plugin {
                     if(enabled&&!p.getBoolean("enabled",false)) {
                         edit.remove("lastRequested");
                         // Signatures only advance while alerts are on, so a stale
-                        // one would read as a recovery that never happened.
-                        for(String key:p.getAll().keySet()) if(key.startsWith("signature.")) edit.remove(key);
+                        // one would read as a recovery that never happened. Probe
+                        // indicators go with them: a stale one reads as "nothing
+                        // moved" and would hold back the full read that notices an
+                        // outage which began while alerts were off.
+                        for(String key:p.getAll().keySet()) if(key.startsWith("signature.")||key.startsWith("probe.")) edit.remove(key);
                     }
                     edit.putBoolean("enabled",enabled);
                 }

@@ -17,8 +17,30 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.TimeUnit;
 
 final class PulseStore {
-    static final String CHANNEL="pulse-watchlist", MONITOR_CHANNEL="pulse-background-monitor", UPDATE_CHANNEL="pulse-updates", PERIODIC="pulse-periodic", ONCE="pulse-once";
-    static final long FRESH_REUSE_MS=30_000, MIN_CONTINUOUS_MS=30_000, MAX_CONTINUOUS_MS=300_000;
+    static final String CHANNEL="pulse-watchlist", ALERT_CHANNEL="pulse-watchlist-alerts", MONITOR_CHANNEL="pulse-background-monitor", UPDATE_CHANNEL="pulse-updates", PERIODIC="pulse-periodic", ONCE="pulse-once";
+    static final long FRESH_REUSE_MS=30_000;
+    /**
+     * How often the fast tier asks every watched feed whether anything moved. This
+     * is the number that decides how quickly an outage becomes a notification, and
+     * PulseProbe is what makes it affordable: a pass costs about 26 KB, where a
+     * full pass over the same 77 feeds costs 3.4 MB. Raise it to spend less radio.
+     */
+    static final long PROBE_MS=20_000;
+    /**
+     * How often every watched feed is read in full. The fast tier cannot see a new
+     * incident that leaves the page indicator alone, and five providers publish no
+     * small document at all, so this pass stays the authority. Unchanged: it is
+     * what the ceiling of the old per-feed interval arithmetic already worked out to.
+     */
+    static final long FULL_SWEEP_MS=300_000;
+    /**
+     * Measured against the shipped 77-provider catalog: four connections wide a
+     * full pass took 29.9s, twelve took 9.3s and twenty-four took 5.5s, with
+     * per-feed latency flat throughout -- the pool was the whole bottleneck. Four
+     * could not finish inside the 30s the screen-off alarm has to spend, so the
+     * tail of the watchlist was being dropped every night.
+     */
+    static final int PARALLEL_FEEDS=16;
     private static final AtomicBoolean SWEEP_RUNNING=new AtomicBoolean(false);
     interface Cancellation { boolean cancelled(); }
 
@@ -36,7 +58,18 @@ final class PulseStore {
     static void channel(Context c) {
         if(Build.VERSION.SDK_INT>=26) {
             NotificationManager manager=c.getSystemService(NotificationManager.class);
-            manager.createNotificationChannel(new NotificationChannel(CHANNEL,"Watched service issues",NotificationManager.IMPORTANCE_DEFAULT));
+            // An outage is an interruption and belongs on a channel that can make
+            // one. Importance belongs to the reader once a channel exists and
+            // cannot be raised afterwards, so this is a new channel rather than a
+            // louder setting on the one that has shipped since 1.0.0 -- every
+            // existing install would have kept the quieter behaviour otherwise.
+            NotificationChannel issues=new NotificationChannel(ALERT_CHANNEL,"Watched service issues",NotificationManager.IMPORTANCE_HIGH);
+            issues.setDescription("A watched service has started reporting an outage or a degradation.");
+            issues.enableVibration(true);
+            manager.createNotificationChannel(issues);
+            // The original channel keeps the all-clear, which is news rather than
+            // an interruption, and keeps whatever the reader had already set on it.
+            manager.createNotificationChannel(new NotificationChannel(CHANNEL,"Watched service recoveries",NotificationManager.IMPORTANCE_DEFAULT));
             manager.createNotificationChannel(new NotificationChannel(MONITOR_CHANNEL,"Pulse background monitoring",NotificationManager.IMPORTANCE_MIN));
             // Its own channel, so a reader who wants to know about a new version but
             // not about every watched service -- or the reverse -- can have that
@@ -46,8 +79,15 @@ final class PulseStore {
     }
     static boolean permission(Context c) {
         if(!NotificationManagerCompat.from(c).areNotificationsEnabled()) return false;
-        if(Build.VERSION.SDK_INT>=26) { NotificationChannel channel=c.getSystemService(NotificationManager.class).getNotificationChannel(CHANNEL); return channel==null||channel.getImportance()!=NotificationManager.IMPORTANCE_NONE; }
+        // Either channel open is enough to keep recording signatures. A reader who
+        // has muted recoveries but not issues, or the reverse, still gets the half
+        // they kept; silencing both is what counts as denied.
+        if(Build.VERSION.SDK_INT>=26) return channelOpen(c,ALERT_CHANNEL)||channelOpen(c,CHANNEL);
         return true;
+    }
+    private static boolean channelOpen(Context c,String id) {
+        NotificationChannel channel=c.getSystemService(NotificationManager.class).getNotificationChannel(id);
+        return channel==null||channel.getImportance()!=NotificationManager.IMPORTANCE_NONE;
     }
     static Constraints periodicConstraints() { return new Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).setRequiresBatteryNotLow(true).build(); }
     static Constraints immediateConstraints() { return new Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build(); }
@@ -80,12 +120,8 @@ final class PulseStore {
         if(continuous(c)) ContextCompat.startForegroundService(c,new Intent(c,PulseMonitorService.class));
     }
     static void stopContinuousMonitor(Context c) { c.stopService(new Intent(c,PulseMonitorService.class)); }
-    static long continuousInterval(Context c) {
-        int automated=0;
-        try { JSONArray all=catalog(c); Set<String> watched=watchlist(c); for(int n=0;n<all.length();n++) if(watched.contains(all.getJSONObject(n).getString("id"))&&!all.getJSONObject(n).optString("format").equals("source-only")) automated++; }
-        catch(Exception ignored) {}
-        return Math.min(MAX_CONTINUOUS_MS,Math.max(MIN_CONTINUOUS_MS,automated*MIN_CONTINUOUS_MS));
-    }
+    /** Whether a full pass is owed. Zero on a fresh install, so the first tick reads everything. */
+    static boolean sweepDue(Context c) { return System.currentTimeMillis()-prefs(c).getLong("lastSweep",0)>=FULL_SWEEP_MS; }
     static PendingIntent open(Context c) {
         Intent intent=new Intent(c,MainActivity.class).putExtra("pulseWatchlist",true).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_CLEAR_TOP);
         return PendingIntent.getActivity(c,100,intent,PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);
@@ -93,9 +129,16 @@ final class PulseStore {
     // Notifications require a bitmap. Do not decode the adaptive launcher
     // resource here: some devices resolve it to a cached legacy app icon.
     static Bitmap notificationLogo(Context c) { return BitmapFactory.decodeResource(c.getResources(),R.drawable.ic_pulse_notification_large); }
-    private static JSONObject reading(Context c,JSONObject provider) throws Exception {
+    /**
+     * A full read, ignoring the freshness window. PulseProbe calls this when an
+     * indicator has just moved, and reusing a reading from thirty seconds ago is
+     * precisely the answer it already knows is out of date.
+     */
+    static JSONObject read(Context c,JSONObject provider) throws Exception { return reading(c,provider,true); }
+    private static JSONObject reading(Context c,JSONObject provider) throws Exception { return reading(c,provider,false); }
+    private static JSONObject reading(Context c,JSONObject provider,boolean force) throws Exception {
         String id=provider.getString("id");
-        try { JSONObject saved=new JSONObject(prefs(c).getString("reading."+id,"{}"));
+        if(!force) try { JSONObject saved=new JSONObject(prefs(c).getString("reading."+id,"{}"));
             if(!saved.optBoolean("stale") && System.currentTimeMillis()-java.time.Instant.parse(saved.getString("checkedAt")).toEpochMilli()<FRESH_REUSE_MS) return saved;
         } catch(Exception ignored) {}
         try { return FeedReading.parse(provider,OfficialFeed.read(provider)); }
@@ -107,7 +150,7 @@ final class PulseStore {
         try {
             JSONArray all=catalog(c);Set<String> watched=watchlist(c);List<JSONObject> selected=new ArrayList<>();
             for(int n=0;n<all.length();n++) { JSONObject provider=all.getJSONObject(n);if(watched.contains(provider.getString("id"))&&!provider.optString("format").equals("source-only")) selected.add(provider); }
-            workers=Executors.newFixedThreadPool(Math.max(1,Math.min(4,selected.size())));
+            workers=Executors.newFixedThreadPool(Math.max(1,Math.min(PARALLEL_FEEDS,selected.size())));
             CompletionService<JSONObject> completed=new ExecutorCompletionService<>(workers);
             for(JSONObject provider:selected) completed.submit(()->reading(c,provider));
             for(int n=0;n<selected.size()&&!cancellation.cancelled();n++) {
@@ -140,19 +183,25 @@ final class PulseStore {
         NotificationCompat.Builder alert=new NotificationCompat.Builder(c,UPDATE_CHANNEL).setSmallIcon(R.drawable.ic_pulse_notification_logo).setLargeIcon(notificationLogo(c)).setContentTitle(c.getString(R.string.installed_title,version)).setContentText(body).setContentIntent(open).setAutoCancel(true);
         NotificationManagerCompat.from(c).notify(("pulse-installed-"+version).hashCode(),alert.build());
     }
-    private static void alert(Context c,String id,String title,String body) {
+    private static void alert(Context c,String id,String title,String body,boolean urgent) {
         channel(c);
-        NotificationCompat.Builder alert=new NotificationCompat.Builder(c,CHANNEL).setSmallIcon(R.drawable.ic_pulse_notification_logo).setLargeIcon(notificationLogo(c)).setContentTitle(title).setContentText(body).setStyle(new NotificationCompat.BigTextStyle().bigText(body)).setContentIntent(open(c)).setAutoCancel(true);
+        NotificationCompat.Builder alert=new NotificationCompat.Builder(c,urgent?ALERT_CHANNEL:CHANNEL).setSmallIcon(R.drawable.ic_pulse_notification_logo).setLargeIcon(notificationLogo(c)).setContentTitle(title).setContentText(body).setStyle(new NotificationCompat.BigTextStyle().bigText(body)).setContentIntent(open(c)).setAutoCancel(true)
+            // Category and priority are what pre-26 devices read instead of the
+            // channel, so an issue heads up on every release the APK supports.
+            .setCategory(urgent?NotificationCompat.CATEGORY_ERROR:NotificationCompat.CATEGORY_STATUS)
+            .setPriority(urgent?NotificationCompat.PRIORITY_HIGH:NotificationCompat.PRIORITY_DEFAULT);
+        if(urgent) alert.setDefaults(NotificationCompat.DEFAULT_VIBRATE|NotificationCompat.DEFAULT_SOUND);
         NotificationManagerCompat.from(c).notify(id.hashCode(),alert.build());
     }
-    static synchronized void record(Context c,JSONObject reading) throws JSONException {
+    /** True when the stored reading moved, so a caller knows whether to repaint the widgets. */
+    static synchronized boolean record(Context c,JSONObject reading) throws JSONException {
         String id=reading.getString("id");
-        if(!watchlist(c).contains(id)) return;
+        if(!watchlist(c).contains(id)) return false;
         SharedPreferences p=prefs(c);
+        JSONObject saved=new JSONObject(p.getString("reading."+id,"{}"));
         String signature=FeedReading.signature(reading);
         if(signature!=null) {
-            JSONObject saved=new JSONObject(p.getString("reading."+id,"{}"));
-            if(reading.optString("checkedAt").compareTo(saved.optString("checkedAt"))<0) return;
+            if(reading.optString("checkedAt").compareTo(saved.optString("checkedAt"))<0) return false;
             p.edit().putString("lastCheckedAt",reading.optString("checkedAt")).apply();
         }
         String previous=p.getString("signature."+id,"");
@@ -160,14 +209,16 @@ final class PulseStore {
             if(FeedReading.shouldNotify(previous,signature)) {
                 JSONArray incidents=reading.optJSONArray("incidents");
                 String body=incidents!=null&&incidents.length()>0?incidents.optJSONObject(0).optString("name","Service disruption"):"A watched service reports an issue. Open Pulse for current details.";
-                alert(c,id,reading.optString("name",id)+" · service issue",body);
+                alert(c,id,reading.optString("name",id)+" · service issue",body,true);
             }
             // The same notification id, so the all-clear replaces the issue it
             // resolves instead of stacking a second entry beside it.
             else if(FeedReading.resolved(previous,signature))
-                alert(c,id,reading.optString("name",id)+" · back to normal","The reported issue is resolved. Its official feed is clear again.");
+                alert(c,id,reading.optString("name",id)+" · back to normal","The reported issue is resolved. Its official feed is clear again.",false);
             p.edit().putString("signature."+id,signature).apply();
         }
         p.edit().putString("reading."+id,reading.toString()).apply();
+        return !reading.optString("status").equals(saved.optString("status"))
+            || FeedReading.severity(reading)!=FeedReading.severity(saved);
     }
 }

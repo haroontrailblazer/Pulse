@@ -15,15 +15,25 @@ final class OfficialFeed {
         return new String(bytes, StandardCharsets.UTF_8).replaceFirst("^\uFEFF", "");
     }
     static String read(JSONObject provider) throws Exception {
+        return read(provider.getString("url"),
+            provider.optString("format").equals("azure-rss") ? "application/xml, text/xml" : "application/json",
+            15000, 7500);
+    }
+    /**
+     * The same reader on a caller's budget. PulseProbe fetches a 262-byte
+     * indicator document on a twenty-second cadence, and the fifteen seconds a
+     * full feed is allowed would let one stalled host swallow a whole tick.
+     */
+    static String read(String url, String accept, long budgetMs, long attemptMs) throws Exception {
         Exception failure = null;
-        long deadline = System.currentTimeMillis() + 15000;
+        long deadline = System.currentTimeMillis() + budgetMs;
         for (int attempt = 0; attempt < 2; attempt++) {
             HttpURLConnection connection = null;
             try {
-                connection = (HttpURLConnection) new URL(provider.getString("url")).openConnection();
-                int timeout = (int) Math.max(1, Math.min(7500, deadline - System.currentTimeMillis()));
+                connection = (HttpURLConnection) new URL(url).openConnection();
+                int timeout = (int) Math.max(1, Math.min(attemptMs, deadline - System.currentTimeMillis()));
                 connection.setConnectTimeout(timeout); connection.setReadTimeout(timeout);
-                connection.setRequestProperty("Accept", provider.optString("format").equals("azure-rss") ? "application/xml, text/xml" : "application/json");
+                connection.setRequestProperty("Accept", accept);
                 connection.setRequestProperty("User-Agent", "PulseStatus/1.0");
                 int code = connection.getResponseCode();
                 if (code != 200) {
