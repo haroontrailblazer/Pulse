@@ -117,7 +117,19 @@ final class PulseStore {
         WorkManager.getInstance(c).enqueueUniqueWork(ONCE,ExistingWorkPolicy.KEEP,request);
     }
     static void startContinuousMonitor(Context c) {
-        if(continuous(c)) ContextCompat.startForegroundService(c,new Intent(c,PulseMonitorService.class));
+        if(!continuous(c)) return;
+        // A foreground service cannot be started from the background on API 31+,
+        // and PulseBoot runs in exactly that position. BOOT_COMPLETED does carry an
+        // exemption, but Android 14 defers that broadcast for an app that is not
+        // running and delivers it once something else wakes the process -- by which
+        // time the exemption has expired. Measured on API 36: the start threw
+        // ForegroundServiceStartNotAllowedException, the receiver died at that line,
+        // and PulseStore.refresh below it never ran, so a rebooted phone monitored
+        // nothing until someone opened Pulse. The alarm is the designed fallback for
+        // a monitor that cannot run; PulseMonitorService.onTimeout falls back the
+        // same way when the platform takes the service away.
+        try { ContextCompat.startForegroundService(c,new Intent(c,PulseMonitorService.class)); }
+        catch(Throwable refused) { PulseAlarm.schedule(c); }
     }
     static void stopContinuousMonitor(Context c) { c.stopService(new Intent(c,PulseMonitorService.class)); }
     /** Whether a full pass is owed. Zero on a fresh install, so the first tick reads everything. */
