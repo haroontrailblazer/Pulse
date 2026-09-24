@@ -1,9 +1,9 @@
 # Pulse documentation
 
 Pulse is one product built three ways from a single codebase: the hosted
-website, a portable Windows EXE, and an Android APK. These pages describe how
-that shared application behaves, where its readings come from, and how each of
-the three surfaces is built, released and verified.
+website, an installed Windows application, and an Android APK. These pages
+describe how that shared application behaves, where its readings come from, and
+how each of the three surfaces is built, released and verified.
 
 **Start here:** [the project README](../README.md) — what Pulse is, how to run
 it locally, and a summary of what currently works.

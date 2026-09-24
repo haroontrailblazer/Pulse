@@ -31,6 +31,48 @@
     />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>Pulse — Internet health, in view.</title>
+    <link rel="canonical" href="https://www.pulses4u.in/app" />
+
+    <!-- The dashboard is the link people actually share, and it had no card at
+         all. Absolute URLs because crawlers resolve these without a document
+         base. This entry is also the one both native packages are built from,
+         so these few hundred bytes ride into the APK and the EXE, where nothing
+         reads them; keeping one entry point is worth more than saving them. -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Pulse" />
+    <meta property="og:url" content="https://www.pulses4u.in/app" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:title" content="Pulse — Internet health, in view." />
+    <meta
+      property="og:description"
+      content="A clearer picture of the internet's health. Track infrastructure, AI, and developer platforms from official status sources."
+    />
+    <meta
+      property="og:image"
+      content="https://www.pulses4u.in/marketing/og-image.png"
+    />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta
+      property="og:image:alt"
+      content="Pulse — know what’s down, get back to building. A panel of 77 status dots for the services Pulse watches, most operational, two degraded and one out."
+    />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Pulse — Internet health, in view." />
+    <meta
+      name="twitter:description"
+      content="A clearer picture of the internet's health. Track infrastructure, AI, and developer platforms from official status sources."
+    />
+    <meta
+      name="twitter:image"
+      content="https://www.pulses4u.in/marketing/og-image.png"
+    />
+    <meta
+      name="twitter:image:alt"
+      content="Pulse — know what’s down, get back to building. A panel of 77 status dots for the services Pulse watches, most operational, two degraded and one out."
+    />
   </head>
   <body>
     <div id="root"></div>

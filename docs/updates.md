@@ -74,18 +74,24 @@ installer's own "Open" button, or the notification Pulse posts from the new
 process once the replacement lands. A tapped notification is a system-sent
 PendingIntent, which is the exemption that block record is itself quoting.
 
-On Windows there is no installer to raise, because the EXE is a portable
-single file. Pulse downloads the new version beside the copy the reader keeps,
-verifies it the same way, and restarts into it -- `app.relaunch` with an explicit
-`execPath`, which Electron acts on once the current instance exits, releasing the
-single-instance lock and port 47823 with it. Three consequences worth stating
-plainly rather than burying: the old .exe stays on disk, because a running
-portable build holds its own file open and cannot be overwritten (measured: both
-a rename and an exclusive write are refused while it runs); the new file cannot
-take the old one's name, because every release carries its version in its
-filename; and any shortcut the reader pinned still points at the old file, which
-will keep offering the update until they launch the new one. A portable app has no
-install location and no shortcut an updater can repoint.
+On Windows the download is an installer, because since 1.0.28 Pulse is installed
+rather than portable. Pulse downloads it, verifies it the same way, and starts it
+-- `app.relaunch` with an explicit `execPath`, which Electron acts on once the
+current instance exits, releasing the single-instance lock and port 47823 with
+it. `execPath` is not optional here: the default is `process.execPath`, which is
+the build being replaced.
+
+It runs the installer visibly rather than silently, and that is a deliberate
+choice around an unresolved defect. Measured on Windows 11 with this NSIS
+configuration, an installer run over an existing installation never finishes:
+with `/S` it exits having changed nothing, and visibly it sits on "Installing,
+please wait..." for five minutes with no child process and no progress, while a
+fresh install of the same artifact takes twelve seconds. `electron-updater`'s
+`--updated /S --force-run` makes no difference. Until that is understood, a
+visible installer is the safer of the two, because a reader can see it stall and
+say so, where a silent no-op looks like an update button that does nothing. This
+does not affect a reader coming from a portable build, who has nothing to install
+over, but it blocks the release after 1.0.28.
 
 Self-update on Android only works while releases keep being signed with the same
 key. The APK is debug-signed from `.cache/android-toolchain/user/debug.keystore`,

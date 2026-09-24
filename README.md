@@ -28,13 +28,13 @@
 
 Pulse aggregates the status feeds that 77 technology providers publish themselves, across nine categories, and presents them as one readable picture: overview counts, a live incident feed, a world map of affected regions, and a searchable service directory. It reports **provider-published health only** — never independent probes, synthetic checks, or inferred uptime. When a feed fails, times out, or changes format, Pulse marks that provider **unavailable** rather than assuming it is healthy. Pulse is independent of every company it lists and implies no endorsement.
 
-One codebase ships three ways: the hosted website, a portable Windows EXE, and an Android APK.
+One codebase ships three ways: the hosted website, an installed Windows application, and an Android APK.
 
 ## Download
 
 | Surface | Artifact | Notes |
 | --- | --- | --- |
-| **Windows** | Portable `.exe` | No installer, no admin rights. Run the file; it serves itself on `127.0.0.1:47823`. |
+| **Windows** | Installer `.exe` | One click, no admin rights. Installs per user into `%LOCALAPPDATA%\Programs`, adds a Start Menu and desktop shortcut, and serves itself on `127.0.0.1:47823`. |
 | **Android** | `.apk` | Sideload. Android 7.0 / API 24 and above. |
 | **Web** | — | Open [the dashboard](https://www.pulses4u.in/app) in a browser. Nothing to install. |
 

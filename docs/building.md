@@ -10,7 +10,7 @@ npm.cmd run desktop
 npm.cmd run build:windows
 ```
 
-Expected portable artifact: `releases/Pulse-<version>-Windows.exe`. Packaging is unsigned; code-signing certificates and public distribution are not configured. The app uses a sandboxed renderer with Node integration disabled and a local status server bound to `127.0.0.1:47823`. Its fixed origin keeps the local watchlist stable across restarts. Port 47823 must be available. External HTTPS links open in the system browser.
+Expected artifact: `releases/Pulse-<version>-Windows.exe`, a one-click per-user NSIS installer that installs into `%LOCALAPPDATA%\Programs\pulse-status`. The unpacked application it installs is also written to `releases/win-unpacked/Pulse.exe`, and that is the binary the release gate launches, because running the installer would install rather than start anything. Packaging is unsigned; code-signing certificates and public distribution are not configured. The app uses a sandboxed renderer with Node integration disabled and a local status server bound to `127.0.0.1:47823`. Its fixed origin keeps the local watchlist stable across restarts. Port 47823 must be available. External HTTPS links open in the system browser.
 
 ## Android app
 

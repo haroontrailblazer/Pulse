@@ -269,7 +269,7 @@ export default function BackgroundSettings({
           <p>
             {android
               ? state.enabled
-                ? `Pulse keeps a visible background-monitor notification and checks your ${automated} watched feeds about every ${state.intervalSeconds || 30} seconds while the screen is on. With the screen off Android spaces checks out to roughly every 10 minutes, and you are alerted both when a watched service reports a new issue and when it recovers. Android can still stop monitoring after force-stop or under battery restrictions.`
+                ? `Pulse keeps a visible background-monitor notification. Every ${state.intervalSeconds || 20} seconds it asks your ${automated} watched feeds whether their published status has moved, and reads one in full when it has, or every five minutes regardless. With the screen off a wake-up alarm carries the checks about every five minutes, which Android can stretch to roughly nine on an idle device. You are alerted both when a watched service reports a new issue and when it recovers. Android can still stop monitoring after force-stop or under battery restrictions.`
                 : "Enable alerts to keep Pulse monitoring after you close the app. The widget also has a 15-minute Android-scheduled fallback when alerts are off."
               : native
                 ? "Pulse stays in the Windows tray after closing the window. Your watched feeds are checked every 30 seconds; Quit stops monitoring."
