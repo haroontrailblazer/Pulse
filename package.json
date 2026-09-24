@@ -1,6 +1,6 @@
 {
   "name": "pulse-status",
-  "version": "1.0.28",
+  "version": "1.0.29",
   "private": true,
   "type": "module",
   "description": "Pulse - a calm, modern view of the internet's health.",
@@ -69,7 +69,8 @@
       "desktop/**/*",
       "server/**/*",
       "shared/**/*",
-      "package.json"
+      "package.json",
+      "!node_modules/@capacitor/**"
     ],
     "win": {
       "target": "nsis",

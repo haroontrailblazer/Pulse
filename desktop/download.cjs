@@ -148,17 +148,26 @@ module.exports = function downloads({ app, updates, report }) {
   // app is now installed rather than portable. execPath is not optional; the
   // default is process.execPath, which is the build being replaced.
   //
-  // Deliberately not silent. /S is what electron-updater passes and what this
-  // first reached for, but measured here on Windows 11 with this NSIS
-  // configuration, an installer run over an existing installation never
-  // finishes: silently it exits having changed nothing, and visibly it sits on
-  // "Installing, please wait..." for five minutes with no child process and no
-  // progress. A fresh install takes twelve seconds. Until that is understood, a
-  // visible installer is the safer of the two -- a reader can see it stall and
-  // say so, where a silent no-op looks like an update button that does nothing.
+  // The three flags electron-updater passes, and each one earns its place.
+  // --updated tells NSIS this is an upgrade: it keeps the existing shortcuts,
+  // preserves app data, and skips the "Pulse is running, click OK to close it"
+  // prompt, which the installer would otherwise wait on -- with Pulse still
+  // running, because Pulse is what launched it. /S runs without a window, and
+  // --force-run starts the new version when it is done, which /S alone does not.
+  //
+  // 1.0.28 ran this visibly and without flags, because at the time an install
+  // over an existing install never finished either way and a stall the reader
+  // can see beats a silent no-op. The cause was the packaged Android Gradle
+  // output: paths too long for NSIS to rename during the upgrade, an old
+  // uninstaller aborting with exit 2, and a failure dialog with no silent
+  // default behind it. 1.0.29 stops packaging those files and clears the ones
+  // 1.0.28 left behind, so silent is the right answer again.
   function restart() {
     if (!verified) return false;
-    app.relaunch({ execPath: verified });
+    app.relaunch({
+      execPath: verified,
+      args: ["--updated", "/S", "--force-run"],
+    });
     app.quit();
     return true;
   }

@@ -81,17 +81,35 @@ current instance exits, releasing the single-instance lock and port 47823 with
 it. `execPath` is not optional here: the default is `process.execPath`, which is
 the build being replaced.
 
-It runs the installer visibly rather than silently, and that is a deliberate
-choice around an unresolved defect. Measured on Windows 11 with this NSIS
-configuration, an installer run over an existing installation never finishes:
-with `/S` it exits having changed nothing, and visibly it sits on "Installing,
-please wait..." for five minutes with no child process and no progress, while a
-fresh install of the same artifact takes twelve seconds. `electron-updater`'s
-`--updated /S --force-run` makes no difference. Until that is understood, a
-visible installer is the safer of the two, because a reader can see it stall and
-say so, where a silent no-op looks like an update button that does nothing. This
-does not affect a reader coming from a portable build, who has nothing to install
-over, but it blocks the release after 1.0.28.
+It runs with `--updated /S --force-run`. `--updated` marks this an upgrade, so
+NSIS keeps the existing shortcuts, preserves app data, and skips the "Pulse is
+running, click OK to close it" prompt that would otherwise wait on a reader while
+Pulse -- the thing that launched the installer -- is still running. `/S` runs it
+without a window, and `--force-run` starts the new version afterwards, which `/S`
+alone suppresses.
+
+1.0.28 ran it visibly and without flags, because at the time an install over an
+existing install never completed either way. The cause was in the package, not
+the updater. Before replacing anything, NSIS runs the installed version's own
+uninstaller, which renames every installed file to
+`$PLUGINSDIR\old-install\<the same relative path>`; NSIS is not long-path aware,
+and `$PLUGINSDIR` sits under `%LOCALAPPDATA%\Temp`, which is longer than the
+install directory. Up to 1.0.28 the Windows package carried `@capacitor/android`
+with the Android Gradle build output inside it, reaching 267 characters, so those
+renames failed, the old uninstaller aborted with exit code 2, the installer
+retried it five times and then waited on a message box carrying no silent
+default -- which is why `/S` appeared to do nothing and a visible run appeared to
+hang at "Installing, please wait...".
+
+1.0.29 stops packaging those files, so the Windows package went from 615 files to
+76 and its longest path from 267 characters to 26, and `customInit` in
+`desktop/installer.nsh` deletes the tree 1.0.28 left behind before the old
+uninstaller runs. `customUnInstallCheck` replaces the message box that had no
+silent default, so a failed removal reports and installs over the top instead of
+waiting forever. `scripts/verify-native-builds.mjs` fails the build if any
+packaged path exceeds what an upgrade rename can carry, budgeted for a
+28-character Windows user name. Measured after the fix, from 1.0.27 with Pulse
+running: 24.9 seconds, the app relaunched, and its local server answering.
 
 Self-update on Android only works while releases keep being signed with the same
 key. The APK is debug-signed from `.cache/android-toolchain/user/debug.keystore`,
