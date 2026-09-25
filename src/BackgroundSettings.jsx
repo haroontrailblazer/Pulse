@@ -7,6 +7,9 @@ import { requestBudget } from "../shared/alerts";
 import "./background.css";
 
 const android = Capacitor.getPlatform() === "android";
+// The EXE only. Start-on-login is a Windows concept and Android has no
+// equivalent the reader would recognise.
+const desktop = !android && !!window.pulseDesktop;
 const native = android
   ? registerPlugin("PulseBackground")
   : window.pulseDesktop;
@@ -319,6 +322,28 @@ export default function BackgroundSettings({
           </button>
         )}
       </div>
+      {desktop && (
+        <label className="start-on-login">
+          <input
+            type="checkbox"
+            checked={!!state.openAtLogin}
+            disabled={busy || !state.ready}
+            onChange={(e) => {
+              const openAtLogin = e.target.checked;
+              publish({ ...bridgeState, openAtLogin });
+              configure({ openAtLogin }).catch((err) =>
+                publish({ ...bridgeState, error: err.message }),
+              );
+            }}
+          />
+          <span>
+            <strong>Start with Windows</strong>
+            Pulse starts in the tray when you sign in, so watchlist checks are
+            running before you think to open it. It starts hidden; nothing
+            appears on screen.
+          </span>
+        </label>
+      )}
       {native && state.enabled && (
         <div className="quiet-hours">
           <label>

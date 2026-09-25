@@ -3864,3 +3864,31 @@ select {
   color: var(--text-muted);
   font-size: var(--fs-caption);
 }
+
+/* ---- Start with Windows ------------------------------------------------- */
+.start-on-login {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--line);
+  cursor: pointer;
+}
+.start-on-login input {
+  margin-top: 2px;
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent);
+  flex: 0 0 auto;
+}
+.start-on-login span {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  color: var(--text-muted);
+  font-size: var(--fs-caption);
+}
+.start-on-login strong {
+  color: var(--text);
+  font-size: var(--fs-body);
+}

@@ -226,3 +226,54 @@ test("quiet hours silence the desktop tier and hold the alert rather than losing
 
   assert.equal(controller.status().quietFrom, noisyFrom, "the window is reported back to the UI");
 });
+
+test("start with Windows registers only from a packaged build, and starts hidden", async (t) => {
+  const dir = mkdtempSync(join(tmpdir(), "pulse-login-test-"));
+  const catalog = providers.slice(0, 1);
+  class Notification { static isSupported() { return true; } constructor(o) { this.o = o; } on() {} show() {} }
+  const services = () => [{ providers: catalog }, {
+    monitor: { snapshot: () => ({ providers: [] }), observeReadings() { return () => {}; } },
+    fetchProvider: async (p) => reading(p, "operational"),
+  }, { nextAlert, quietNow, resolved }, { REFRESH_MS, DESKTOP_REFRESH_MS }, { ...updates, dueFrom: () => false }];
+
+  // Unpackaged: `npm run desktop` must never write the developer's own Electron
+  // binary into their HKCU Run key and leave it there.
+  const devCalls = [];
+  const dev = await background({
+    app: {
+      getPath: () => dir, getVersion: () => "1.0.20", isPackaged: false,
+      setLoginItemSettings: (o) => devCalls.push(o),
+    },
+    Notification, powerMonitor: { on() {} }, open() {}, services: services(),
+  });
+  dev.configure({ openAtLogin: true });
+  assert.deepEqual(devCalls, [], "an unpackaged run must not register a login item");
+  assert.equal(dev.status().openAtLogin, true, "but the preference is still recorded");
+  dev.stop();
+
+  // Packaged: registers, and asks to start hidden so no window appears at boot.
+  const calls = [];
+  const app2 = {
+    getPath: () => dir, getVersion: () => "1.0.20", isPackaged: true,
+    setLoginItemSettings: (o) => calls.push(o),
+  };
+  const prod = await background({
+    app: app2, Notification, powerMonitor: { on() {} }, open() {}, services: services(),
+  });
+  t.after(() => { prod.stop(); rmSync(dir, { recursive: true, force: true }); });
+
+  prod.configure({ openAtLogin: true });
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].openAtLogin, true);
+  assert.deepEqual(calls[0].args, ["--hidden"], "a login start must land in the tray, not open a window");
+  assert.equal(prod.status().openAtLogin, true, "and status() reports it, or the checkbox resets on reopen");
+
+  prod.configure({ openAtLogin: false });
+  assert.equal(calls.at(-1).openAtLogin, false, "turning it off deregisters");
+  assert.equal(prod.status().openAtLogin, false);
+
+  // An unrelated configure call must not touch the registration.
+  const before = calls.length;
+  prod.configure({ watchlist: catalog.map((p) => p.id) });
+  assert.equal(calls.length, before, "only an explicit openAtLogin changes the login item");
+});

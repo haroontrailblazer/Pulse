@@ -2377,7 +2377,7 @@ export default function App() {
                 <span>
                   <strong>Windows desktop</strong>
                   <small>
-                    Download the portable EXE for Windows 10+ (64-bit).
+                    Installs for Windows 10+ (64-bit) in a couple of clicks.
                   </small>
                 </span>
                 <Download size={16} />

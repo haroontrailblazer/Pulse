@@ -135,7 +135,10 @@ if (hasLock)
         ]),
       );
       tray.on("double-click", () => open());
-      open();
+      // A login start must not throw a 1480x960 window at the reader every
+      // boot. The tray is what holds the process alive, and it exists by the
+      // time this runs, so there is nothing else to keep open.
+      if (!process.argv.includes("--hidden")) open();
       app.on("second-instance", () => open());
       app.on("activate", () => open());
     })

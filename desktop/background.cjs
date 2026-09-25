@@ -41,6 +41,7 @@ module.exports = async function background({
     // exactly as it did before quiet hours existed.
     quietFrom: 0,
     quietTo: 0,
+    openAtLogin: false,
     updateCheckedDay: "",
     updateNotified: "",
   };
@@ -86,6 +87,7 @@ module.exports = async function background({
     // rather than resetting to 00:00 every time the sheet is opened.
     quietFrom: state.quietFrom ?? 0,
     quietTo: state.quietTo ?? 0,
+    openAtLogin: state.openAtLogin ?? false,
     // Re-checked on every read rather than trusted from disk, so the row
     // disappears by itself once the reader has installed the build it names.
     //
@@ -308,6 +310,19 @@ module.exports = async function background({
       if (Number.isInteger(options.quietFrom) && Number.isInteger(options.quietTo)) {
         state.quietFrom = options.quietFrom;
         state.quietTo = options.quietTo;
+      }
+      if (typeof options.openAtLogin === "boolean") {
+        state.openAtLogin = options.openAtLogin;
+        // Guarded on isPackaged, and not as tidiness: unpackaged, execPath is
+        // node_modules/electron/dist/electron.exe, so `npm run desktop` would
+        // write a developer's Electron binary into their own HKCU Run key and
+        // leave it there. --hidden is what makes a login start land in the tray
+        // instead of opening a window on every boot.
+        if (app.isPackaged)
+          app.setLoginItemSettings({
+            openAtLogin: state.openAtLogin,
+            args: ["--hidden"],
+          });
       }
       const enabling = options.enabled === true && !state.enabled;
       if (typeof options.enabled === "boolean") state.enabled = options.enabled;

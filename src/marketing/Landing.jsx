@@ -1065,7 +1065,7 @@ export default function Landing() {
                 </li>
                 <li>
                   <Check size={15} />
-                  Portable app. No installer wizard.
+                  Installs in a couple of clicks. No admin rights needed.
                 </li>
                 <li>
                   <Check size={15} />
@@ -1075,7 +1075,7 @@ export default function Landing() {
               <a className="m-button m-button-outline" href={downloads.windows}>
                 Download for Windows <Download size={17} />
               </a>
-              <small>Windows 10+ · 64-bit · Portable EXE</small>
+              <small>Windows 10+ · 64-bit · Installs for you only</small>
             </TiltCard>
             <TiltCard>
               <div className="platform-label">
