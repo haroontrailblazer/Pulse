@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { nextAlert, requestBudget } from "../shared/alerts.js";
+import { readFileSync } from "node:fs";
+import { alertKeys, nextAlert, requestBudget, resolved } from "../shared/alerts.js";
 import { providers } from "../shared/providers.js";
 const reading = (status = "operational", extra = {}) => ({
   id: "openai",
@@ -178,4 +179,47 @@ test("planned maintenance is not an issue and never raises an alert", () => {
     ).notify,
     true,
   );
+});
+
+// --- the shared truth table ------------------------------------------------
+// Read by this file and by FeedReadingTest.java, which npm run build:android
+// runs. The two implementations of these decisions were hand-mirrored and had
+// already drifted; this is what makes a disagreement a failed build.
+const cases = JSON.parse(
+  readFileSync(new URL("../shared/alert-cases.json", import.meta.url), "utf8"),
+);
+
+test("the shared alert table is actually populated", () => {
+  // A renamed or emptied fixture must fail rather than pass by iterating
+  // nothing. The Java mirror asserts the same floors for the same reason.
+  assert.ok(cases.notify.length > 10, "notify rows");
+  assert.ok(cases.resolved.length > 6, "resolved rows");
+});
+
+// nextAlert takes a reading, but every decision it makes is a comparison of two
+// signatures, so the table is expressed in signatures and the comparison is
+// exercised directly. Keeping the rows at that level is what lets Java assert
+// the identical rows without building a JSONObject reading for each one.
+const notifies = (previous, next) => {
+  if (next === null) return false;
+  const old = alertKeys(previous);
+  return [...alertKeys(next)].some((key) => !old.has(key));
+};
+
+test("the notify decision matches the shared table", () => {
+  for (const row of cases.notify)
+    assert.equal(
+      notifies(row.previous, row.next),
+      row.notify,
+      `${JSON.stringify(row.previous)} -> ${JSON.stringify(row.next)}: ${row.why}`,
+    );
+});
+
+test("the recovery decision matches the shared table", () => {
+  for (const row of cases.resolved)
+    assert.equal(
+      resolved(row.previous, row.next),
+      row.resolved,
+      `${JSON.stringify(row.previous)} -> ${JSON.stringify(row.next)}: ${row.why}`,
+    );
 });

@@ -1,6 +1,8 @@
 package app.pulse.status;
 import org.junit.Test;
 import org.json.*;
+import java.io.File;
+import java.nio.file.Files;
 import static org.junit.Assert.*;
 public class FeedReadingTest {
     @Test public void awsEncodingAndActiveEvents() throws Exception {
@@ -123,5 +125,55 @@ public class FeedReadingTest {
         // And it neither masks a real problem nor counts as something to recover from.
         assertTrue(FeedReading.shouldNotify("status:maintenance|component:db:under_maintenance","status:outage|component:db:major_outage"));
         assertFalse(FeedReading.resolved("status:maintenance|component:db:under_maintenance",""));
+    }
+
+    /**
+     * The shared alert truth table, read by this file and by tests/alerts.test.js.
+     *
+     * These two implementations were mirrored by hand and by comment only, and
+     * they had already drifted: resolved() lived here and had no counterpart in
+     * shared/alerts.js, so the phone announced recoveries and the desktop never
+     * did. Reading one table from both sides is what turns that into a failed
+     * build. The loader walks up because Gradle's working directory is
+     * android/app, not the repository root.
+     */
+    private static JSONObject alertCases() throws Exception {
+        File at = new File("").getAbsoluteFile();
+        for (int n = 0; n < 8 && at != null; n++, at = at.getParentFile()) {
+            File fixture = new File(at, "shared/alert-cases.json");
+            if (fixture.isFile())
+                return new JSONObject(new String(Files.readAllBytes(fixture.toPath()), "UTF-8"));
+        }
+        throw new IllegalStateException("shared/alert-cases.json not found from " + new File("").getAbsolutePath());
+    }
+
+    @Test public void theSharedAlertTableIsActuallyPopulated() throws Exception {
+        JSONObject table = alertCases();
+        // A renamed or emptied fixture must fail rather than pass by iterating
+        // nothing. The JavaScript mirror asserts the same floors.
+        assertTrue("notify rows", table.getJSONArray("notify").length() > 10);
+        assertTrue("resolved rows", table.getJSONArray("resolved").length() > 6);
+    }
+
+    @Test public void notifyDecisionMatchesTheSharedTable() throws Exception {
+        JSONArray rows = alertCases().getJSONArray("notify");
+        for (int i = 0; i < rows.length(); i++) {
+            JSONObject row = rows.getJSONObject(i);
+            String previous = row.getString("previous");
+            String next = row.isNull("next") ? null : row.getString("next");
+            assertEquals(row.getString("why"),
+                row.getBoolean("notify"), FeedReading.shouldNotify(previous, next));
+        }
+    }
+
+    @Test public void recoveryDecisionMatchesTheSharedTable() throws Exception {
+        JSONArray rows = alertCases().getJSONArray("resolved");
+        for (int i = 0; i < rows.length(); i++) {
+            JSONObject row = rows.getJSONObject(i);
+            String previous = row.getString("previous");
+            String next = row.isNull("next") ? null : row.getString("next");
+            assertEquals(row.getString("why"),
+                row.getBoolean("resolved"), FeedReading.resolved(previous, next));
+        }
     }
 }

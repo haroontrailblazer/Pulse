@@ -12,7 +12,7 @@ module.exports = async function background({
   const [
     { providers },
     { fetchProvider, monitor },
-    { nextAlert },
+    { nextAlert, resolved },
     { DESKTOP_REFRESH_MS, REFRESH_MS },
     updates,
   ] =
@@ -107,6 +107,22 @@ module.exports = async function background({
           reading.incidents?.[0]?.name ||
           reading.description ||
           "A watched service reports a disruption. Open Pulse for details.",
+        icon: path.join(__dirname, "icon.png"),
+      });
+      notification.on("click", () => open(true));
+      notification.show();
+    } else if (
+      resolved(state.signatures[reading.id], result.signature) &&
+      Notification.isSupported()
+    ) {
+      // The phone has said this since it shipped, from FeedReading.resolved via
+      // PulseStore; the desktop never did, so a Windows reader was told an
+      // outage had started and then left to wonder. Same shared function on
+      // both tiers now, and shared/alert-cases.json is asserted by both test
+      // suites so they cannot part company again quietly.
+      const notification = new Notification({
+        title: `${reading.name} · back to normal`,
+        body: "The reported issue is resolved. Its official feed is clear again.",
         icon: path.join(__dirname, "icon.png"),
       });
       notification.on("click", () => open(true));

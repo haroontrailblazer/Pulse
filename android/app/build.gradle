@@ -56,3 +56,17 @@ try {
 } catch(Exception e) {
     logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
 }
+
+// The JVM tests read two truth tables out of shared/, which Gradle cannot see
+// because they live outside this module. Without declaring them, editing a
+// table leaves testDebugUnitTest UP-TO-DATE and the Java half of the guarantee
+// silently does not run -- measured: flipping a row in alert-cases.json and
+// running testDebugUnitTest reported BUILD SUCCESSFUL without executing a test.
+// Declaring them as inputs is what makes "a disagreement is a failed build"
+// true incrementally and not only on a clean checkout.
+tasks.withType(Test).configureEach {
+    inputs.files(
+        rootProject.file('../shared/alert-cases.json'),
+        rootProject.file('../shared/update-cases.json')
+    ).withPropertyName('sharedTruthTables').withPathSensitivity(PathSensitivity.RELATIVE)
+}

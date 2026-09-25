@@ -1,0 +1,139 @@
+{
+  "note": "One truth table for the two implementations of the alert decisions. tests/alerts.test.js reads it, and so does android/app/src/test/java/app/pulse/status/FeedReadingTest.java, which npm run build:android runs. A disagreement between the JavaScript and the Java is therefore a failed build rather than a bug report a reader has to find. This table exists because they had already disagreed: FeedReading.resolved had no counterpart in shared/alerts.js, so the phone announced recoveries and the desktop never did, through several releases, with nothing failing. Signatures here are written in the same pipe-joined form alertSignature produces; a null signature means the feed could not be read and is spelled as null, not as an empty string, because the two mean different things.",
+  "notify": [
+    {
+      "previous": "",
+      "next": "status:outage",
+      "notify": true,
+      "why": "the ordinary case: a provider that was clear is now down"
+    },
+    {
+      "previous": "status:outage",
+      "next": "status:outage",
+      "notify": false,
+      "why": "the same outage on the next sweep is not a second alert"
+    },
+    {
+      "previous": "status:outage",
+      "next": "",
+      "notify": false,
+      "why": "recovery is not a notify; it is the resolved table below"
+    },
+    {
+      "previous": "",
+      "next": "component:c1:major_outage",
+      "notify": true,
+      "why": "a component failing is worth waking someone for"
+    },
+    {
+      "previous": "component:c1:degraded_performance",
+      "next": "component:c2:degraded_performance",
+      "notify": false,
+      "why": "components collapse to one worst-rank key, so a second degraded component is not news. This is the rule the nineteen-toast Cloudflare case exists to defend."
+    },
+    {
+      "previous": "component:c1:degraded_performance",
+      "next": "component:c1:major_outage",
+      "notify": true,
+      "why": "the same component getting worse crosses to a higher rank"
+    },
+    {
+      "previous": "component:c1:major_outage",
+      "next": "component:c1:degraded_performance",
+      "notify": true,
+      "why": "CURRENT BEHAVIOUR, recorded rather than wished away: components collapse to a single worst-rank key, so improving from component:3 to component:1 presents a key the previous signature did not have and fires. Both tiers do this identically, so it is consistent rather than drift - but a reader is interrupted to be told something got better. Changing it is a product decision, not a mirror fix."
+    },
+    {
+      "previous": "",
+      "next": "status:maintenance",
+      "notify": false,
+      "why": "planned maintenance is not an incident"
+    },
+    {
+      "previous": "",
+      "next": "incident:i1:major",
+      "notify": true,
+      "why": "a newly listed incident"
+    },
+    {
+      "previous": "incident:i1:major",
+      "next": "incident:i1:major",
+      "notify": false,
+      "why": "the same incident still open"
+    },
+    {
+      "previous": "incident:i1:major",
+      "next": "incident:i1:major|incident:i2:minor",
+      "notify": true,
+      "why": "a second, different incident is its own key"
+    },
+    {
+      "previous": "",
+      "next": "incident:i1:maintenance",
+      "notify": false,
+      "why": "a maintenance incident is dropped before the keys are compared"
+    },
+    {
+      "previous": "",
+      "next": null,
+      "notify": false,
+      "why": "an unreadable feed is never an alert; unavailable is not the same as down"
+    },
+    {
+      "previous": "status:outage",
+      "next": null,
+      "notify": false,
+      "why": "losing the feed during an outage must not fire again, and must not read as recovery"
+    }
+  ],
+  "resolved": [
+    {
+      "previous": "status:outage",
+      "next": "",
+      "resolved": true,
+      "why": "the reported issue is gone and the feed is readable"
+    },
+    {
+      "previous": "component:c1:major_outage",
+      "next": "",
+      "resolved": true,
+      "why": "the failing component is clear"
+    },
+    {
+      "previous": "",
+      "next": "",
+      "resolved": false,
+      "why": "nothing was wrong, so nothing recovered. This is the row that stops a quiet-hours hold announcing the end of something the reader was never told about."
+    },
+    {
+      "previous": "status:outage",
+      "next": "status:outage",
+      "resolved": false,
+      "why": "still down"
+    },
+    {
+      "previous": "status:outage",
+      "next": "component:c1:degraded_performance",
+      "resolved": false,
+      "why": "improved but not clear, so it is not a recovery"
+    },
+    {
+      "previous": "status:outage",
+      "next": null,
+      "resolved": false,
+      "why": "an unreachable feed is not evidence of recovery"
+    },
+    {
+      "previous": "",
+      "next": null,
+      "resolved": false,
+      "why": "nothing was wrong and the feed is unreadable"
+    },
+    {
+      "previous": "status:maintenance",
+      "next": "",
+      "resolved": false,
+      "why": "maintenance never produced an alert key, so its ending is not a recovery"
+    }
+  ]
+}

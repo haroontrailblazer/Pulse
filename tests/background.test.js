@@ -6,7 +6,7 @@ import { join } from "node:path";
 import background from "../desktop/background.cjs";
 import { createMonitor, REFRESH_MS, DESKTOP_REFRESH_MS } from "../shared/monitor.js";
 import { providers } from "../shared/providers.js";
-import { nextAlert } from "../shared/alerts.js";
+import { nextAlert, resolved } from "../shared/alerts.js";
 import * as updates from "../shared/updates.js";
 
 const reading = (p, status = "degraded") => ({ ...p, status, checkedAt: new Date().toISOString(), components: [], incidents: [] });
@@ -55,7 +55,7 @@ test("desktop isolates failed feeds, alerts newly watched services, deduplicates
     services: [{ providers: catalog }, {
       monitor: { snapshot: () => ({ providers: [] }), observeReadings(fn) { listener = fn; return () => { detached = true; }; } },
       fetchProvider: async (p) => { if (p.id === catalog[0].id) throw Error("offline"); return reading(p); },
-    }, { nextAlert }, { REFRESH_MS, DESKTOP_REFRESH_MS }, { ...updates, dueFrom: () => false }],
+    }, { nextAlert, resolved }, { REFRESH_MS, DESKTOP_REFRESH_MS }, { ...updates, dueFrom: () => false }],
   });
   t.after(() => { controller.stop(); rmSync(dir, { recursive: true, force: true }); });
   controller.configure({ enabled: true, watchlist: catalog.slice(0, 2).map((p) => p.id) });
@@ -114,7 +114,7 @@ test("the desktop update check notifies once per release, reaches the renderer, 
     { providers: providers.slice(0, 1) },
     { monitor: { snapshot: () => ({ providers: [] }), observeReadings: () => () => {} },
       fetchProvider: async (p) => reading(p, "operational") },
-    { nextAlert },
+    { nextAlert, resolved },
     { REFRESH_MS, DESKTOP_REFRESH_MS },
     { ...updates, dueFrom: () => due },
   ];

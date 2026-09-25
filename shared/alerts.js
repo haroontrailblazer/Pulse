@@ -64,6 +64,21 @@ export function alertKeys(signature) {
   if (worst) keys.add(`component:${worst}`);
   return keys;
 }
+/**
+ * Did a provider that was reporting a problem stop reporting one?
+ *
+ * This existed only in Java. FeedReading.resolved has been deciding it on the
+ * phone since it shipped, and PulseStore posts "back to normal" from it; the
+ * desktop had no counterpart and so never announced a recovery at all. The two
+ * tiers are now the same function and shared/alert-cases.json is asserted by
+ * both test suites, so they cannot drift apart again without a failed build.
+ *
+ * A null next signature means the feed could not be read. That is not evidence
+ * of recovery, and saying it was would turn every network blip into good news.
+ */
+export function resolved(previous, next) {
+  return next !== null && alertKeys(previous).size > 0 && alertKeys(next).size === 0;
+}
 export function nextAlert(previous, provider) {
   const signature = alertSignature(provider);
   if (signature === null) return { signature: previous, notify: false };
