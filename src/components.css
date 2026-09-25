@@ -3706,3 +3706,94 @@ select {
     height: 72px;
   }
 }
+
+/* ---- Your status pages: add and manage custom providers ----------------- */
+.custom-add {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-2);
+  margin: var(--space-4) 0 var(--space-2);
+}
+.custom-field {
+  display: flex;
+  flex: 1 1 200px;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+.custom-field span {
+  font-size: var(--fs-caption);
+  color: var(--text-muted);
+}
+.custom-field input {
+  min-width: 0;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--text);
+  /* 16px on phones or iOS zooms the page on focus. */
+  font-size: var(--fs-body);
+  min-height: var(--tap);
+}
+.custom-field input[aria-invalid="true"] {
+  border-color: var(--negative);
+}
+.custom-error {
+  margin-top: var(--space-2);
+  color: var(--negative);
+  font-size: var(--fs-caption);
+}
+.custom-list {
+  margin: var(--space-4) 0 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--line);
+}
+.custom-list li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--line);
+}
+.custom-list-main {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-width: 0;
+}
+.custom-list-main strong {
+  color: var(--text);
+}
+.custom-list-main small {
+  overflow: hidden;
+  color: var(--text-muted);
+  font-size: var(--fs-caption);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.custom-list-state {
+  flex: 0 0 auto;
+  font-size: var(--fs-caption);
+  color: var(--text-secondary);
+}
+.custom-list-state.is-operational { color: var(--positive); }
+.custom-list-state.is-degraded,
+.custom-list-state.is-maintenance { color: var(--warning); }
+.custom-list-state.is-outage { color: var(--negative); }
+.custom-remove {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--tap);
+  min-height: var(--tap);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.custom-remove:hover { background: var(--surface-hover); color: var(--text); }

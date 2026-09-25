@@ -9,6 +9,7 @@ import { dirname, resolve } from "node:path";
 
 import { providers, categories } from "../shared/providers.js";
 import { readableMark } from "../shared/brand.js";
+import { makeCustomProvider } from "../shared/custom-providers.js";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const css = readFileSync(resolve(root, "src/tokens.css"), "utf8");
@@ -335,6 +336,22 @@ test("every brand mark is legible on both tiles", () => {
     [],
     `brand marks below the 3:1 non-text floor: ${failures.join(", ")}`,
   );
+
+  // A provider the reader added has no brand colour to read, so it gets a
+  // synthesized one. The loop above only covers the catalog, which left the
+  // default entirely unenforced - a later tweak to it could drop below the floor
+  // with nothing failing.
+  const mine = makeCustomProvider("https://status.example.com");
+  for (const theme of ["light", "dark"]) {
+    const ratio = contrast(
+      rgb(readableMark(mine.color, theme), {}),
+      rgb(tiles[theme], {}),
+    );
+    assert.ok(
+      ratio >= 3,
+      `the default custom mark is ${ratio.toFixed(2)}:1 on ${theme}, below the 3:1 floor`,
+    );
+  }
 });
 
 test("a mark is only moved when it has to be, and never off-hue", () => {

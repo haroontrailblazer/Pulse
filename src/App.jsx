@@ -48,6 +48,8 @@ import {
 } from "./icons";
 import { Capacitor } from "@capacitor/core";
 import useLiveStatus from "./useLiveStatus";
+import useCustomProviders from "./useCustomProviders";
+import CustomProviders from "./CustomProviders.jsx";
 import LiveConsole from "./LiveConsole";
 import IncidentInbox from "./IncidentInbox";
 import InsightDetails from "./InsightDetails";
@@ -644,6 +646,10 @@ export default function App() {
       }
     };
   }, [mobileNav]);
+  // The reader's own providers, fetched in the browser rather than by
+  // /api/status, and unioned into `items` below.
+  const custom = useCustomProviders(autoRefresh);
+  const customReadings = custom.readings;
   const {
     items,
     loading,
@@ -653,7 +659,7 @@ export default function App() {
     now,
     connection,
     monitorData,
-  } = useLiveStatus(autoRefresh);
+  } = useLiveStatus(autoRefresh, customReadings);
   useBackgroundSync(watchlist, monitorData);
   // Only the APK and the EXE ever have this: it comes from the native bridge,
   // which the website does not have, so the row below cannot appear there.
@@ -1213,6 +1219,11 @@ export default function App() {
               <ArrowUpRight size={16} />
             </button>
           )}
+          <button className="nav-item" onClick={() => openModal("custom")}>
+            <Plus size={20} />
+            <span>Your status pages</span>
+            <ArrowUpRight size={16} />
+          </button>
           <button className="nav-item" onClick={() => openModal("methodology")}>
             <CircleHelp size={20} />
             <span>Help & methodology</span>
@@ -1941,6 +1952,7 @@ export default function App() {
                   settings: "Your preferences",
                   methodology: "Clarity starts with good sources",
                   apps: "Pulse, wherever you work",
+                  custom: "Watch your own status pages",
                 }[modal]
           }
           onClose={closeModal}
@@ -2328,6 +2340,14 @@ export default function App() {
                 reason this exists: one question, asked once, in one place.
               </p>
             </div>
+          )}
+          {modal === "custom" && (
+            <CustomProviders
+              list={custom.list}
+              readings={custom.readings}
+              onAdd={custom.add}
+              onRemove={custom.remove}
+            />
           )}
           {modal === "apps" && (
             <div className="prose">

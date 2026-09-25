@@ -19,7 +19,13 @@ const initial = () => ({
   refreshing: true,
   completedChecks: 0,
 });
-export default function useLiveStatus(autoRefresh) {
+// `custom` is the reader's own providers, already fetched by useCustomProviders
+// in the browser. They are unioned at the items boundary below and deliberately
+// NOT merged into `data.providers`: accept() replaces that array wholesale on
+// every non-partial frame, and the hosted build is poll-only, so every 30s frame
+// is a full one. Merging there looks right against a dev SSE stream and silently
+// drops them on the deployed site.
+export default function useLiveStatus(autoRefresh, custom = []) {
   const [data, setData] = useState(initial);
   const [error, setError] = useState("");
   const [connection, setConnection] = useState("connecting");
@@ -180,7 +186,7 @@ export default function useLiveStatus(autoRefresh) {
       window.removeEventListener("online", restore);
     };
   }, [autoRefresh, visible, accept, refresh]);
-  const items = data.providers.map((p) =>
+  const items = [...data.providers, ...custom].map((p) =>
     isFresh(p, now)
       ? p
       : {
