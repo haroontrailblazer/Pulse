@@ -2,12 +2,15 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   CUSTOM_PREFIX,
+  categoryOptions,
   customProviderId,
+  isCustomId,
   makeCustomProvider,
+  nativeWatchlist,
   normalizeCustomUrl,
   refuseUnusableFeed,
 } from "../shared/custom-providers.js";
-import { feedUrl, providers } from "../shared/providers.js";
+import { categories, feedUrl, providers } from "../shared/providers.js";
 
 // A reader pastes whatever their vendor's status page shows them. Everything
 // here is about turning that into something the existing pipeline already knows
@@ -116,4 +119,39 @@ test("a web page served where a feed was expected is refused, as the server alre
   assert.doesNotThrow(() =>
     refuseUnusableFeed({ ok: true, contentType: "application/json", bytes: 2048 }),
   );
+});
+
+// --- Defects found after the first slice shipped ---------------------------
+
+test("a custom provider is never sent to the native watchlist", () => {
+  // PulseBackground.configure drops ids it cannot find in the packaged catalog
+  // AND deletes their stored reading/signature/probe keys. A custom id can
+  // never be in that catalog by construction, so sending one asks the native
+  // tier to purge on every round trip. The web layer filters first.
+  const watchlist = [
+    "openai",
+    customProviderId(normalizeCustomUrl("https://status.example.com")),
+    "cloudflare",
+  ];
+  assert.deepEqual(nativeWatchlist(watchlist), ["openai", "cloudflare"]);
+  assert.deepEqual(nativeWatchlist([]), []);
+  assert.deepEqual(nativeWatchlist(undefined), []);
+});
+
+test("isCustomId recognises only ids this module minted", () => {
+  assert.equal(isCustomId(customProviderId(normalizeCustomUrl("https://s.example.com"))), true);
+  for (const built of ["openai", "cloudflare", "google_cloud", "", null, undefined])
+    assert.equal(isCustomId(built), false, `misread ${JSON.stringify(built)}`);
+});
+
+test("every built-in category is offered alongside the reader's own", () => {
+  // The catalog's `categories` is frozen at import from the built-in array, so
+  // a filter built from it alone silently hides custom providers the moment any
+  // category is chosen.
+  const mine = makeCustomProvider("https://status.example.com");
+  const options = categoryOptions([...providers, mine]);
+  assert.ok(options.includes(mine.category), "the reader's own category must be selectable");
+  for (const c of categories) assert.ok(options.includes(c), `lost built-in category ${c}`);
+  // Without any custom provider the list is exactly the catalog's, in order.
+  assert.deepEqual(categoryOptions(providers), categories);
 });

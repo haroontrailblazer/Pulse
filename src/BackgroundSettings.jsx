@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Capacitor, registerPlugin } from "@capacitor/core";
 import { Bell, Layers3, LayoutDashboard, ShieldCheck } from "./icons";
 import { providers } from "../shared/providers";
+import { nativeWatchlist } from "../shared/custom-providers.js";
 import { requestBudget } from "../shared/alerts";
 import "./background.css";
 
@@ -107,7 +108,9 @@ export function useUpdateIntent(onOpen) {
 }
 
 export function useBackgroundSync(watchlist, data) {
-  const ids = JSON.stringify(watchlist);
+  // Only ids the native catalog can resolve. A custom provider sent here makes
+  // PulseBackground.configure purge on every round trip and never alerts.
+  const ids = JSON.stringify(nativeWatchlist(watchlist));
   useEffect(() => {
     if (!native) return;
     configure({ watchlist: JSON.parse(ids) }).catch((e) =>

@@ -127,3 +127,43 @@ export function refuseUnusableFeed({ ok, status, contentType, bytes }) {
 }
 
 export { MAX_FEED_BYTES };
+
+/** True for an id this module minted. Built-in catalog ids can never match. */
+export function isCustomId(id) {
+  return typeof id === "string" && id.startsWith(CUSTOM_PREFIX);
+}
+
+/**
+ * The watchlist as the native tiers may receive it.
+ *
+ * PulseBackground.configure resolves every id against the catalog packaged into
+ * the APK, drops the ones it cannot find, and deletes their stored reading,
+ * signature and probe keys. A custom id can never be in that catalog - the
+ * `custom:` prefix is refused by the codegen that builds it - so sending one
+ * asks the native tier to purge on every round trip, and tells the reader
+ * nothing about why their provider raises no alerts.
+ *
+ * Filtering here keeps that boundary explicit rather than relying on the native
+ * side to be harmlessly confused.
+ */
+export function nativeWatchlist(watchlist) {
+  if (!Array.isArray(watchlist)) return [];
+  return watchlist.filter((id) => !isCustomId(id));
+}
+
+/**
+ * Category filter options for a set of providers.
+ *
+ * `categories` in shared/providers.js is frozen at import from the built-in
+ * array, so a filter built from it alone hides every custom provider the moment
+ * a reader picks any category - the one place they are most likely to go
+ * looking for the provider they just added.
+ */
+export function categoryOptions(items) {
+  const seen = [];
+  for (const provider of items || []) {
+    const category = provider?.category;
+    if (category && !seen.includes(category)) seen.push(category);
+  }
+  return seen;
+}

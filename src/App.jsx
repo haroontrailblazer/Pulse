@@ -50,6 +50,7 @@ import { Capacitor } from "@capacitor/core";
 import useLiveStatus from "./useLiveStatus";
 import useCustomProviders from "./useCustomProviders";
 import CustomProviders from "./CustomProviders.jsx";
+import { categoryOptions } from "../shared/custom-providers.js";
 import useHistory from "./useHistory";
 import HistoryStrip from "./HistoryStrip.jsx";
 import LiveConsole from "./LiveConsole";
@@ -1560,7 +1561,7 @@ export default function App() {
                   <FilterMenu
                     className="category-filter"
                     value={category}
-                    options={["All categories", ...categories]}
+                    options={["All categories", ...categoryOptions(items)]}
                     onChange={setCategory}
                     icon={<Funnel size={16} />}
                     label="Filter service category"
