@@ -50,6 +50,8 @@ import { Capacitor } from "@capacitor/core";
 import useLiveStatus from "./useLiveStatus";
 import useCustomProviders from "./useCustomProviders";
 import CustomProviders from "./CustomProviders.jsx";
+import useHistory from "./useHistory";
+import HistoryStrip from "./HistoryStrip.jsx";
 import LiveConsole from "./LiveConsole";
 import IncidentInbox from "./IncidentInbox";
 import InsightDetails from "./InsightDetails";
@@ -660,6 +662,9 @@ export default function App() {
     connection,
     monitorData,
   } = useLiveStatus(autoRefresh, customReadings);
+  // Thirty days of what this device actually saw. Written from the same
+  // readings the interface already renders; nothing extra is fetched.
+  const { historyFor, degraded: historyDegraded } = useHistory(items);
   useBackgroundSync(watchlist, monitorData);
   // Only the APK and the EXE ever have this: it comes from the native bridge,
   // which the website does not have, so the row below cannot appear there.
@@ -2058,6 +2063,7 @@ export default function App() {
                   Feed diagnostic: {detail.error}
                 </p>
               )}
+              <HistoryStrip entry={historyFor(detail.id)} degraded={historyDegraded} />
               <div className="detail-meta">
                 <span>
                   Last successful check

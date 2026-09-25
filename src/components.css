@@ -3797,3 +3797,37 @@ select {
   cursor: pointer;
 }
 .custom-remove:hover { background: var(--surface-hover); color: var(--text); }
+
+/* ---- Thirty days of recorded status ------------------------------------- */
+.history-strip {
+  margin: var(--space-4) 0;
+}
+.history-strip-row {
+  display: flex;
+  gap: 2px;
+  align-items: stretch;
+  height: 28px;
+}
+.history-mark {
+  flex: 1 1 0;
+  min-width: 0;
+  border-radius: var(--radius-xs);
+  background: var(--neutral-bg);
+}
+/* Grey is "Pulse was not watching". It must never be mistaken for health, so it
+   is the flattest thing on the strip and is named in the caption. */
+.history-mark.is-unrecorded { background: var(--surface-sunken); }
+.history-mark.is-unknown { background: var(--neutral-line); }
+.history-mark.is-operational { background: var(--positive); }
+.history-mark.is-under_maintenance { background: var(--info); }
+.history-mark.is-degraded_performance,
+.history-mark.is-partial_outage { background: var(--warning); }
+.history-mark.is-major_outage { background: var(--negative); }
+.history-caption {
+  margin-top: var(--space-2);
+  color: var(--text-muted);
+  font-size: var(--fs-caption);
+}
+.history-caption.is-degraded {
+  color: var(--negative);
+}
