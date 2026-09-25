@@ -444,3 +444,40 @@ test("a resolved issue is announced as well as a new one", () => {
   // Same notification id, so the all-clear replaces the issue it resolves.
   assert.match(store, /alert\(c,id,/);
 });
+
+test("the quick settings tile reuses the widgets' numbers and never toggles monitoring", () => {
+  const manifest = read("android/app/src/main/AndroidManifest.xml");
+  const tile = read("android/app/src/main/java/app/pulse/status/PulseTile.java");
+
+  // A tile the platform will bind: the permission is what makes it a tile
+  // rather than an ordinary exported service anything could start.
+  assert.ok(
+    manifest.includes('<service android:name=".PulseTile"'),
+    "PulseTile is not declared",
+  );
+  assert.match(manifest, /android\.permission\.BIND_QUICK_SETTINGS_TILE/);
+  assert.match(manifest, /android\.service\.quicksettings\.action\.QS_TILE/);
+
+  // Third view of the same numbers, not a fourth opinion. If the tile grew its
+  // own severity arithmetic it could disagree with the widget sitting on the
+  // same home screen.
+  assert.match(tile, /PulseWidgets\.readings\(/, "the tile must reuse the widgets' reading list");
+  assert.match(tile, /FeedReading\.severity\(/, "and the shared severity rank");
+
+  // Read-only by design: "stop watching my infrastructure" must not end up one
+  // accidental tap from the torch.
+  assert.doesNotMatch(
+    tile,
+    /putBoolean\("enabled"|configure\(|setEnabled/,
+    "the tile must not change monitoring state",
+  );
+
+  // API 34 forbids the Intent overload of startActivityAndCollapse and below it
+  // the PendingIntent overload does not exist, so both paths have to be present.
+  assert.match(tile, /SDK_INT >= 34/, "the API 34 PendingIntent path is missing");
+  assert.match(tile, /SDK_INT >= 29/, "setSubtitle below API 29 would crash");
+
+  // An empty watchlist is not an all-clear, and the tile must not imply it is.
+  assert.match(tile, /No watched services/);
+  assert.doesNotMatch(tile, /All (systems|services) operational/);
+});
