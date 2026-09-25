@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { alertKeys, nextAlert, requestBudget, resolved } from "../shared/alerts.js";
+import { alertKeys, nextAlert, quietNow, requestBudget, resolved } from "../shared/alerts.js";
 import { providers } from "../shared/providers.js";
 const reading = (status = "operational", extra = {}) => ({
   id: "openai",
@@ -194,6 +194,7 @@ test("the shared alert table is actually populated", () => {
   // nothing. The Java mirror asserts the same floors for the same reason.
   assert.ok(cases.notify.length > 10, "notify rows");
   assert.ok(cases.resolved.length > 6, "resolved rows");
+  assert.ok(cases.quiet.length > 10, "quiet rows");
 });
 
 // nextAlert takes a reading, but every decision it makes is a comparison of two
@@ -222,4 +223,43 @@ test("the recovery decision matches the shared table", () => {
       row.resolved,
       `${JSON.stringify(row.previous)} -> ${JSON.stringify(row.next)}: ${row.why}`,
     );
+});
+
+test("the quiet-hours decision matches the shared table", () => {
+  for (const row of cases.quiet)
+    assert.equal(
+      quietNow(row.hourNow, row.from, row.to),
+      row.quiet,
+      `hour=${row.hourNow} window=${row.from}-${row.to}: ${row.why}`,
+    );
+});
+
+test("quiet hours suppress and hold, so nothing is lost and nothing double-fires", () => {
+  // The whole reason to prefer hold over a pending queue: the state that
+  // survives the window is the signature the reader was last told about, so
+  // there is nothing to persist and nothing to replay.
+  const held = "";
+  const duringWindow = "status:outage";
+
+  // 1. While quiet, the tier returns before nextAlert, so the stored signature
+  //    is still the pre-issue one.
+  assert.equal(quietNow(3, 22, 7), true, "03:00 is inside a 22-07 window");
+
+  // 2. The issue is still there when the window closes: one alert, not none.
+  const after = nextAlert(held, {
+    id: "openai",
+    status: "outage",
+    checkedAt: new Date().toISOString(),
+    components: [],
+    incidents: [],
+  });
+  assert.equal(after.notify, true, "a held issue must fire once the window closes");
+
+  // 3. The issue began AND ended inside the window: the held signature never
+  //    gained an alert key, so there is no recovery to announce for something
+  //    the reader was never told about.
+  assert.equal(resolved(held, ""), false);
+  // But an issue that predated the window and cleared during it IS announced,
+  // because the reader was told about that one.
+  assert.equal(resolved(duringWindow, ""), true);
 });

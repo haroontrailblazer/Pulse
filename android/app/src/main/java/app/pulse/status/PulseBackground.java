@@ -102,7 +102,7 @@ public class PulseBackground extends Plugin {
     // would be wiped again by the next watchlist edit. status(), configure() and
     // the permission callback all resolve this same object.
     private JSObject state() {
-        JSObject state=new JSObject().put("enabled",PulseStore.prefs(getContext()).getBoolean("enabled",false)).put("permission",PulseStore.permission(getContext())?"granted":"denied").put("lastCheckedAt",PulseStore.prefs(getContext()).getString("lastCheckedAt",null)).put("intervalSeconds",PulseStore.PROBE_MS/1000).put("continuous",PulseStore.continuous(getContext()));
+        JSObject state=new JSObject().put("enabled",PulseStore.prefs(getContext()).getBoolean("enabled",false)).put("permission",PulseStore.permission(getContext())?"granted":"denied").put("lastCheckedAt",PulseStore.prefs(getContext()).getString("lastCheckedAt",null)).put("intervalSeconds",PulseStore.PROBE_MS/1000).put("continuous",PulseStore.continuous(getContext())).put("quietFrom",PulseStore.prefs(getContext()).getInt("quietFrom",0)).put("quietTo",PulseStore.prefs(getContext()).getInt("quietTo",0));
         org.json.JSONObject update=PulseUpdate.offered(getContext());
         if(update==null) return state;
         state.put("update",(Object)update);
@@ -130,6 +130,11 @@ public class PulseBackground extends Plugin {
                     if(!PulseStore.watchlist(getContext()).containsAll(ids)) edit.remove("lastRequested");
                     edit.putStringSet("watchlist",ids);
                 }
+                // Two scalars, global rather than per provider, so nothing new is
+                // keyed by provider id and the custom:<hash> purge question above
+                // never arises for them.
+                Integer quietFrom=call.getInt("quietFrom"), quietTo=call.getInt("quietTo");
+                if(quietFrom!=null&&quietTo!=null) { edit.putInt("quietFrom",quietFrom); edit.putInt("quietTo",quietTo); }
                 Boolean enabled=call.getBoolean("enabled");
                 if(enabled!=null) {
                     if(enabled&&!p.getBoolean("enabled",false)) {

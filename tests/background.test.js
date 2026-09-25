@@ -6,7 +6,7 @@ import { join } from "node:path";
 import background from "../desktop/background.cjs";
 import { createMonitor, REFRESH_MS, DESKTOP_REFRESH_MS } from "../shared/monitor.js";
 import { providers } from "../shared/providers.js";
-import { nextAlert, resolved } from "../shared/alerts.js";
+import { nextAlert, quietNow, resolved } from "../shared/alerts.js";
 import * as updates from "../shared/updates.js";
 
 const reading = (p, status = "degraded") => ({ ...p, status, checkedAt: new Date().toISOString(), components: [], incidents: [] });
@@ -55,7 +55,7 @@ test("desktop isolates failed feeds, alerts newly watched services, deduplicates
     services: [{ providers: catalog }, {
       monitor: { snapshot: () => ({ providers: [] }), observeReadings(fn) { listener = fn; return () => { detached = true; }; } },
       fetchProvider: async (p) => { if (p.id === catalog[0].id) throw Error("offline"); return reading(p); },
-    }, { nextAlert, resolved }, { REFRESH_MS, DESKTOP_REFRESH_MS }, { ...updates, dueFrom: () => false }],
+    }, { nextAlert, quietNow, resolved }, { REFRESH_MS, DESKTOP_REFRESH_MS }, { ...updates, dueFrom: () => false }],
   });
   t.after(() => { controller.stop(); rmSync(dir, { recursive: true, force: true }); });
   controller.configure({ enabled: true, watchlist: catalog.slice(0, 2).map((p) => p.id) });
@@ -114,7 +114,7 @@ test("the desktop update check notifies once per release, reaches the renderer, 
     { providers: providers.slice(0, 1) },
     { monitor: { snapshot: () => ({ providers: [] }), observeReadings: () => () => {} },
       fetchProvider: async (p) => reading(p, "operational") },
-    { nextAlert, resolved },
+    { nextAlert, quietNow, resolved },
     { REFRESH_MS, DESKTOP_REFRESH_MS },
     { ...updates, dueFrom: () => due },
   ];
@@ -167,4 +167,62 @@ test("the desktop update check notifies once per release, reaches the renderer, 
   assert.equal(notifications.length, before, "a failed look never notifies");
   assert.ok(asked > 3, "and it really did try");
   rmSync(quietDir, { recursive: true, force: true });
+});
+
+test("quiet hours silence the desktop tier and hold the alert rather than losing it", async (t) => {
+  const dir = mkdtempSync(join(tmpdir(), "pulse-quiet-test-"));
+  const catalog = providers.slice(0, 1);
+  let listener;
+  const notifications = [];
+  class Notification {
+    static isSupported() { return true; }
+    constructor(options) { this.options = options; }
+    on() {}
+    show() { notifications.push(this.options); }
+  }
+  // The hour is the only thing that moves, so the window is set around whatever
+  // hour this test actually runs in rather than a fixed one - a test that only
+  // passes between 22:00 and 07:00 is worse than no test.
+  const hour = new Date().getHours();
+  const quietFrom = hour;
+  const quietTo = (hour + 1) % 24;
+  const noisyFrom = (hour + 2) % 24;
+  const noisyTo = (hour + 3) % 24;
+
+  const controller = await background({
+    app: { getPath: () => dir, getVersion: () => "1.0.20" }, Notification, powerMonitor: { on() {} }, open() {},
+    services: [{ providers: catalog }, {
+      monitor: { snapshot: () => ({ providers: [] }), observeReadings(fn) { listener = fn; return () => {}; } },
+      fetchProvider: async (p) => reading(p, "operational"),
+    }, { nextAlert, quietNow, resolved }, { REFRESH_MS, DESKTOP_REFRESH_MS }, { ...updates, dueFrom: () => false }],
+  });
+  t.after(() => { controller.stop(); rmSync(dir, { recursive: true, force: true }); });
+
+  controller.configure({ enabled: true, watchlist: catalog.map((p) => p.id), quietFrom, quietTo });
+  await tick();
+  const before = notifications.length;
+
+  // An outage arrives inside the quiet window.
+  listener(reading(catalog[0], "outage"));
+  await tick();
+  assert.equal(notifications.length, before, "an outage inside quiet hours must not notify");
+
+  // The window closes with the outage still in place. It must fire exactly once,
+  // which is only possible if the signature was held rather than advanced.
+  controller.configure({ quietFrom: noisyFrom, quietTo: noisyTo });
+  await tick();
+  listener(reading(catalog[0], "outage"));
+  await tick();
+  assert.equal(
+    notifications.length,
+    before + 1,
+    "a held outage must be reported once the window closes, not lost",
+  );
+
+  // And not again on the next reading of the same outage.
+  listener(reading(catalog[0], "outage"));
+  await tick();
+  assert.equal(notifications.length, before + 1, "and not a second time");
+
+  assert.equal(controller.status().quietFrom, noisyFrom, "the window is reported back to the UI");
 });

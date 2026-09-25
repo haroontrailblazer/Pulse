@@ -221,6 +221,19 @@ final class FeedReading {
     static boolean resolved(String previous, String next) {
         return next != null && !alertKeys(previous).isEmpty() && alertKeys(next).isEmpty();
     }
+    /**
+     * Mirrors quietNow in shared/alerts.js, and shared/alert-cases.json asserts
+     * both against the same rows so they cannot part company.
+     *
+     * Three ints, no Calendar: the caller supplies the hour from the device's
+     * own clock, the same split PulseUpdate uses for the 08:00 floor so the
+     * shared table never has to encode a timezone. `from` inclusive, `to`
+     * exclusive; from == to means off rather than a silent day.
+     */
+    static boolean quietNow(int hourNow, int from, int to) {
+        if(from==to) return false;
+        return from<to ? hourNow>=from&&hourNow<to : hourNow>=from||hourNow<to;
+    }
     static boolean shouldNotify(String previous, String next) {
         if(next==null) return false;
         Set<String> old=alertKeys(previous);

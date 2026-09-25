@@ -153,6 +153,7 @@ public class FeedReadingTest {
         // nothing. The JavaScript mirror asserts the same floors.
         assertTrue("notify rows", table.getJSONArray("notify").length() > 10);
         assertTrue("resolved rows", table.getJSONArray("resolved").length() > 6);
+        assertTrue("quiet rows", table.getJSONArray("quiet").length() > 10);
     }
 
     @Test public void notifyDecisionMatchesTheSharedTable() throws Exception {
@@ -174,6 +175,15 @@ public class FeedReadingTest {
             String next = row.isNull("next") ? null : row.getString("next");
             assertEquals(row.getString("why"),
                 row.getBoolean("resolved"), FeedReading.resolved(previous, next));
+        }
+    }
+
+    @Test public void quietHoursDecisionMatchesTheSharedTable() throws Exception {
+        JSONArray rows = alertCases().getJSONArray("quiet");
+        for (int i = 0; i < rows.length(); i++) {
+            JSONObject row = rows.getJSONObject(i);
+            assertEquals(row.getString("why"), row.getBoolean("quiet"),
+                FeedReading.quietNow(row.getInt("hourNow"), row.getInt("from"), row.getInt("to")));
         }
     }
 }

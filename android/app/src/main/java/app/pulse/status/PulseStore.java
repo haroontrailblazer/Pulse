@@ -44,6 +44,17 @@ final class PulseStore {
     private static final AtomicBoolean SWEEP_RUNNING=new AtomicBoolean(false);
     interface Cancellation { boolean cancelled(); }
 
+    /**
+     * The reader's quiet window, read against this device's own clock.
+     *
+     * Absent settings mean off: quietFrom and quietTo default to the same value
+     * and FeedReading.quietNow treats equal bounds as disabled, so an install
+     * that has never opened the setting behaves exactly as it did before.
+     */
+    static boolean quietHoursNow(SharedPreferences p) {
+        int from=p.getInt("quietFrom",0), to=p.getInt("quietTo",0);
+        return FeedReading.quietNow(java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY),from,to);
+    }
     static SharedPreferences prefs(Context c) { return c.getSharedPreferences("pulse-background",Context.MODE_PRIVATE); }
     static JSONArray catalog(Context c) throws Exception {
         try(java.io.InputStream in=c.getAssets().open("pulse-catalog.json"); java.io.ByteArrayOutputStream out=new java.io.ByteArrayOutputStream()) {
@@ -217,7 +228,16 @@ final class PulseStore {
             p.edit().putString("lastCheckedAt",reading.optString("checkedAt")).apply();
         }
         String previous=p.getString("signature."+id,"");
-        if(signature!=null && p.getBoolean("enabled",false) && permission(c)) {
+        // Quiet hours suppress and HOLD: the signature is not advanced either,
+        // so the first sweep after the window compares against what the reader
+        // was last told and fires once if the issue is still there. Nothing is
+        // queued, so nothing is lost to a quit, a crash or a truncated sweep.
+        // An issue that both began and ended inside the window announces
+        // nothing, because the held signature never gained an alert key and
+        // FeedReading.resolved requires one. The reading itself is still
+        // written below, so the widgets stay current while the phone is quiet.
+        boolean quiet=quietHoursNow(p);
+        if(signature!=null && !quiet && p.getBoolean("enabled",false) && permission(c)) {
             if(FeedReading.shouldNotify(previous,signature)) {
                 JSONArray incidents=reading.optJSONArray("incidents");
                 String body=incidents!=null&&incidents.length()>0?incidents.optJSONObject(0).optString("name","Service disruption"):"A watched service reports an issue. Open Pulse for current details.";

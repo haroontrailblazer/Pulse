@@ -65,6 +65,28 @@ export function alertKeys(signature) {
   return keys;
 }
 /**
+ * Is the reader's quiet window open right now?
+ *
+ * Three integers and nothing else. No Date, no timezone, no locale - each tier
+ * supplies the hour from its own calendar, exactly as the update check's
+ * dueFrom takes `hourNow` so that shared/update-cases.json can assert the
+ * decision without asserting a timezone. Android reads Calendar.getInstance(),
+ * the desktop reads new Date().getHours(), and both travel with the reader.
+ *
+ * `from` is inclusive and `to` is exclusive, so 22 to 7 is quiet at 22:00 and
+ * noisy again at 07:00. A window that wraps midnight is the normal case rather
+ * than the edge case, which is why it is the thing the table covers most.
+ * from === to means no quiet hours at all, not a 24-hour silence: the settings
+ * UI cannot express "always" and a reader who set both to the same value meant
+ * to turn it off.
+ */
+export function quietNow(hourNow, from, to) {
+  if (!Number.isInteger(hourNow) || !Number.isInteger(from) || !Number.isInteger(to))
+    return false;
+  if (from === to) return false;
+  return from < to ? hourNow >= from && hourNow < to : hourNow >= from || hourNow < to;
+}
+/**
  * Did a provider that was reporting a problem stop reporting one?
  *
  * This existed only in Java. FeedReading.resolved has been deciding it on the

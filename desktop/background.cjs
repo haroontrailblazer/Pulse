@@ -12,7 +12,7 @@ module.exports = async function background({
   const [
     { providers },
     { fetchProvider, monitor },
-    { nextAlert, resolved },
+    { nextAlert, quietNow, resolved },
     { DESKTOP_REFRESH_MS, REFRESH_MS },
     updates,
   ] =
@@ -37,6 +37,10 @@ module.exports = async function background({
     watchlist: [],
     signatures: {},
     update: null,
+    // Equal bounds mean off, so an install that never opens the setting behaves
+    // exactly as it did before quiet hours existed.
+    quietFrom: 0,
+    quietTo: 0,
     updateCheckedDay: "",
     updateNotified: "",
   };
@@ -77,6 +81,11 @@ module.exports = async function background({
     permission: Notification.isSupported() ? "granted" : "denied",
     lastCheckedAt: state.lastCheckedAt || null,
     intervalSeconds: DESKTOP_REFRESH_MS / 1000,
+    // Reported for the same reason the comment below gives for `update`:
+    // configure() returns status(), so the two selects show the stored window
+    // rather than resetting to 00:00 every time the sheet is opened.
+    quietFrom: state.quietFrom ?? 0,
+    quietTo: state.quietTo ?? 0,
     // Re-checked on every read rather than trusted from disk, so the row
     // disappears by itself once the reader has installed the build it names.
     //
@@ -99,6 +108,11 @@ module.exports = async function background({
       state.checkedAt = { ...state.checkedAt, [reading.id]: reading.checkedAt };
       state.lastCheckedAt = reading.checkedAt;
     }
+    // Quiet hours suppress and hold, the same as the phone: nextAlert is not
+    // called at all, so state.signatures is not advanced and the first sweep
+    // after the window compares against what the reader was last told. No
+    // pending queue means nothing to lose across a quit or a sleep.
+    if (quietNow(new Date().getHours(), state.quietFrom ?? 0, state.quietTo ?? 0)) return;
     const result = nextAlert(state.signatures[reading.id], reading);
     if (result.notify && Notification.isSupported()) {
       const notification = new Notification({
@@ -287,6 +301,13 @@ module.exports = async function background({
         ];
         for (const id of Object.keys(state.signatures))
           if (!state.watchlist.includes(id)) { delete state.signatures[id]; delete state.checkedAt?.[id]; }
+      }
+      // Whole hours, stored beside the watchlist in watchlist-monitor.json so
+      // the tray monitor can read them with no window open - the renderer's
+      // localStorage is a different store the main process never sees.
+      if (Number.isInteger(options.quietFrom) && Number.isInteger(options.quietTo)) {
+        state.quietFrom = options.quietFrom;
+        state.quietTo = options.quietTo;
       }
       const enabling = options.enabled === true && !state.enabled;
       if (typeof options.enabled === "boolean") state.enabled = options.enabled;

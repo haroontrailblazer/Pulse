@@ -3831,3 +3831,36 @@ select {
 .history-caption.is-degraded {
   color: var(--negative);
 }
+
+/* ---- Quiet hours -------------------------------------------------------- */
+.quiet-hours {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--line);
+}
+.quiet-hours label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--text-secondary);
+  font-size: var(--fs-caption);
+}
+.quiet-hours select {
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--text);
+  /* 16px so iOS does not zoom the page on focus. */
+  font-size: var(--fs-body);
+  min-height: var(--tap);
+}
+.quiet-hours p {
+  flex: 1 1 100%;
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--fs-caption);
+}

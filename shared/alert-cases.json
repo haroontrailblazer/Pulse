@@ -135,5 +135,105 @@
       "resolved": false,
       "why": "maintenance never produced an alert key, so its ending is not a recovery"
     }
+  ],
+  "quiet": [
+    {
+      "hourNow": 23,
+      "from": 22,
+      "to": 7,
+      "quiet": true,
+      "why": "inside a window that wraps midnight, before midnight"
+    },
+    {
+      "hourNow": 3,
+      "from": 22,
+      "to": 7,
+      "quiet": true,
+      "why": "inside a wrapping window, after midnight - the case the whole feature exists for"
+    },
+    {
+      "hourNow": 22,
+      "from": 22,
+      "to": 7,
+      "quiet": true,
+      "why": "the start hour is inclusive"
+    },
+    {
+      "hourNow": 7,
+      "from": 22,
+      "to": 7,
+      "quiet": false,
+      "why": "the end hour is exclusive, so alerts resume at 07:00"
+    },
+    {
+      "hourNow": 12,
+      "from": 22,
+      "to": 7,
+      "quiet": false,
+      "why": "the middle of the day is never quiet under a night window"
+    },
+    {
+      "hourNow": 21,
+      "from": 22,
+      "to": 7,
+      "quiet": false,
+      "why": "one hour before the window opens"
+    },
+    {
+      "hourNow": 3,
+      "from": 1,
+      "to": 5,
+      "quiet": true,
+      "why": "a window inside one day needs no wrap"
+    },
+    {
+      "hourNow": 0,
+      "from": 1,
+      "to": 5,
+      "quiet": false,
+      "why": "before a same-day window, and midnight must not be treated as wrapping"
+    },
+    {
+      "hourNow": 5,
+      "from": 1,
+      "to": 5,
+      "quiet": false,
+      "why": "the end hour is exclusive here too"
+    },
+    {
+      "hourNow": 9,
+      "from": 9,
+      "to": 9,
+      "quiet": false,
+      "why": "equal bounds mean quiet hours are off, not a silent 24 hours - the UI cannot express always and a reader who set both the same meant to disable it"
+    },
+    {
+      "hourNow": 0,
+      "from": 23,
+      "to": 1,
+      "quiet": true,
+      "why": "a one-hour window across midnight"
+    },
+    {
+      "hourNow": 1,
+      "from": 23,
+      "to": 1,
+      "quiet": false,
+      "why": "and it closes on the exclusive end"
+    },
+    {
+      "hourNow": 0,
+      "from": 0,
+      "to": 8,
+      "quiet": true,
+      "why": "a window starting at midnight is not a wrap"
+    },
+    {
+      "hourNow": 23,
+      "from": 0,
+      "to": 8,
+      "quiet": false,
+      "why": "and does not silently include the hour before it"
+    }
   ]
 }

@@ -11,6 +11,15 @@ const native = android
   ? registerPlugin("PulseBackground")
   : window.pulseDesktop;
 let bridgeState = { enabled: false, permission: "prompt", ready: false };
+// Whole hours only. The decision is an integer comparison on both tiers so the
+// shared table can assert it without encoding a timezone, and minutes would
+// mean a second number to agree about for very little.
+const hourLabel = (hour) => `${String(hour ?? 0).padStart(2, "0")}:00`;
+const HOURS = Array.from({ length: 24 }, (_, hour) => (
+  <option key={hour} value={hour}>
+    {hourLabel(hour)}
+  </option>
+));
 const subscribers = new Set();
 function publish(state) {
   bridgeState = { ...state, ready: true };
@@ -172,6 +181,14 @@ export default function BackgroundSettings({
   onConfigure,
 }) {
   const [state, setState] = useState(bridgeState);
+  const setQuiet = (quietFrom, quietTo) => {
+    // Optimistic: the bridge is the source of truth and republishes on resolve,
+    // but a select that does not move until a round trip completes feels broken.
+    publish({ ...bridgeState, quietFrom, quietTo });
+    configure({ quietFrom, quietTo }).catch((e) =>
+      publish({ ...bridgeState, error: e.message }),
+    );
+  };
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   useEffect(() => {
@@ -302,6 +319,35 @@ export default function BackgroundSettings({
           </button>
         )}
       </div>
+      {native && state.enabled && (
+        <div className="quiet-hours">
+          <label>
+            <span>Quiet from</span>
+            <select
+              value={state.quietFrom ?? 0}
+              disabled={busy || !state.ready}
+              onChange={(e) => setQuiet(Number(e.target.value), state.quietTo ?? 0)}
+            >
+              {HOURS}
+            </select>
+          </label>
+          <label>
+            <span>until</span>
+            <select
+              value={state.quietTo ?? 0}
+              disabled={busy || !state.ready}
+              onChange={(e) => setQuiet(state.quietFrom ?? 0, Number(e.target.value))}
+            >
+              {HOURS}
+            </select>
+          </label>
+          <p>
+            {(state.quietFrom ?? 0) === (state.quietTo ?? 0)
+              ? "Quiet hours are off. Set two different times to silence watchlist alerts overnight."
+              : `Watchlist alerts and recoveries are held between ${hourLabel(state.quietFrom)} and ${hourLabel(state.quietTo)} on this device's clock. Nothing is dropped: an issue that is still there when the window closes is reported once. Update notices are not affected.`}
+          </p>
+        </div>
+      )}
       <div className="background-foot">
         {native && state.lastCheckedAt && (
           <span>
