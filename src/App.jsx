@@ -801,6 +801,31 @@ export default function App() {
     ["degraded", "outage"].includes(p.status),
   ).length;
   const verified = items.filter((p) => p.status !== "unknown").length;
+  // Every provider with a problem is the internet's news; only a watched one is
+  // the reader's. This is the count the installed web app wears on its icon, and
+  // the same number the watchlist tile reports, so the two cannot disagree.
+  const watchedDisrupted = items.filter(
+    (p) => watchlist.includes(p.id) && ["degraded", "outage"].includes(p.status),
+  ).length;
+  // An installed Pulse carries that count on its own icon, so a reader who has
+  // closed the window still sees it. Only the hosted build can be installed, and
+  // the API exists only in Chromium, so both are checked rather than assumed; a
+  // browser that ignores this loses nothing it had.
+  useEffect(() => {
+    if (import.meta.env.VITE_STATUS_TRANSPORT !== "poll") return;
+    if (typeof navigator === "undefined" || !navigator.setAppBadge) return;
+    // Before the first sweep there is no news to report, and badging zero is not
+    // the same as badging nothing -- clearBadge takes the dot away entirely.
+    if (firstLoad) return;
+    try {
+      const done = watchedDisrupted
+        ? navigator.setAppBadge(watchedDisrupted)
+        : navigator.clearBadge();
+      done?.catch?.(() => {});
+    } catch {
+      // Badging is decoration. It must never be able to break a render.
+    }
+  }, [watchedDisrupted, firstLoad]);
   const allIncidents = useMemo(
     () => collectIncidents(items, now),
     [items, now],
@@ -1381,7 +1406,7 @@ export default function App() {
                 label="On your radar"
                 number={watchlist.length}
                 icon={Star}
-                note={`${items.filter((p) => watchlist.includes(p.id) && ["degraded", "outage"].includes(p.status)).length} watched providers with disruptions`}
+                note={`${watchedDisrupted} watched providers with disruptions`}
                 color="purple"
                 onClick={() => go("Watchlist")}
               />

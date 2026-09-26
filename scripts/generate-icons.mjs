@@ -9,6 +9,13 @@ const round = pulseSvg({
   round: true,
 });
 const foreground = pulseSvg({ color: "#ffffff", adaptive: true });
+// An installed web app needs its own icons, and a maskable one is not the same
+// picture: the launcher crops it to whatever shape the platform likes, so the
+// mark has to sit inside the safe circle with the background reaching the edges.
+// pulseSvg's adaptive viewBox gives the padding; the backdrop has to cover the
+// whole of it rather than the 64-unit mark, which is why this is spelled out
+// here instead of adding a fourth flag to pulseSvg.
+const maskable = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="-22 -22 108 108"><rect x="-22" y="-22" width="108" height="108" fill="#161616"/><path fill="#ffffff" d="${pulsePath}"/></svg>`;
 const png = (svg, size) =>
   new Resvg(svg, { fitTo: { mode: "width", value: size } }).render().asPng();
 
@@ -27,6 +34,11 @@ writeFileSync(
   png(pulseSvg({ color: "#ffffff" }), 1024),
 );
 writeFileSync("desktop/icon.png", png(icon, 256));
+// The two sizes an installable web app is expected to declare, plus the
+// maskable one. Named by size because the manifest reads them by path.
+writeFileSync("public/brand/pulse-192.png", png(icon, 192));
+writeFileSync("public/brand/pulse-512.png", png(icon, 512));
+writeFileSync("public/brand/pulse-maskable-512.png", png(maskable, 512));
 mkdirSync("android/app/src/main/res/drawable-nodpi", { recursive: true });
 // Notifications need a bitmap. Decoding an adaptive launcher resource can
 // fall back to a device-cached legacy icon instead of the current Pulse mark.

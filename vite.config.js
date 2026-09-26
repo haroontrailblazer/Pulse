@@ -39,10 +39,31 @@ export default defineConfig(({ mode }) => ({
   plugins: [
     react(),
     {
+      // Only the hosted dashboard is an installable web app. The APK and the EXE
+      // are built from the same index.html and are already installed
+      // applications, so they get neither the manifest link nor the files behind
+      // it -- a packaged build asking its own local server for a manifest it does
+      // not ship is a 404 and a console error for nothing, and a second caching
+      // layer inside a package is a way for it to serve something other than the
+      // bytes the release gate verified. The link is injected rather than written
+      // into index.html so the decision lives next to the copy rule that enforces
+      // it, instead of in two files that can drift.
+      name: "pulse-installable-web-app",
+      transformIndexHtml(html, context) {
+        if (mode !== "web" || !context.filename.endsWith("index.html"))
+          return html;
+        return html.replace(
+          "</head>",
+          '  <link rel="manifest" href="/manifest.webmanifest" />\n  </head>',
+        );
+      },
+    },
+    {
       name: "pulse-entry-points",
       closeBundle() {
+        const webOnly = new Set(["marketing", "manifest.webmanifest", "sw.js"]);
         for (const entry of readdirSync(resolve("public"))) {
-          if (entry === "downloads" || (mode !== "web" && entry === "marketing")) continue;
+          if (entry === "downloads" || (mode !== "web" && webOnly.has(entry))) continue;
           cpSync(resolve("public", entry), resolve("dist", entry), { recursive: true });
         }
         writeFileSync(resolve("dist/pulse-build.json"), JSON.stringify(buildIdentity(), null, 2));

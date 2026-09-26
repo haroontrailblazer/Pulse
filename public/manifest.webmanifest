@@ -1,0 +1,43 @@
+{
+  "id": "/app",
+  "name": "Pulse — Internet health, in view.",
+  "short_name": "Pulse",
+  "description": "A clearer picture of the internet's health. Track infrastructure, AI, and developer platforms from official status sources.",
+  "start_url": "/app",
+  "scope": "/app",
+  "display": "standalone",
+  "theme_color": "#f4f5f6",
+  "background_color": "#f4f5f6",
+  "icons": [
+    {
+      "src": "/brand/pulse-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/brand/pulse-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/brand/pulse-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Incidents",
+      "url": "/app/incidents",
+      "icons": [{ "src": "/brand/pulse-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Watchlist",
+      "url": "/app/watchlist",
+      "icons": [{ "src": "/brand/pulse-192.png", "sizes": "192x192" }]
+    }
+  ]
+}
