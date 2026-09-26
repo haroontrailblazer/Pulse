@@ -5,6 +5,7 @@ import {
   describeTransfer,
   encodeTransfer,
 } from "../shared/watchlist-transfer.js";
+import { qrSvg } from "../shared/qr.js";
 
 // Carrying a watchlist between the website, the EXE and the APK.
 //
@@ -26,6 +27,23 @@ export default function WatchlistTransfer({
     () => encodeTransfer({ watchlist, custom }),
     [watchlist, custom],
   );
+
+  // Fixed black on white whatever the theme is doing. Inverted codes are within
+  // the specification and many readers cope, but "many" is the wrong word for the
+  // one step a reader cannot work around, and a dark-theme square that some
+  // phones refuse would look like a broken feature rather than a contrast
+  // problem. The white plate in the stylesheet is part of the same decision.
+  //
+  // A long enough watchlist has no square at all: past roughly six hundred
+  // characters the encoder refuses rather than truncate, and the honest answer is
+  // to say so and leave the code, which still works.
+  const square = useMemo(() => {
+    try {
+      return { svg: qrSvg(code, { dark: "#000000", light: "#ffffff" }) };
+    } catch {
+      return { tooLong: true };
+    }
+  }, [code]);
 
   // Parsed on every keystroke so the reader is told what a code contains before
   // they agree to it, rather than after it has changed their watchlist.
@@ -111,6 +129,28 @@ export default function WatchlistTransfer({
           <Download size={16} /> Save as a file
         </button>
       </div>
+
+      {square.svg ? (
+        <figure className="transfer-qr">
+          <div
+            className="transfer-qr-plate"
+            // The encoder's output, built from this device's own watchlist. No
+            // reader input reaches it: the only variable is the code above, which
+            // this app generated.
+            dangerouslySetInnerHTML={{ __html: square.svg }}
+          />
+          <figcaption>
+            Point the other device's camera at this to read the code, then paste
+            it into Pulse there. It holds the code itself, not a link, so
+            nothing is fetched and no server sees your watchlist.
+          </figcaption>
+        </figure>
+      ) : (
+        <p className="transfer-note">
+          This watchlist is too long to fit in a scannable square. Copy the code
+          or save it as a file instead.
+        </p>
+      )}
 
       <h3>From another device</h3>
       <label className="custom-field">

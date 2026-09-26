@@ -3940,3 +3940,28 @@ select {
   color: var(--positive);
   font-size: var(--fs-caption);
 }
+.transfer-qr {
+  margin: 0 0 var(--space-4);
+}
+/* The plate stays white in both themes because the square does. A dark-theme
+   inverted code is legal and most readers manage it, but "most" is the wrong
+   word for the one step a reader cannot work around. */
+.transfer-qr-plate {
+  width: 280px;
+  max-width: 100%;
+  padding: var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: #ffffff;
+}
+.transfer-qr-plate svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.transfer-qr figcaption {
+  margin-top: var(--space-2);
+  max-width: 44ch;
+  color: var(--text-muted);
+  font-size: var(--fs-caption);
+}
