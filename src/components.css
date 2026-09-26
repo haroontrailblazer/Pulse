@@ -3892,3 +3892,51 @@ select {
   color: var(--text);
   font-size: var(--fs-body);
 }
+
+/* ---- Moving a watchlist between devices --------------------------------- */
+.transfer-count {
+  margin: var(--space-2) 0;
+  color: var(--text-muted);
+  font-size: var(--fs-caption);
+}
+.transfer-code {
+  width: 100%;
+  box-sizing: border-box;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--text);
+  /* A code is read character by character when something has gone wrong with it,
+     so it is the one string in the product that wants a monospaced face. */
+  font-family: ui-monospace, monospace;
+  /* 16px so iOS does not zoom the page on focus. */
+  font-size: var(--fs-body);
+  line-height: 1.5;
+  resize: vertical;
+  word-break: break-all;
+}
+.transfer-code[aria-invalid="true"] {
+  border-color: var(--negative);
+}
+.transfer-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: var(--space-2) 0 var(--space-4);
+}
+.transfer-preview {
+  margin: var(--space-3) 0 var(--space-2);
+  color: var(--text);
+  font-size: var(--fs-caption);
+}
+.transfer-note {
+  margin: 0 0 var(--space-2);
+  color: var(--text-muted);
+  font-size: var(--fs-caption);
+}
+.transfer-applied {
+  margin-top: var(--space-3);
+  color: var(--positive);
+  font-size: var(--fs-caption);
+}

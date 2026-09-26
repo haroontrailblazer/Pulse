@@ -23,6 +23,7 @@ import {
   ChevronRight,
   Check,
   CircleHelp,
+  Copy,
   Settings,
   Download,
   X,
@@ -50,6 +51,7 @@ import { Capacitor } from "@capacitor/core";
 import useLiveStatus from "./useLiveStatus";
 import useCustomProviders from "./useCustomProviders";
 import CustomProviders from "./CustomProviders.jsx";
+import WatchlistTransfer from "./WatchlistTransfer.jsx";
 import { categoryOptions } from "../shared/custom-providers.js";
 import useHistory from "./useHistory";
 import HistoryStrip from "./HistoryStrip.jsx";
@@ -826,6 +828,23 @@ export default function App() {
       // Badging is decoration. It must never be able to break a render.
     }
   }, [watchedDisrupted, firstLoad]);
+  // Applying a transfer code merges and never removes, so a code made before the
+  // reader starred something new cannot undo it. The counts are computed outside
+  // the state updater rather than tallied inside it: StrictMode invokes an
+  // updater twice in development, which would report double what happened.
+  const applyTransfer = useCallback(
+    (incoming) => {
+      const added = incoming.watchlist.filter((id) => !watchlist.includes(id));
+      if (added.length) setWatchlist([...watchlist, ...added]);
+      const pages = incoming.custom.filter(
+        (provider) => !custom.list.some((have) => have.url === provider.url),
+      );
+      for (const provider of pages)
+        custom.add(provider.url, { name: provider.name });
+      return { services: added.length, pages: pages.length };
+    },
+    [watchlist, custom],
+  );
   const allIncidents = useMemo(
     () => collectIncidents(items, now),
     [items, now],
@@ -1253,6 +1272,11 @@ export default function App() {
           <button className="nav-item" onClick={() => openModal("custom")}>
             <Plus size={20} />
             <span>Your status pages</span>
+            <ArrowUpRight size={16} />
+          </button>
+          <button className="nav-item" onClick={() => openModal("transfer")}>
+            <Copy size={20} />
+            <span>Move your watchlist</span>
             <ArrowUpRight size={16} />
           </button>
           <button className="nav-item" onClick={() => openModal("methodology")}>
@@ -1984,6 +2008,7 @@ export default function App() {
                   methodology: "Clarity starts with good sources",
                   apps: "Pulse, wherever you work",
                   custom: "Watch your own status pages",
+                  transfer: "Move your watchlist to another device",
                 }[modal]
           }
           onClose={closeModal}
@@ -2379,6 +2404,14 @@ export default function App() {
               readings={custom.readings}
               onAdd={custom.add}
               onRemove={custom.remove}
+            />
+          )}
+          {modal === "transfer" && (
+            <WatchlistTransfer
+              watchlist={watchlist}
+              custom={custom.list}
+              known={providers.map((provider) => provider.id)}
+              onApply={applyTransfer}
             />
           )}
           {modal === "apps" && (
