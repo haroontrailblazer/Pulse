@@ -92,16 +92,26 @@ test("a real transfer code fits in a square a phone can read", () => {
   assert.ok(size <= 73, `a ten-service code needs ${size} modules`);
 });
 
-test("a watchlist too long to scan is refused, not silently truncated", () => {
-  // Watching all seventy-seven services makes a code past what any version this
-  // encoder supports can hold. The panel offers the code without a square in that
-  // case; what it must never do is show a square holding half a watchlist.
+test("the whole catalogue now gets a square", () => {
+  // It did not, before the payload stopped going through JSON and base64: the same
+  // watchlist was 1,104 characters and no version this encoder draws could hold
+  // it, so the reader who watched everything was the one reader who could not scan.
   const everything = encodeTransfer({
     watchlist: providers.map((provider) => provider.id),
   });
+  const { version, size } = qrMatrix(everything);
+  assert.ok(version <= 22, `the whole catalogue needs version ${version}`);
+  assert.ok(size <= 105, `${size} modules`);
+});
+
+test("a payload past the ceiling is refused, not silently truncated", () => {
+  // 1,059 bytes is the most a version 26 symbol at this error level holds. Past
+  // that the panel offers the code without a square; what it must never do is draw
+  // a square holding part of a watchlist.
+  assert.doesNotThrow(() => qrMatrix("A".repeat(1059)));
   assert.throws(
-    () => qrMatrix(everything),
-    /more than a version \d+ QR code holds/,
+    () => qrMatrix("A".repeat(1060)),
+    /more than a version 26 QR code holds/,
   );
 });
 

@@ -625,6 +625,38 @@ export function useDesktopShortcuts() {
   }, []);
 }
 
+/**
+ * Take a watchlist transfer code off the arrival URL, and take it out of the URL.
+ *
+ * Here rather than in App.jsx because this module owns window.history and the
+ * navigation tests enforce that: one writer, one stack. The removal is the point
+ * as much as the reading is -- a code left in the address is a watchlist left in
+ * browser history, and this product tells readers their watchlist goes nowhere.
+ *
+ * Safe to call from an effect: begin() runs at module scope, so the entry this
+ * rewrites is already the canonical one, and the state object is carried across
+ * untouched so the offsets recorded on it survive.
+ */
+export function takeTransferCode() {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get("transfer");
+    if (!code) return "";
+    params.delete("transfer");
+    const rest = params.toString();
+    window.history.replaceState(
+      window.history.state,
+      "",
+      window.location.pathname +
+        (rest ? `?${rest}` : "") +
+        window.location.hash,
+    );
+    return code;
+  } catch {
+    return "";
+  }
+}
+
 // At module scope, not in an effect: that is what guarantees exactly one
 // popstate listener and exactly one replaceState however StrictMode mounts. It
 // reads window.location only, so it is safe before main.jsx runs.

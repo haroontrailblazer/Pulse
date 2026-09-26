@@ -23,6 +23,18 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
+            <!-- Scanning a watchlist square opens Pulse with the code in hand. A
+                 private scheme, not an https link: a link would put the reader's
+                 whole watchlist in a request line to a server. Nothing here is
+                 trusted - see PulseTransfer - and the code only reaches the paste
+                 field, never the watchlist, until the reader agrees. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="pulse" android:host="transfer" />
+            </intent-filter>
+
         </activity>
 
         <provider

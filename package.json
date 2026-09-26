@@ -43,6 +43,7 @@
     "qa:nav": "node scripts/check-navigation.mjs",
     "qa:apk-nav": "node scripts/check-apk-back.mjs",
     "qa:screens": "node scripts/capture-screens.mjs",
+    "qa:transfer": "node scripts/check-transfer.mjs",
     "build:portable": "npm run build:windows && npm run build:android",
     "sync:metadata": "node scripts/update-release-assets.mjs",
     "sync:public-downloads": "node scripts/sync-public-downloads.mjs",

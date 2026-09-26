@@ -178,6 +178,11 @@ public class PulseBackground extends Plugin {
         // app alone would show an unchanged screen; this asks the web layer to open
         // the navigation sheet where the row is.
         if(intent.getBooleanExtra("pulseUpdate",false)) { intent.removeExtra("pulseUpdate");notifyListeners("openUpdate",new JSObject(),true); }
+        // Scanning the square another device drew arrives as a VIEW intent. The
+        // data is cleared once read so a later resume does not hand the same code
+        // over twice, the same way the extras above are removed.
+        String transfer=PulseTransfer.code(intent);
+        if(transfer!=null) { intent.setData(null);notifyListeners("openTransfer",new JSObject().put("code",transfer),true); }
     }
     @Override protected void handleOnNewIntent(Intent intent) {
         if(intent.getBooleanExtra("pulseWatchlist",false)) { intent.removeExtra("pulseWatchlist");notifyListeners("openWatchlist",new JSObject(),true); }
@@ -186,5 +191,10 @@ public class PulseBackground extends Plugin {
         // app alone would show an unchanged screen; this asks the web layer to open
         // the navigation sheet where the row is.
         if(intent.getBooleanExtra("pulseUpdate",false)) { intent.removeExtra("pulseUpdate");notifyListeners("openUpdate",new JSObject(),true); }
+        // Scanning the square another device drew arrives as a VIEW intent. The
+        // data is cleared once read so a later resume does not hand the same code
+        // over twice, the same way the extras above are removed.
+        String transfer=PulseTransfer.code(intent);
+        if(transfer!=null) { intent.setData(null);notifyListeners("openTransfer",new JSObject().put("code",transfer),true); }
     }
 }

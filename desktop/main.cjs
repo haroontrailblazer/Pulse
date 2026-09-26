@@ -139,8 +139,50 @@ if (hasLock)
       // boot. The tray is what holds the process alive, and it exists by the
       // time this runs, so there is nothing else to keep open.
       if (!process.argv.includes("--hidden")) open();
-      app.on("second-instance", () => open());
+      // Scanning a watchlist square on a phone opens Pulse there; on Windows the
+      // same link arrives because Pulse registers the scheme, and Windows hands it
+      // to a second instance as an argument. Single-instance means that second
+      // process quits immediately, so the URL is read from what it passed over.
+      //
+      // A private scheme, not an https link, deliberately: a link would carry the
+      // reader's whole watchlist in a request line to a server. Nothing about the
+      // code is trusted here -- it goes to the paste field, and the reader still
+      // sees what it would add before agreeing.
+      app.setAsDefaultProtocolClient("pulse");
+      const handTransfer = (argv) => {
+        const link = (argv || []).find((argument) =>
+          /^pulse:\/\/transfer\?/i.test(argument),
+        );
+        if (!link) return;
+        const code = link.slice(link.indexOf("c=") + 2);
+        if (!code.startsWith("PULSE") || code.length > 4000) return;
+        // A link can arrive before there is a window to show it in, and on a cold
+        // start the window exists well before the app inside it is listening. Both
+        // would drop the code silently, so the window is opened first and the
+        // dispatch waits for the load to finish when one is still in progress.
+        open();
+        if (!win) return;
+        const deliver = () =>
+          win.webContents.executeJavaScript(
+            `window.dispatchEvent(new CustomEvent("pulse-transfer-code",{detail:${JSON.stringify(code)}}))`,
+          );
+        if (win.webContents.isLoading())
+          win.webContents.once("did-finish-load", deliver);
+        else deliver();
+      };
+      app.on("second-instance", (event, argv) => {
+        open();
+        handTransfer(argv);
+      });
       app.on("activate", () => open());
+      // macOS delivers it as an event rather than an argument. Pulse ships for
+      // Windows, but leaving this out would make the scheme silently dead there.
+      app.on("open-url", (event, url) => {
+        event.preventDefault();
+        open();
+        handTransfer([url]);
+      });
+      handTransfer(process.argv);
     })
     .catch((error) => {
       dialog.showErrorBox(

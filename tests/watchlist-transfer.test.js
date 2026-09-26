@@ -4,6 +4,7 @@ import {
   decodeTransfer,
   describeTransfer,
   encodeTransfer,
+  transferLink,
 } from "../shared/watchlist-transfer.js";
 import { providers } from "../shared/providers.js";
 
@@ -107,25 +108,48 @@ test("ids this build does not have are reported, not imported", () => {
   assert.equal(back.unknown, 1);
 });
 
-test("an imported page cannot smuggle in a non-https address", () => {
-  // The same guard the paste field applies. Hand-built payload, because
-  // encodeTransfer is not the attacker here.
-  const body = Buffer.from(
-    JSON.stringify({
-      v: 1,
-      w: [],
-      c: [{ u: "http://insecure.example.com", n: "x" }],
-    }),
-  ).toString("base64url");
+// The seal, rebuilt here so a test can forge a body encodeTransfer would never
+// produce. Kept deliberately separate from the implementation: a test that
+// imported the checksum would pass even if the checksum itself changed meaning.
+function seal(body) {
   let hash = 0x811c9dc5;
   for (const byte of new TextEncoder().encode(body)) {
     hash ^= byte;
     hash = Math.imul(hash, 0x01000193) >>> 0;
   }
-  const code = `PULSE1.${body}.${hash.toString(36).padStart(6, "0").slice(-6)}`;
-  const back = decodeTransfer(code, known);
+  return hash.toString(36).padStart(6, "0").slice(-6);
+}
+const forge = (ids, pages) =>
+  `PULSE1;${ids};${pages};${seal(`${ids};${pages}`)}`;
+
+test("an imported page cannot smuggle in a non-https address", () => {
+  // The same guard the paste field applies, on a payload encodeTransfer would
+  // never build, because encodeTransfer is not the attacker here.
+  const back = decodeTransfer(
+    forge("", "http://insecure.example.com$x"),
+    known,
+  );
   assert.deepEqual(back.custom, []);
   assert.equal(back.refused, 1);
+});
+
+test("a name carrying the separators survives", () => {
+  // Names are whatever a reader typed, so they are percent-encoded. If they were
+  // not, a comma would split one page into two and a pipe would move the boundary
+  // between address and name.
+  const code = encodeTransfer({
+    watchlist: [],
+    custom: [
+      {
+        url: "https://status.example.com",
+        name: "Acme, Inc | GmbH; $50 & Ltd",
+      },
+    ],
+  });
+  assert.equal(
+    decodeTransfer(code, known).custom[0].name,
+    "Acme, Inc | GmbH; $50 & Ltd",
+  );
 });
 
 test("an empty code is refused", () => {
@@ -165,6 +189,29 @@ test("the summary counts only what the device does not already have", () => {
   assert.equal(some.services, 2);
 });
 
+test("the whole catalogue fits in a code, and in a square", async () => {
+  // This is the case the format exists for. As JSON inside base64 the same
+  // watchlist came to 1,104 characters, which no QR version this product draws
+  // can hold -- so the one reader who wanted their entire stack on a second
+  // device was the one reader who could not scan it.
+  const { qrMatrix } = await import("../shared/qr.js");
+  const code = encodeTransfer({
+    watchlist: providers.map((provider) => provider.id),
+    custom: [
+      { url: "https://status.a.example.com", name: "A" },
+      { url: "https://status.b.example.com", name: "B" },
+      { url: "https://status.c.example.com", name: "C" },
+    ],
+  });
+  assert.ok(
+    code.length < 900,
+    `the whole catalogue is ${code.length} characters`,
+  );
+  const { size } = qrMatrix(code);
+  assert.ok(size <= 121, `${size} modules`);
+  assert.equal(decodeTransfer(code, known).watchlist.length, providers.length);
+});
+
 test("a code is short enough to be carried by hand", () => {
   // Ten services and two pages is a realistic load. If this grows past a few
   // hundred characters it stops being something a reader can paste or scan.
@@ -176,4 +223,53 @@ test("a code is short enough to be carried by hand", () => {
     ],
   });
   assert.ok(code.length < 400, `code is ${code.length} characters`);
+});
+
+test("the link form is accepted wherever a code is", () => {
+  // A phone that cannot open the scheme still shows the link as text, and copying
+  // that is the obvious thing to do with it. Refusing it would punish exactly the
+  // reader the square was drawn for.
+  const code = encodeTransfer({ watchlist: someIds });
+  const link = transferLink(code);
+  assert.match(link, /^pulse:\/\/transfer\?c=PULSE1;/);
+  assert.deepEqual(decodeTransfer(link, known).watchlist, someIds);
+  // Some readers upper-case a scheme.
+  assert.deepEqual(
+    decodeTransfer(link.replace("pulse://", "PULSE://"), known).watchlist,
+    someIds,
+  );
+});
+
+test("the link needs no escaping to be a legal URI", () => {
+  // The separators were chosen for this. Percent-encoding the whole code instead
+  // would mean decoding it twice on the way back, because the names inside are
+  // already encoded -- and unescaping %7C for a pipe separator corrupted any name
+  // that contained one.
+  const link = transferLink(
+    encodeTransfer({
+      watchlist: someIds,
+      custom: [
+        {
+          url: "https://status.example.com",
+          name: "Acme, Inc | GmbH; $50 & more",
+        },
+      ],
+    }),
+  );
+  assert.doesNotThrow(() => new URL(link));
+  assert.equal(
+    decodeTransfer(link, known).custom[0].name,
+    "Acme, Inc | GmbH; $50 & more",
+  );
+});
+
+test("the link is not an https address, and that is deliberate", () => {
+  // An https link would open in any browser, and would put the reader's whole
+  // watchlist in a request line -- reaching a server, its logs and their browser
+  // history. The product tells readers their watchlist is never sent anywhere.
+  const link = transferLink(encodeTransfer({ watchlist: someIds }));
+  assert.ok(
+    !/^https?:/i.test(link),
+    "a transfer link must not be a web address",
+  );
 });

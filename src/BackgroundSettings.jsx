@@ -177,6 +177,20 @@ export function useBackgroundSync(watchlist, data) {
       listener.then((handle) => handle.remove());
     };
   }, []);
+  useEffect(() => {
+    if (!android) return;
+    // A scanned watchlist square. PulseTransfer has already refused anything that
+    // is not shaped like a code; what arrives here goes to the paste field, where
+    // the reader sees it before it changes anything.
+    const listener = native.addListener("openTransfer", (event) =>
+      window.dispatchEvent(
+        new CustomEvent("pulse-transfer-code", { detail: event?.code || "" }),
+      ),
+    );
+    return () => {
+      listener.then((handle) => handle.remove());
+    };
+  }, []);
 }
 export default function BackgroundSettings({
   watchlist,

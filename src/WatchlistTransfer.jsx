@@ -4,8 +4,9 @@ import {
   decodeTransfer,
   describeTransfer,
   encodeTransfer,
+  transferLink,
 } from "../shared/watchlist-transfer.js";
-import { qrSvg } from "../shared/qr.js";
+import { qrMatrix, qrSvg } from "../shared/qr.js";
 
 // Carrying a watchlist between the website, the EXE and the APK.
 //
@@ -16,9 +17,13 @@ export default function WatchlistTransfer({
   watchlist,
   custom,
   known,
+  handedCode = "",
   onApply,
 }) {
-  const [paste, setPaste] = useState("");
+  // A code scanned on this device, or handed to it by Windows, starts in the field
+  // already read -- but not applied. The reader still sees what it would add, and
+  // still has to agree, because arriving from a camera is not consent.
+  const [paste, setPaste] = useState(handedCode);
   const [copied, setCopied] = useState(false);
   const [applied, setApplied] = useState(null);
   const fileInput = useRef(null);
@@ -34,12 +39,28 @@ export default function WatchlistTransfer({
   // phones refuse would look like a broken feature rather than a contrast
   // problem. The white plate in the stylesheet is part of the same decision.
   //
-  // A long enough watchlist has no square at all: past roughly six hundred
-  // characters the encoder refuses rather than truncate, and the honest answer is
-  // to say so and leave the code, which still works.
+  // The square is drawn at four CSS pixels per module rather than one fixed width,
+  // because the module count is not fixed: four watched services is 29 modules
+  // across and the whole catalogue is 97, and rendering both at 280px would leave
+  // the second at under three pixels a module, which is below what a camera can
+  // separate. Bounded at both ends so a small code is not a postage stamp and a
+  // large one still fits a phone-width sheet.
+  //
+  // Past 1,059 bytes no version this encoder draws can hold the code, so it
+  // refuses rather than truncate and the panel says so. A full catalogue plus a
+  // dozen added pages is still inside that.
   const square = useMemo(() => {
     try {
-      return { svg: qrSvg(code, { dark: "#000000", light: "#ffffff" }) };
+      // The square holds the link, not the bare code: a phone with Pulse
+      // installed offers to open it and the code lands in the field, and a phone
+      // without still shows it as text that this panel accepts back.
+      const link = transferLink(code);
+      const { size } = qrMatrix(link);
+      return {
+        svg: qrSvg(link, { dark: "#000000", light: "#ffffff" }),
+        modules: size,
+        width: Math.min(420, Math.max(240, size * 4)),
+      };
     } catch {
       return { tooLong: true };
     }
@@ -134,6 +155,7 @@ export default function WatchlistTransfer({
         <figure className="transfer-qr">
           <div
             className="transfer-qr-plate"
+            style={{ width: square.width }}
             // The encoder's output, built from this device's own watchlist. No
             // reader input reaches it: the only variable is the code above, which
             // this app generated.
@@ -158,7 +180,7 @@ export default function WatchlistTransfer({
         <textarea
           rows={3}
           className="transfer-code"
-          placeholder="PULSE1.…"
+          placeholder="PULSE1;…"
           value={paste}
           onChange={(event) => {
             setPaste(event.target.value);

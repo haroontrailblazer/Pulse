@@ -26,29 +26,35 @@
 // verified output as fixtures so a future change has to keep matching it.
 //
 // One honest caveat: which of the eight masks gets chosen is ours. The three
-// implementations compared here disagree with each other about it, because the
-// specification's third penalty rule is fiddly and everyone approximates it
-// differently. Mask choice affects only how easily a camera reads the square, not
-// whether it decodes -- with the mask forced to the same value, the modules agree
-// exactly -- and this scoring errs toward penalising finder-like patterns more
-// than the rule strictly requires, which is the cautious direction.
+// Mask selection is verified too, and by its score rather than by eye: the
+// penalty this file computes is identical to the qrcode library's own `lost_point`
+// on every symbol tried, and the mask chosen is the lowest-scoring one, which is
+// what the specification asks for. Getting there corrected the third rule twice.
+// It is matched at unit width -- the eleven-module template -- not as the
+// scale-free ratio the wording suggests, and the four light modules beside it have
+// to be inside the symbol rather than satisfied by the quiet zone. Each of those
+// was worth ten to twenty-three phantom patterns per symbol and a different mask.
+//
+// One note, since it looks like a disagreement and is not: the qrcode library's
+// own automatic path sometimes returns a symbol that scores worse than its own
+// scoring function's minimum. Where this differs from that path, it agrees with
+// that library's score.
 
-// Data codewords per block, and how many blocks, for level M at versions 1-20.
-// Twenty is far past what a transfer code needs -- version 20 holds 666 bytes and
-// a ten-service code is under 400 characters -- so nothing here has to guess
-// about the larger versions.
+// Data codewords per block, and how many blocks, for level M.
 const ECC_PER_BLOCK = [
   10, 16, 26, 18, 24, 16, 18, 22, 22, 26, 30, 22, 22, 24, 24, 28, 28, 26, 26,
-  26,
+  26, 26, 28, 28, 28, 28, 28,
 ];
 const BLOCKS = [
-  1, 1, 1, 2, 2, 4, 4, 4, 5, 5, 5, 8, 9, 9, 10, 10, 11, 13, 14, 16,
+  1, 1, 1, 2, 2, 4, 4, 4, 5, 5, 5, 8, 9, 9, 10, 10, 11, 13, 14, 16, 17, 17, 18,
+  20, 21, 23,
 ];
+// Version 26 holds 1,022 bytes at this level, which is well past the largest
+// watchlist this product can produce -- every service in the catalogue plus a few
+// added pages. Stopping here rather than at 40 keeps two hand-written tables
+// shorter, and a version 40 symbol is 177 modules across, which is more than a
+// phone reads off a screen anyway.
 const MAX_VERSION = ECC_PER_BLOCK.length;
-const ALIGNMENT_STEP = [
-  0, 0, 16, 20, 24, 28, 32, 16, 18, 20, 22, 24, 26, 28, 20, 22, 24, 24, 26, 28,
-  28,
-];
 
 // Total 8-bit codewords a version holds, function patterns already removed. The
 // closed form from the specification, which is less error-prone than another
@@ -187,14 +193,19 @@ function bch(data, generatorPoly, bits) {
   return rest;
 }
 
+// Derived rather than tabulated. The spacing is even between the last centre and
+// the first, and the first is always 6, so a third hand-copied table would only be
+// a third thing to get wrong in one cell. Version 32 is the documented exception
+// where the even spacing does not come out at 26 by itself.
 function alignmentCentres(version) {
   if (version === 1) return [];
   const count = Math.floor(version / 7) + 2;
-  const step = ALIGNMENT_STEP[version];
+  const last = version * 4 + 10;
+  const step =
+    version === 32 ? 26 : Math.ceil((version * 4 + 4) / (count * 2 - 2)) * 2;
   const positions = [6];
-  for (let i = 1; i < count; i++)
-    positions.push(4 * version + 10 - (count - 1 - i) * step);
-  return positions;
+  for (let at = last; positions.length < count; at -= step) positions.push(at);
+  return positions.sort((a, b) => a - b);
 }
 
 /**
@@ -388,36 +399,70 @@ function writeFormat(modules, mask, size) {
   modules[size - 8][8] = true;
 }
 
-function penalty(modules, size) {
+// Exported because it is the one part of this file whose correctness is a
+// judgement rather than a bit pattern: the mask is chosen by comparing these
+// scores, so the score is what the tests have to be able to look at.
+export function penalty(modules, size) {
   let score = 0;
   const runs = (get) => {
     for (let a = 0; a < size; a++) {
+      // Each run carries its colour as well as its length, because the third
+      // rule is about a specific arrangement of both.
+      const history = [];
       let run = 1;
       let previous = get(a, 0);
-      const history = [];
       for (let b = 1; b < size; b++) {
         const current = get(a, b);
         if (current === previous) {
           run++;
         } else {
           if (run >= 5) score += run - 2;
-          history.push(run);
+          history.push({ dark: previous, length: run });
           run = 1;
           previous = current;
         }
       }
       if (run >= 5) score += run - 2;
-      history.push(run);
-      // 1:1:3:1:1, the finder's own proportions, anywhere in the data is the
-      // pattern most likely to be mistaken for an alignment mark.
-      for (let i = 0; i + 4 < history.length; i++)
-        if (
-          history[i + 1] === history[i] &&
-          history[i + 2] === history[i] * 3 &&
-          history[i + 3] === history[i] &&
-          history[i + 4] === history[i]
-        )
+      history.push({ dark: previous, length: run });
+
+      // Rule three: the finder's own 1:1:3:1:1 proportions appearing in the data,
+      // where a scanner may mistake them for a real finder. The specification
+      // states it as a ratio, which reads as scale-free, but it is matched here at
+      // unit width only -- the eleven-module template, dark light dark dark dark
+      // light dark with four light modules on one side. That is what the two
+      // independent implementations this file was checked against both do, and
+      // scoring it as a free ratio instead counted between ten and eighteen extra
+      // patterns per symbol and chose different masks than either of them.
+      //
+      // The four light modules have to be inside the symbol. Counting the quiet
+      // zone as the light area instead is the more physical reading -- what is out
+      // there really is light and really is four modules wide -- but it scores
+      // every edge occurrence and matches no reference: measured against the
+      // qrcode library's own scores, requiring them in bounds agrees exactly on
+      // every symbol tried, and treating out of bounds as light was over by
+      // fourteen to twenty-three patterns each time.
+      const light = (b) => b >= 0 && b < size && !get(a, b);
+      for (let b = 0; b + 6 < size; b++) {
+        const core =
+          get(a, b) &&
+          !get(a, b + 1) &&
+          get(a, b + 2) &&
+          get(a, b + 3) &&
+          get(a, b + 4) &&
+          !get(a, b + 5) &&
+          get(a, b + 6);
+        if (!core) continue;
+        // Counted once per side, not once per core. A core with four light
+        // modules on both sides scores eighty, because the usual formulation of
+        // this rule slides two eleven-module templates -- core-then-light and
+        // light-then-core -- and such a core matches both. It is rare enough that
+        // it showed up in exactly one symbol out of twenty-six, as a forty-point
+        // gap against the reference score.
+        if (light(b - 1) && light(b - 2) && light(b - 3) && light(b - 4))
           score += 40;
+        if (light(b + 7) && light(b + 8) && light(b + 9) && light(b + 10))
+          score += 40;
+      }
     }
   };
   runs((row, column) => modules[row][column]);

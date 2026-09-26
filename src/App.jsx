@@ -89,6 +89,7 @@ import {
   interrupt,
   onDesktop,
   setScrollPort,
+  takeTransferCode,
   useDesktopShortcuts,
   useDismissible,
   useNavigation,
@@ -454,6 +455,7 @@ export default function App() {
     update();
     return () => media.removeEventListener("change", update);
   }, []);
+  const [handedCode, setHandedCode] = useState("");
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("All services");
   const [category, setCategory] = useState("All categories");
@@ -996,6 +998,25 @@ export default function App() {
     setSelected(p.id);
     openModal("provider");
   };
+  // A watchlist code handed in from outside the app: scanned on the phone, where
+  // the scheme reaches PulseTransfer, or passed to the EXE by Windows. It only ever
+  // reaches the paste field -- the reader still sees what it would add and still
+  // has to agree -- so nothing here needs to trust where it came from.
+  //
+  // The query form is read once and removed from the address by navigation.js,
+  // which owns history: a code left in a URL is a watchlist left in browser
+  // history.
+  useEffect(() => {
+    const hand = (code) => {
+      if (!code) return;
+      setHandedCode(code);
+      openModal("transfer");
+    };
+    hand(takeTransferCode());
+    const fromNative = (event) => hand(event.detail);
+    window.addEventListener("pulse-transfer-code", fromNative);
+    return () => window.removeEventListener("pulse-transfer-code", fromNative);
+  }, []);
   const detailProvider = items.find((p) => p.id === selected);
   const detail = detailProvider
     ? {
@@ -2411,6 +2432,7 @@ export default function App() {
               watchlist={watchlist}
               custom={custom.list}
               known={providers.map((provider) => provider.id)}
+              handedCode={handedCode}
               onApply={applyTransfer}
             />
           )}
